@@ -14,7 +14,10 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@/*": ["apps/frontend/src/*"],
+      "@repo-hub/internal": ["libs/internal/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

@@ -1,0 +1,12 @@
+{
+  "name": "@repo-hub/internal",
+  "version": "0.0.1",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.709.0",
+    "dynamoose": "^4.0.2"
+  },
+  "main": "./index.js",
+  "module": "./index.mjs",
+  "typings": "./index.d.ts",
+  "private": true
+}

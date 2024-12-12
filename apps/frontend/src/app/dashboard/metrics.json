@@ -1,0 +1,31 @@
+{
+   "Indicators":{
+      "availability":0,
+      "performance":0,
+      "quality":0,
+      "efficiency":0
+   },
+   "PieCharts":{
+      "quality":{
+        "labels":[],
+        "parents":[],
+        "values":[]
+      }
+
+   },
+   "LineCharts":{
+     "xaxis":[""],
+     "yaxis":{
+        "quality":[]
+     }
+
+   },
+   "BarCharts":{
+     "energy":{
+        "labels":[],
+        "firstValues":[],
+        "secondValues":[]
+     }
+   }
+}
+

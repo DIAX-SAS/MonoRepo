@@ -1,0 +1,16 @@
+{
+  "at_hash": "nxT6lH-7CPvFGDxYFlU0Ww",
+  "sub": "746834c8-60b1-709b-a76a-85e7b3da0949",
+  "email_verified": true,
+  "iss": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_bHo9GIUJg",
+  "cognito:username": "fernando",
+  "origin_jti": "48cfedb9-39e0-4ff1-9b62-c048c3f9ff1d",
+  "aud": "1dgddk7rc0bir0mt3g403kojcc",
+  "event_id": "5bde562a-79a6-449f-bd8c-2ed4e9d94b4c",
+  "token_use": "id",
+  "auth_time": 1733919987,
+  "exp": 1733923587,
+  "iat": 1733919987,
+  "jti": "98583d19-fc24-40a9-92b6-79f229719c3c",
+  "email": "sepulvedafernando20@gmail.com"
+}
