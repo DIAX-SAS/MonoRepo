@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { config } from '@/config';
+import { IdToken } from '@/types/user';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -8,10 +8,9 @@ import MenuList from '@mui/material/MenuList';
 import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
-
-import { authClient } from '@/lib/auth/client';
-import { logger } from '@/lib/default-logger';
-import { useUser } from '@/hooks/use-user';
+import { jwtDecode } from 'jwt-decode';
+import * as React from 'react';
+import { useAuth } from 'react-oidc-context';
 
 export interface UserPopoverProps {
   anchorEl: Element | null;
@@ -19,32 +18,24 @@ export interface UserPopoverProps {
   open: boolean;
 }
 
-export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): React.JSX.Element {
-  const { checkSession } = useUser();
-
-  const router = useRouter();
-
+export function UserPopover({
+  anchorEl,
+  onClose,
+  open,
+}: UserPopoverProps): React.JSX.Element {
+  const auth = useAuth();
+  const user: IdToken | null = auth.user?.id_token
+    ? jwtDecode(auth.user.id_token)
+    : null;
   const handleSignOut = React.useCallback(async (): Promise<void> => {
-    try {
-      const { error } = await authClient.signOut();
-
-      if (error) {
-        logger.error('Sign out error', error);
-        return;
-      }
-
-      // Refresh the auth state
-      await checkSession?.();
-
-      // UserProvider, for this case, will not refresh the router and we need to do it manually
-      router.refresh();
-      // After refresh, AuthGuard will handle the redirect
-    } catch (err) {
-      logger.error('Sign out error', err);
-    }
-  }, [checkSession, router]);
-
-  const user = useUser();
+    await auth.signoutRedirect({
+      post_logout_redirect_uri: config.auth.cognitoDomain,
+      extraQueryParams: {
+        client_id: config.auth.clientId,
+        logout_uri: config.auth.logoutUri,
+      },
+    });
+  }, [auth]);
 
   return (
     <Popover
@@ -55,13 +46,18 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
       slotProps={{ paper: { sx: { width: '240px' } } }}
     >
       <Box sx={{ p: '16px 20px ' }}>
-        <Typography variant="subtitle1">{user.user?.name}</Typography>
+        <Typography variant="subtitle1">
+          {user ? user['cognito:username'] : null}
+        </Typography>
         <Typography color="text.secondary" variant="body2">
-         {user.user?.email}
+          {user ? user.email : null}
         </Typography>
       </Box>
       <Divider />
-      <MenuList disablePadding sx={{ p: '8px', '& .MuiMenuItem-root': { borderRadius: 1 } }}>
+      <MenuList
+        disablePadding
+        sx={{ p: '8px', '& .MuiMenuItem-root': { borderRadius: 1 } }}
+      >
         <MenuItem onClick={handleSignOut}>
           <ListItemIcon>
             <SignOutIcon fontSize="var(--icon-fontSize-md)" />

@@ -8,5 +8,4 @@ export class AppController {
   getObjects() {
     return "Hello world!";
   }
-
 }

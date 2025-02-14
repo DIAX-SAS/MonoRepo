@@ -1,7 +1,6 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { configureAWS } from './config/aws.config';
 
 async function bootstrap() {
   const globalPrefix = 'api';
@@ -14,9 +13,14 @@ async function bootstrap() {
     preflightContinue: false,
     optionsSuccessStatus: 204,
   }); 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // Convierte los datos automáticamente (ej. string → Date)
+      whitelist: true, // Remueve campos no definidos en el DTO
+      forbidNonWhitelisted: true, // Retorna error si hay campos no permitidos
+    }),
+  );
   app.setGlobalPrefix(globalPrefix);
-
-  await configureAWS();
   await app.listen(port);
   
   Logger.log(

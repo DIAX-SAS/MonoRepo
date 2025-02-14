@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["apps/frontend/src/*"],
-      "@repo-hub/internal": ["libs/internal/src/index.ts"]
+      "@repo-hub/internal": ["libs/internal/src/index.ts"],
+      "@backend/*":["apps/backend/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

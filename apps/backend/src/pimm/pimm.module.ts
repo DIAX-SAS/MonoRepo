@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { PlcController } from './pimm.controller';
-import { PlcService } from './pimm.service';
+import { PIMMController } from './pimm.controller';
+import { PIMMService } from './pimm.service';
 
 @Module({
   imports: [
   ],
-  controllers: [PlcController],
-  providers: [PlcService],
-  exports: [PlcService],
+  controllers: [PIMMController],
+  providers: [PIMMService],
+  exports: [PIMMService],
 })
-export class PlcModule {}
+export class PIMMModule {}

@@ -6,7 +6,7 @@ import Alert from '@mui/material/Alert';
 
 import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
-import { useUser } from '@/hooks/use-user';
+import { useAuth } from 'react-oidc-context';
 
 export interface AuthGuardProps {
   children: React.ReactNode;
@@ -14,34 +14,34 @@ export interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | null {
   const router = useRouter();
-  const { user, error, isLoading } = useUser();
+  const auth = useAuth(); 
   const [isChecking, setIsChecking] = React.useState<boolean>(true);
 
   React.useEffect(() => {
-    if (isLoading) {
+    if (auth.isLoading) {
       return;
     }
 
-    if (error) {
+    if (auth.error) {
       setIsChecking(false);
       return;
     }
 
-    if (!user) {
+    if (!auth.isAuthenticated) {
       logger.debug('[AuthGuard]: User is not logged in, redirecting to sign in');
       router.replace(paths.auth.signIn);
       return;
     }
 
     setIsChecking(false);
-  }, [user, error, isLoading, router]);
+  }, [router, auth.isLoading, auth.error, auth.isAuthenticated]);
 
   if (isChecking) {
     return null;
   }
 
-  if (error) {
-    return <Alert color="error">{error}</Alert>;
+  if (auth.error) {
+    return <Alert color="error">{auth.error.message}</Alert>;
   }
 
   return <React.Fragment>{children}</React.Fragment>;
