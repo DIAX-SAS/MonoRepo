@@ -1,13 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
-
 import FilterForm from '@/components/dashboard/filters/filter-form';
 import { config } from '@/config';
 import {
   fetchCredentialsCore,
   fetchData,
 } from '@/connections/backend-connections';
-import { Filters } from '@/types/filters';
+import { useDataStore } from '@/contexts/data-store';
 import { Card, CardContent, CardHeader } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { Box } from '@mui/system';
@@ -19,17 +18,16 @@ import { unstable_batchedUpdates } from 'react-dom';
 import { useAuth } from 'react-oidc-context';
 
 export default function Page(): React.JSX.Element {
-  const [filters, setFilters] = useState<Filters>({
-    initTime: Date.now(),
-    endTime: Date.now(),
-    accUnit: 'second',
-    offset: false,
-    live: false,
-    states: [],
-    selected: [],
-  });
+
   const [isConnected, setIsConnected] = useState(false);
-  const [originalData, setOriginalData] = useState<PIMMState[]>([]);
+
+  const {
+    addData,
+    filterByStates,
+    dataMap,
+    cleanDataStore,
+    filters,
+  } = useDataStore();
   const isPaginating = React.useRef(false);
   const auth = useAuth();
   const clientMQTT = React.useRef<mqtt.MqttClient | undefined>();
@@ -44,44 +42,41 @@ export default function Page(): React.JSX.Element {
   >({});
   const filterIdStateKeyMap = React.useMemo(() => config.stateKeys, []);
 
-  const applyFilters = useCallback(
-    (offset: boolean, selected: string[], PIMMStates: PIMMState[]) => {
-      if (selected.length === 0) return PIMMStates;
+  const applyFiltersMap = useCallback(
+    (offset: boolean, selected: string[]) => {
+      const PIMMStates = new Map(dataMap.current);
+      if (selected.length === 0) return Array.from(PIMMStates);
 
-      const filteredPIMMStates: PIMMState[] = []; // Use Array instead of Set
-      const selectionMap = new Map<string, Map<string, string | null>>(); // O(M) space
-
-      // Convert selected into a map for O(1) lookups
-      for (const value of selected) {
+      const options = selected.flatMap((value) => {
         const [filterPIMMNumber, filterStateKey, filterStateValue] =
           value.split('-');
-        if (!selectionMap.has(filterPIMMNumber)) {
-          selectionMap.set(filterPIMMNumber, new Map());
-        }
-        if (filterStateKey) {
-          if (filterStateKey) {
-            selectionMap
-              .get(filterPIMMNumber)
-              ?.set(filterStateKey, filterStateValue ?? null);
-          }
-        }
-      }
+        return [
+          {
+            stateId: filterStateKey,
+            value: filterStateValue,
+          },
+          { stateId: config.keyPIMMNumber, value: Number(filterPIMMNumber) },
+        ];
+      });
 
+      const filteredPIMMStates: PIMMState[] = filterByStates(options);
       if (offset) {
-        // Apply offset logic
-        for (let i = 0; i < PIMMStates.length; i++) {
-          const PIMMState = PIMMStates[i];
-          const statePIMMNumber = PIMMState.states.find(
-            (variable) => variable.id === config.keyPIMMNumber
-          )?.value; // INDEX
-          if (!statePIMMNumber) continue;
+        filteredPIMMStates.forEach((PIMMState, i) => {
+          // Convert states & counters into Maps for O(1) lookups
+          const stateMap = new Map(PIMMState.states.map((s) => [s.id, s]));
+          const counterMap = new Map(PIMMState.counters.map((c) => [c.id, c]));
+
+          // Get PIMM Number (from indexed stateMap)
+          const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
+          if (!statePIMMNumber) return;
 
           if (!offsets.current[statePIMMNumber]) {
             offsets.current[statePIMMNumber] = {};
           }
 
           for (const offsetKey of config.offsetKeys) {
-            const counter = PIMMState.counters.find((c) => c.id === offsetKey); // INDEX
+            // O(1) lookup instead of O(C) find()
+            const counter = counterMap.get(offsetKey);
             const counterValue = counter ? Number(counter.value) : 0;
 
             if (!offsets.current[statePIMMNumber][offsetKey]) {
@@ -109,59 +104,12 @@ export default function Page(): React.JSX.Element {
 
             offsetEntry.previousValue = counterValue;
           }
-        }
+        });
       }
-
-      // Apply selection filter efficiently
-      for (const PIMMState of PIMMStates) {
-        const statePIMMNumber = PIMMState.states.find(
-          (variable) => variable.id === config.keyPIMMNumber
-        )?.value; // INDEX
-
-        if (!statePIMMNumber || !selectionMap.has(statePIMMNumber)) continue;
-
-        const stateFilters = selectionMap.get(statePIMMNumber);
-        if (!stateFilters) continue;
-        let match = stateFilters.size === 0; // If no specific filters, allow the whole PIMMState
-
-        for (const variable of PIMMState.states) {
-          if (stateFilters.has(variable.name)) {
-            const filterValue = stateFilters.get(variable.name);
-            if (!filterValue || variable.value === filterValue) {
-              match = true;
-              break; // No need to check further
-            }
-          }
-        }
-
-        if (match) filteredPIMMStates.push(PIMMState);
-      }
-
       return filteredPIMMStates;
     },
     [filterIdStateKeyMap]
   );
-
-  const getFilterableCategories = useCallback((PIMMStates: PIMMState[]) => {
-    const states = new Set<string>();
-    const variableIdSet = new Set(config.stateKeys); // O(K) preprocessing
-
-    PIMMStates.forEach((PIMMState) => {
-      const statePIMMNumber = PIMMState.states.find(
-        (variable) => variable.id === config.keyPIMMNumber
-      )?.value;
-      if (!statePIMMNumber) return;
-
-      PIMMState.states.forEach((variable) => {
-        if (variableIdSet.has(variable.id)) {
-          // O(1) lookup
-          states.add(`${statePIMMNumber}-${variable.name}-${variable.value}`);
-        }
-      });
-    });
-
-    return Array.from(states);
-  }, []);
 
   const connectToIoT = useCallback(async (token: string) => {
     const response = await fetchCredentialsCore(token);
@@ -198,13 +146,8 @@ export default function Page(): React.JSX.Element {
     client.on('message', (topic, message) => {
       const data = JSON.parse(message.toString());
       unstable_batchedUpdates(() => {
-        setFilters((prevFilter) => ({
-          ...prevFilter,
-          initTime: data.timestamp - config.lapseLive,
-          endTime: data.timestamp,
-          states: [...prevFilter.states, ...getFilterableCategories([data])],
-        }));
-        setOriginalData((prev) => [...prev.slice(1), data]);
+       
+        addData(data.timestamp, data.counters, data.states);
       });
     });
 
@@ -230,14 +173,15 @@ export default function Page(): React.JSX.Element {
       token: string
     ) => {
       isPaginating.current = true;
-      setOriginalData([]);
+      cleanDataStore();
       offsets.current = {};
 
       let lastID: number | null = null;
       const length = config.paginationLength;
       let hasMore = true;
+      let counterObjects = 0;
 
-      while (hasMore) {
+      while (hasMore && counterObjects <= config.maxObjects) {
         const response = await fetchData(
           {
             filters: {
@@ -253,15 +197,12 @@ export default function Page(): React.JSX.Element {
 
         lastID = response.lastID;
         hasMore = response.hasMore;
+        counterObjects += response.pimmStates.length;
         unstable_batchedUpdates(() => {
-          setFilters((prevFilter) => ({
-            ...prevFilter,
-            states: [
-              ...prevFilter.states,
-              ...getFilterableCategories([...response.pimmStates]),
-            ],
-          }));
-          setOriginalData((prev) => [...prev, ...response.pimmStates]);
+        
+          response.pimmStates.forEach((PIMMState) => {
+            addData(PIMMState.timestamp, PIMMState.counters, PIMMState.states);
+          });
         });
       }
 
@@ -325,7 +266,7 @@ export default function Page(): React.JSX.Element {
     };
 
     fetchData();
-  }, [filters.accUnit, filters.live, filters.offset]);
+  }, [filters.accUnit, filters.live]);
 
   return (
     <Grid container spacing={3}>
@@ -334,7 +275,7 @@ export default function Page(): React.JSX.Element {
           <CardHeader title="Settings" />
           <CardContent>
             <Box display="flex" flexDirection="column" gap={2}>
-              <FilterForm filters={filters} setFilters={setFilters} />
+              <FilterForm />
             </Box>
           </CardContent>
         </Card>
@@ -346,12 +287,8 @@ export default function Page(): React.JSX.Element {
             <pre>
               {' '}
               {JSON.stringify(
-                applyFilters(filters.offset, filters.selected, [
-                  ...originalData,
-                ]),
-                null,
-                2
-              )}
+                applyFiltersMap(filters.offset, filters.selected)
+              )}{' '}
             </pre>
           </CardContent>
         </Card>

@@ -8,7 +8,7 @@ export type InfoSettings = {
 };
 
 export type PIMMState = {
-  timestamp: string;
+  timestamp: number;
   counters: Variable[];
   states: Variable[];
 };

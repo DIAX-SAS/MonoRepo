@@ -5,8 +5,7 @@ import * as React from 'react';
 import '@/styles/global.css';
 import { LocalizationProvider } from '@/components/core/localization-provider';
 import { ThemeProvider } from '@/components/core/theme-provider/theme-provider';
-import { FilteredDataProvider } from '@/contexts/filtered-data';
-import { OriginalDataProvider } from '@/contexts/original-data';
+import { DataStoreProvider } from '@/contexts/data-store';
 import { getSiteURL } from '@/lib/get-site-url';
 import { AuthProvider } from 'react-oidc-context';
 
@@ -35,7 +34,9 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
         <html lang="en">
           <body>
             <LocalizationProvider>
-              <ThemeProvider>{children}</ThemeProvider>
+              <DataStoreProvider>
+                <ThemeProvider>{children}</ThemeProvider>
+              </DataStoreProvider>
             </LocalizationProvider>
           </body>
         </html>

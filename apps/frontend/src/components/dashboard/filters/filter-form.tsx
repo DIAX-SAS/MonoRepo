@@ -1,12 +1,10 @@
+import {useDataStore} from '@/contexts/data-store';
 import { type Filters } from '@/types/filters';
 import React from 'react';
 import { Checkbox, MultiCascader, SelectPicker } from 'rsuite';
 import { DateRangePicker } from 'rsuite';
 
-interface FilterFormProps {
-  filters: Filters;
-  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-}
+
 interface StateNode {
   label: string;
   value: string;
@@ -18,7 +16,11 @@ const accUnitOptions = [
   { label: 'Second', value: 'second' },
 ];
 
-const FilterForm: React.FC<FilterFormProps> = ({ filters, setFilters }) => {
+const FilterForm: React.FC = () => {
+  const {
+    filters,
+    setFilters
+  } = useDataStore();
   const handleChange = (key: keyof Filters, value: Filters[keyof Filters]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
