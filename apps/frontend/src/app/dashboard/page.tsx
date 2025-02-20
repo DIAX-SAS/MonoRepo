@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
+
 import FilterForm from '@/components/dashboard/filters/filter-form';
 import { config } from '@/config';
 import {
@@ -10,106 +11,17 @@ import { useDataStore } from '@/contexts/data-store';
 import { Card, CardContent, CardHeader } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { Box } from '@mui/system';
-import { PIMMState } from '@repo-hub/internal';
 import mqtt from 'mqtt';
 import * as React from 'react';
-import { useCallback, useEffect, useState } from 'react';
-import { unstable_batchedUpdates } from 'react-dom';
+import { useCallback, useEffect } from 'react';
 import { useAuth } from 'react-oidc-context';
 
 export default function Page(): React.JSX.Element {
-
-  const [isConnected, setIsConnected] = useState(false);
-
-  const {
-    addData,
-    filterByStates,
-    dataMap,
-    cleanDataStore,
-    filters,
-  } = useDataStore();
-  const isPaginating = React.useRef(false);
-  const auth = useAuth();
   const clientMQTT = React.useRef<mqtt.MqttClient | undefined>();
-  const offsets = React.useRef<
-    Record<
-      string,
-      Record<
-        string,
-        { start: number; end: number; value: number; previousValue: number }
-      >
-    >
-  >({});
-  const filterIdStateKeyMap = React.useMemo(() => config.stateKeys, []);
-
-  const applyFiltersMap = useCallback(
-    (offset: boolean, selected: string[]) => {
-      const PIMMStates = new Map(dataMap.current);
-      if (selected.length === 0) return Array.from(PIMMStates);
-
-      const options = selected.flatMap((value) => {
-        const [filterPIMMNumber, filterStateKey, filterStateValue] =
-          value.split('-');
-        return [
-          {
-            stateId: filterStateKey,
-            value: filterStateValue,
-          },
-          { stateId: config.keyPIMMNumber, value: Number(filterPIMMNumber) },
-        ];
-      });
-
-      const filteredPIMMStates: PIMMState[] = filterByStates(options);
-      if (offset) {
-        filteredPIMMStates.forEach((PIMMState, i) => {
-          // Convert states & counters into Maps for O(1) lookups
-          const stateMap = new Map(PIMMState.states.map((s) => [s.id, s]));
-          const counterMap = new Map(PIMMState.counters.map((c) => [c.id, c]));
-
-          // Get PIMM Number (from indexed stateMap)
-          const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
-          if (!statePIMMNumber) return;
-
-          if (!offsets.current[statePIMMNumber]) {
-            offsets.current[statePIMMNumber] = {};
-          }
-
-          for (const offsetKey of config.offsetKeys) {
-            // O(1) lookup instead of O(C) find()
-            const counter = counterMap.get(offsetKey);
-            const counterValue = counter ? Number(counter.value) : 0;
-
-            if (!offsets.current[statePIMMNumber][offsetKey]) {
-              offsets.current[statePIMMNumber][offsetKey] = {
-                start: 0,
-                end: 0,
-                value: 0,
-                previousValue: 0,
-              };
-            }
-
-            const offsetEntry = offsets.current[statePIMMNumber][offsetKey];
-
-            if (i === 0 && offsetEntry.start > 0) {
-              offsetEntry.start = counterValue;
-              if (counter) counter.value = '0';
-            }
-
-            if (counterValue < offsetEntry.previousValue) {
-              offsetEntry.end = offsetEntry.previousValue;
-              offsetEntry.value += offsetEntry.end - offsetEntry.start;
-              offsetEntry.start = 0;
-              if (counter) counter.value = String(offsetEntry.value);
-            }
-
-            offsetEntry.previousValue = counterValue;
-          }
-        });
-      }
-      return filteredPIMMStates;
-    },
-    [filterIdStateKeyMap]
-  );
+  const [isPaginating, setIsPaginating] = React.useState(false);
+  const { addData, cleanDataStore, filters, applyFiltersMap } =
+    useDataStore();
+  const auth = useAuth();
 
   const connectToIoT = useCallback(async (token: string) => {
     const response = await fetchCredentialsCore(token);
@@ -133,7 +45,6 @@ export default function Page(): React.JSX.Element {
 
     client.on('connect', () => {
       console.log('Conectado a AWS IoT!');
-      setIsConnected(true);
       client.subscribe('PIMMStateTopic', (err) => {
         if (err) {
           console.error('Error al suscribirse:', err);
@@ -145,10 +56,7 @@ export default function Page(): React.JSX.Element {
 
     client.on('message', (topic, message) => {
       const data = JSON.parse(message.toString());
-      unstable_batchedUpdates(() => {
-       
-        addData(data.timestamp, data.counters, data.states);
-      });
+      addData(data.timestamp, data.counters, data.states, true);
     });
 
     client.on('error', (err) => {
@@ -157,7 +65,6 @@ export default function Page(): React.JSX.Element {
 
     client.on('close', () => {
       console.log('Conexión MQTT cerrada');
-      setIsConnected(false);
     });
 
     return client;
@@ -172,10 +79,8 @@ export default function Page(): React.JSX.Element {
       },
       token: string
     ) => {
-      isPaginating.current = true;
+      setIsPaginating(true);
       cleanDataStore();
-      offsets.current = {};
-
       let lastID: number | null = null;
       const length = config.paginationLength;
       let hasMore = true;
@@ -198,25 +103,24 @@ export default function Page(): React.JSX.Element {
         lastID = response.lastID;
         hasMore = response.hasMore;
         counterObjects += response.pimmStates.length;
-        unstable_batchedUpdates(() => {
-        
-          response.pimmStates.forEach((PIMMState) => {
-            addData(PIMMState.timestamp, PIMMState.counters, PIMMState.states);
-          });
+
+        response.pimmStates.forEach((PIMMState) => {
+          addData(PIMMState.timestamp, PIMMState.counters, PIMMState.states);
         });
       }
 
-      isPaginating.current = false;
+      setIsPaginating(false);
     },
     []
   );
 
+  //Offline data
   useEffect(() => {
     const fetchData = async () => {
       if (filters.live) return;
       if (!auth.user) return;
 
-      if (isPaginating.current) return;
+      if (isPaginating) return;
       await paginateRequest(
         {
           initTime: filters.initTime,
@@ -233,9 +137,9 @@ export default function Page(): React.JSX.Element {
     filters.endTime,
     filters.initTime,
     filters.live,
-    filters.offset,
   ]);
 
+  //Online data
   useEffect(() => {
     if (clientMQTT.current && clientMQTT.current.connected && !filters.live) {
       clientMQTT.current.end();
@@ -246,14 +150,15 @@ export default function Page(): React.JSX.Element {
       if (!filters.live) return;
       if (!auth.user) return;
 
-      await paginateRequest(
-        {
-          initTime: new Date().getTime() - config.lapseLive,
-          endTime: new Date().getTime(),
-          accUnit: filters.accUnit,
-        },
-        auth.user.access_token
-      );
+      if (!isPaginating)
+        await paginateRequest(
+          {
+            initTime: new Date().getTime() - config.lapseLive,
+            endTime: new Date().getTime(),
+            accUnit: filters.accUnit,
+          },
+          auth.user.access_token
+        );
 
       clientMQTT.current = await connectToIoT(auth.user.access_token);
 
@@ -275,7 +180,7 @@ export default function Page(): React.JSX.Element {
           <CardHeader title="Settings" />
           <CardContent>
             <Box display="flex" flexDirection="column" gap={2}>
-              <FilterForm />
+              {!isPaginating ? <FilterForm /> : 'Loading ...'}
             </Box>
           </CardContent>
         </Card>
@@ -285,10 +190,13 @@ export default function Page(): React.JSX.Element {
           <CardHeader title="Information" />
           <CardContent>
             <pre>
-              {' '}
-              {JSON.stringify(
-                applyFiltersMap(filters.offset, filters.selected)
-              )}{' '}
+              {!isPaginating
+                ? JSON.stringify(
+                   applyFiltersMap(filters),
+                    null,
+                    2
+                  ).substring(0,1000)
+                : 'Loading ...'}
             </pre>
           </CardContent>
         </Card>

@@ -30,8 +30,8 @@ export const config: Config = {
     LogLevel.ALL,
   socketURL: 'wss://d0978261uk2h0hot7q0x-ats.iot.us-east-1.amazonaws.com',
   lapseLive: 2 * 60 * 60 * 1000, // must be in miliseconds
-  paginationLength: 20,
-  maxObjects:50,
+  paginationLength: 500,
+  maxObjects:7200,
   stateKeys: ['MI31', 'MI19', 'ML1', 'ML5', 'ML3','MI18'],
   offsetKeys: [
     'ML0',

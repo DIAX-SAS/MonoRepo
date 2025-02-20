@@ -244,7 +244,7 @@ def send_to_iot_core(data, topic):
     )  # Tiempo de espera para operaciones MQTT
 
     mqtt_client.connect()
-    is_sent = mqtt_client.publish(topic, data, 1)  # QoS 1
+    is_sent = mqtt_client.publish(topic, data, 0)  # QoS 1
     mqtt_client.disconnect()
 
     return is_sent

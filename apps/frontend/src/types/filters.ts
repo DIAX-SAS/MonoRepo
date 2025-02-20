@@ -4,7 +4,7 @@ export interface Filters {
     accUnit: 'hour' | 'minute' | 'second';
     offset: boolean;
     live: boolean;
-    states: string[];
+    states: Set<string>;
     selected: string[];
   }
   

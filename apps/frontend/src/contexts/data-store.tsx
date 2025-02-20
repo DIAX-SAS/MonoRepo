@@ -1,151 +1,206 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { createContext, useContext, useCallback, useRef, useState, ReactNode } from 'react';
+import { time } from 'console';
 import { config } from '@/config';
 import { Filters } from '@/types/filters';
 import { PIMMState, Variable } from '@repo-hub/internal';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from 'react';
 
-// 📌 Define context type
 interface DataStoreContextProps {
-  addData: (timestamp: number, counters: Variable[], states: Variable[]) => void;
-  filterByCounter: (counterId: string, value: string) => PIMMState[];
-  filterByStates: (filters: { stateId: string; value: string | number | undefined }[]) => PIMMState[];
-  timestamps: number[];
-  dataMap: React.MutableRefObject<Map<number, PIMMState>>;
+  addData: (
+    timestamp: number,
+    counters: Variable[],
+    states: Variable[],
+    onMessage?: boolean
+  ) => void;
   cleanDataStore: () => void;
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  applyFiltersMap: (filters: Filters) => PIMMState[];
 }
 
-// 📌 Create context
-const DataStoreContext = createContext<DataStoreContextProps | undefined>(undefined);
+const DataStoreContext = createContext<DataStoreContextProps | undefined>(
+  undefined
+);
 
-// 📌 Context Provider Component
 export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
-  const [timestamps, setTimestamps] = useState<number[]>([]);
-  const dataMap = useRef<Map<number, PIMMState>>(new Map());
-  const counterIndex = useRef<Map<string, Map<string, Set<number>>>>(new Map());
-  const stateIndex = useRef<Map<string, Map<string | number, Set<number>>>>(new Map());
-  
+  const offsets = React.useRef<
+    Record<
+      string,
+      Record<
+        string,
+        { start: number; end: number; value: number; previousValue: number }
+      >
+    >
+  >({});
+  const filterIdStateKeyMap = React.useMemo(() => config.stateKeys, []);
+
   const [filters, setFilters] = useState<Filters>({
     initTime: Date.now(),
     endTime: Date.now(),
     accUnit: 'second',
     offset: false,
     live: false,
-    states: [],
+    states: new Set(),
     selected: [],
   });
 
+  const dataMap = useRef<Map<number, PIMMState>>(new Map<number, PIMMState>());
+  const [timestamps, setTimestamps] = useState<number[]>([]);
+  const dataKeys = useRef<Map<string, Set<number>>>(new Map());
+
   const addData = useCallback(
-    (timestamp: number, counters: Variable[], states: Variable[]) => {
+    (
+      timestamp: number,
+      counters: Variable[],
+      states: Variable[],
+      onMessage?: boolean
+    ) => {
       const entry: PIMMState = { timestamp, counters, states };
-      dataMap.current.set(timestamp, entry);
+      const PIMMNumber = states.find(
+        (variable) => variable.id === config.keyPIMMNumber
+      )?.value;
 
-      // Index counters
-      counters.forEach(({ id, value }) => {
-        if (!counterIndex.current.has(id)) counterIndex.current.set(id, new Map());
-        if (!counterIndex.current.get(id)!.has(value)) counterIndex.current.get(id)!.set(value, new Set());
-        counterIndex.current.get(id)!.get(value)!.add(timestamp);
-      });
-
-      // Index states
-      states.forEach(({ id, value }) => {
-        if (!stateIndex.current.has(id)) stateIndex.current.set(id, new Map());
-        if (!stateIndex.current.get(id)!.has(value)) stateIndex.current.get(id)!.set(value, new Set());
-        stateIndex.current.get(id)!.get(value)!.add(timestamp);
-      });
-
-      setTimestamps((prev) => [...prev, timestamp]);
-
-      if (filters.live) {
-        setFilters((prevFilter) => ({
-          ...prevFilter,
-          initTime: timestamp - config.lapseLive,
-          endTime: timestamp,
-          states: [...prevFilter.states, ...getFilterableCategories([entry])],
-        }));
-      } else {
-        setFilters((prevFilter) => ({
-          ...prevFilter,
-          states: [...prevFilter.states, ...getFilterableCategories([entry])],
-        }));
-      }
-    },
-    [filters.live]
-  );
-
-  const getFilterableCategories = (PIMMStates: PIMMState[]) => {
-    const states = new Set<string>();
-    const variableIdSet = new Set(config.stateKeys);
-
-    PIMMStates.forEach((PIMMState) => {
-      const statePIMMNumber = PIMMState.states.find((variable) => variable.id === config.keyPIMMNumber)?.value;
-      if (!statePIMMNumber) return;
-
-      PIMMState.states.forEach((variable) => {
-        if (variableIdSet.has(variable.id)) {
-          states.add(`${statePIMMNumber}-${variable.id}-${variable.value}`);
-        }
-      });
-    });
-
-    return Array.from(states);
-  };
-
-  const filterByCounter = useCallback(
-    (counterId: string, value: string): PIMMState[] => {
-      if (!counterIndex.current.has(counterId) || !counterIndex.current.get(counterId)!.has(value)) return [];
-      return [...counterIndex.current.get(counterId)!.get(value)!].map((timestamp) => dataMap.current.get(timestamp)!);
-    },
-    []
-  );
-
-  const filterByStates = useCallback(
-    (filters: { stateId: string; value: string | number | undefined }[]): PIMMState[] => {
-      if (filters.length === 0) return [];
-
-      let filteredTimestamps: Set<number> | undefined;
-
-      for (const { stateId, value } of filters) {
-        if (value === undefined) {
-          return Array.from(dataMap.current.values()); // Return all PIMMStates if `value` is undefined
-        }
-
-        const timestamps = stateIndex.current.get(stateId)?.get(value);
-        if (!timestamps) return [];
-
-        if (filteredTimestamps === undefined) {
-          filteredTimestamps = new Set(timestamps);
-        } else {
-          filteredTimestamps = new Set([...filteredTimestamps].filter((ts) => timestamps.has(ts)));
-        }
-
-        if (filteredTimestamps.size === 0) return [];
+      if (!dataMap.current.has(timestamp)) {
+        dataMap.current.set(timestamp, entry);
       }
 
-      return filteredTimestamps ? Array.from(filteredTimestamps).map((ts) => dataMap.current.get(ts)!) : [];
+      const newStates = new Set<string>(filters.states);
+      let newTimestamps: number[] = [];
+
+      states.forEach((variable) => {
+        const key = `${PIMMNumber}-${variable.id}-${variable.value}`;
+
+        // Use existing set instead of creating a new one
+        const keySet = dataKeys.current.get(key) || new Set();
+        keySet.add(timestamp);
+        dataKeys.current.set(key, keySet);
+
+        newStates.add(key);
+      });
+
+      setTimestamps((prevTimestamps) => {
+        newTimestamps = [...prevTimestamps, timestamp];
+
+        if (onMessage && newTimestamps.length > 1) {
+          const oldestTimestamp = newTimestamps.shift()!;
+          const oldestObject = dataMap.current.get(oldestTimestamp);
+
+          if (oldestObject) {
+            const PIMMNumberOld = oldestObject.states.find(
+              (v) => v.id === config.keyPIMMNumber
+            )?.value;
+
+            oldestObject.states.forEach((variable) => {
+              const keyOld = `${PIMMNumberOld}-${variable.id}-${variable.value}`;
+              dataKeys.current.get(keyOld)?.delete(oldestTimestamp);
+            });
+          }
+
+          dataMap.current.delete(oldestTimestamp);
+        }
+
+        return newTimestamps;
+      });
+
+      setFilters((prevFilter) => ({
+        ...prevFilter,
+        initTime: onMessage
+          ? timestamp - config.lapseLive
+          : prevFilter.initTime,
+        endTime: onMessage ? timestamp : prevFilter.endTime,
+        states: newStates,
+      }));
     },
-    []
+    [filters.states] // Add dependencies
   );
 
   const cleanDataStore = () => {
     dataMap.current.clear();
-    stateIndex.current.clear();
-    counterIndex.current.clear();
+    dataKeys.current.clear();
     setTimestamps([]);
   };
+
+  const applyFiltersMap = useCallback(
+    (filters: Filters) => {
+     
+      const newStates = Array.from(filters.states).filter((state) =>
+        filters.selected.some((prefix) => state.startsWith(prefix))
+      );
+      const filteredPIMMStates = Array.from(dataKeys.current)
+        .flatMap(([key, timestamps], index) => {
+          if (newStates.length === 0) return Array.from(timestamps);
+          if (newStates.includes(key)) return Array.from(timestamps);
+          return [];
+        })
+        .map((timestamp) => dataMap.current.get(timestamp))
+        .filter((state): state is PIMMState => state !== undefined);
+
+      if (filters.offset) {
+        filteredPIMMStates.forEach((PIMMState, i) => {
+          // Convert states & counters into Maps for O(1) lookups
+          const stateMap = new Map(PIMMState.states.map((s) => [s.id, s]));
+          const counterMap = new Map(PIMMState.counters.map((c) => [c.id, c]));
+
+          // Get PIMM Number (from indexed stateMap)
+          const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
+          if (!statePIMMNumber) return;
+
+          if (!offsets.current[statePIMMNumber]) {
+            offsets.current[statePIMMNumber] = {};
+          }
+
+          for (const offsetKey of config.offsetKeys) {
+            // O(1) lookup instead of O(C) find()
+            const counter = counterMap.get(offsetKey);
+            const counterValue = counter ? Number(counter.value) : 0;
+
+            if (!offsets.current[statePIMMNumber][offsetKey]) {
+              offsets.current[statePIMMNumber][offsetKey] = {
+                start: 0,
+                end: 0,
+                value: 0,
+                previousValue: 0,
+              };
+            }
+
+            const offsetEntry = offsets.current[statePIMMNumber][offsetKey];
+
+            if (i === 0 && offsetEntry.start > 0) {
+              offsetEntry.start = counterValue;
+              if (counter) counter.value = '0';
+            }
+
+            if (counterValue < offsetEntry.previousValue) {
+              offsetEntry.end = offsetEntry.previousValue;
+              offsetEntry.value += offsetEntry.end - offsetEntry.start;
+              offsetEntry.start = 0;
+              if (counter) counter.value = String(offsetEntry.value);
+            }
+
+            offsetEntry.previousValue = counterValue;
+          }
+        });
+      }
+      return filteredPIMMStates;
+    },
+    [dataMap, filters.offset, filters.selected]
+  );
 
   return (
     <DataStoreContext.Provider
       value={{
         addData,
-        filterByCounter,
-        filterByStates,
-        timestamps,
-        dataMap,
         cleanDataStore,
         filters,
         setFilters,
+        applyFiltersMap,
       }}
     >
       {children}
@@ -153,7 +208,6 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 📌 Custom Hook for consuming the context
 export const useDataStore = () => {
   const context = useContext(DataStoreContext);
   if (!context) {
