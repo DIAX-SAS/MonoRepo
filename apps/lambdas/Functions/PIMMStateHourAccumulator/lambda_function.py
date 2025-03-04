@@ -1,80 +1,86 @@
 import boto3
 import json
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any
+from boto3.dynamodb.conditions import Key
+from itertools import islice
+
+# AWS clients
+dynamodb = boto3.resource("dynamodb")
+
+# Table names
+SOURCE_TABLE_NAME = "PIMM"
+TARGET_TABLE_NAME = "PIMMHour"
+
+source_table = dynamodb.Table(SOURCE_TABLE_NAME)
+target_table = dynamodb.Table(TARGET_TABLE_NAME)
+
+
+def chunked_iterable(iterable, size):
+    """Splits list into chunks of given size."""
+    it = iter(iterable)
+    while chunk := list(islice(it, size)):
+        yield chunk
+
+
+def batch_write_items(table, items):
+    """Writes items to DynamoDB in batch (max 25 per request)."""
+    with table.batch_writer() as batch:
+        for item in items:
+            batch.put_item(Item=item)
+
 
 def lambda_handler(event, context):
-    s3 = boto3.client("s3")
-    
-    source_bucket = "pimmbucket"
-    target_bucket = "pimmhourbucket"
-    prefix = "IotData/"
+    # Time configuration
+    AGGREGATION_UNIT = 60 #TRAER DEL EVENTO
+    now = int(datetime.now(timezone.utc).timestamp() * 1000)  # Convert to milliseconds
+    start_time = now - (AGGREGATION_UNIT * 60 * 1000)  # 1 hour ago in milliseconds
 
-    # Configuración de tiempo
-    now = datetime.now(timezone.utc)
-    start_time = now - timedelta(hours=1)
-    
-    # Listar y filtrar objetos
-    paginator = s3.get_paginator("list_objects_v2")
-    pages = paginator.paginate(Bucket=source_bucket, Prefix=prefix)
-    
-    filtered_objects = []
-    for page in pages:
-        for obj in page.get("Contents", []):
-            try:
-                # Extraer timestamp del nombre del archivo
-                timestamp_str = obj["Key"].split("/")[1].split(".")[0]
-                obj_time = datetime.fromisoformat(timestamp_str).astimezone(timezone.utc)
-            except (IndexError, ValueError):
-                continue
-            
-            if start_time <= obj_time <= now:
-                filtered_objects.append((obj["Key"], obj_time))            
+    partitions = [3,8] #PASAR 
+    unique_items = []
 
-    # Ordenar por timestamp
-    filtered_objects.sort(key=lambda x: x[1])
-    unique_datas = []
-    prev_states = None
-
-    # Procesar cambios de estado
-    for key, _ in filtered_objects:
-        response = s3.get_object(Bucket=source_bucket, Key=key)
-        data = json.loads(response["Body"].read().decode("utf-8"))
+    for partition in partitions:
+        # Query latest data
+        response = source_table.query(
+            KeyConditionExpression=Key("PIMMNumber").eq(partition)
+            & Key("timestamp").between(start_time, now)
+        )
+        items = response.get("Items", [])
         
-        current_states = [s.get("value") for s in data.get("states", [])]
-        
-        if prev_states is None or current_states != prev_states:
-            unique_datas.append(data)
-            prev_states = current_states
 
-    # Añadir último objeto si coincide con el tiempo actual (sin milisegundos)
-    if filtered_objects:
-        last_key, last_time = filtered_objects[-1]
-        now_trimmed = now.replace(microsecond=0)
-        last_time_trimmed = last_time.replace(microsecond=0)
-        
-        if last_time_trimmed == now_trimmed:
-            response = s3.get_object(Bucket=source_bucket, Key=last_key)
-            last_data = json.loads(response["Body"].read().decode("utf-8"))
-            
-            # Verificar si no está ya incluido
-            if not unique_datas or unique_datas[-1]["timestamp"] != last_data["timestamp"]:
-                unique_datas.append(last_data)
+        if not items:
+            continue  # Skip if no data
 
-    # Subir resultados
-    for data in unique_datas:
-        try:
-            output_key = f"IotData/{data['timestamp']}.json"
-            s3.put_object(
-                Bucket=target_bucket,
-                Key=output_key,
-                Body=json.dumps(data),
-                ContentType="application/json"
-            )
-        except KeyError:
-            continue
+        # Find state changes
+        before_item = items[0]  # First item
+        for item in items:
+            for i in range(len(item["payload"]["states"])):  # Correct dictionary access
+                if (
+                    item["payload"]["states"][i]["value"]
+                    != before_item["payload"]["states"][i]["value"]
+                ):
+                    unique_items.append(item)
+                    before_item = item  # Update previous item
+                    break  # Move to next item
+
+        # Save first and last if not added
+        if items:
+            # Ensure at least the first and last item are added
+            if not unique_items:
+                unique_items.extend([items[0], items[-1]])  # Add first & last item
+
+            # Ensure first item is included only once
+            if unique_items[0]["timestamp"] != items[0]["timestamp"]:
+                unique_items.insert(0, items[0])  # Insert at the beginning
+
+            # Ensure last item is included only once
+            if unique_items[-1]["timestamp"] != items[-1]["timestamp"]:
+                unique_items.append(items[-1])  # Append at the end
+
+        # Batch write to DynamoDB
+        for chunk in chunked_iterable(unique_items, 25):
+            batch_write_items(target_table, chunk)
 
     return {
         "statusCode": 200,
-        "body": json.dumps(f"Procesados {len(unique_datas)} cambios de estado.")
+        "body": json.dumps(f"Processed {len(unique_items)} state changes."),
     }

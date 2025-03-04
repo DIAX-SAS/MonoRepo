@@ -59,35 +59,25 @@ export class PIMMService {
   }
 
   async getPIMMStatesFromDynamoDB(settings: InfoSettingsDto): Promise<ProcessedResult> {
-    const { initTime, endTime, lastID, length } = settings.filters;
-
+    const { initTime, endTime, lastID, length, accUnit:step } = settings.filters;
+  
+    const partitions: string[] = JSON.parse(this.config.get("PARTITIONS")); 
    
-    const startDate = new Date((!lastID) ? initTime : lastID).toISOString().split("T")[0];
-    const endDate = new Date(endTime).toISOString().split("T")[0];
-
-    const currentDate = new Date(startDate);
-    const partitions: string[] = [];
-
-    // Get all dates between `initTime` and `endTime`
-    while (currentDate.toISOString().split("T")[0] <= endDate) {
-      partitions.push(new Date(currentDate.toISOString().split("T")[0]).getTime().toString());
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
+    const tableName = this.getTableName(step);
     let allResults = [];
     let hasMore = false;
     let newLastID = null;
 
     for (const partition of partitions) {
       const params = {
-        TableName: "PIMMs",
-        KeyConditionExpression: "#pd = :date AND #ts BETWEEN :initTime AND :endTime",
+        TableName: tableName,
+        KeyConditionExpression: "#PLCNumber = :PLCNumber AND #ts BETWEEN :initTime AND :endTime",
         ExpressionAttributeNames: {
-          "#pd": "partitionDate",
+          "#PLCNumber": "PLCNumber",
           "#ts": "timestamp"
         },
         ExpressionAttributeValues: {
-          ":date": { N: partition },
+          ":PLCNumber": { N: partition },
           ":initTime": { N: initTime.toString() },
           ":endTime": { N: endTime.toString() }
         },
@@ -98,7 +88,7 @@ export class PIMMService {
       // Handle pagination across partitions
       if (lastID) {
         params["ExclusiveStartKey"] = {
-          partitionDate: { N: partition },
+          PLCNumber : { N: partition },
           timestamp: { N: lastID.toString() }
         };
       }
@@ -187,6 +177,17 @@ export class PIMMService {
       hour: this.config.get('NAME_BUCKET_HOUR')
     };
     const bucket = buckets[accUnit];
+    return bucket;
+  }
+
+  private getTableName(step:string){
+
+    const buckets: Record<string, string> = {
+      second: this.config.get('NAME_TABLE'),
+      minute: this.config.get('NAME_TABLE_MINUTE'),
+      hour: this.config.get('NAME_TABLE_HOUR')
+    };
+    const bucket = buckets[step];
     return bucket;
   }
 

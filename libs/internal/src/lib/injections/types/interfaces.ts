@@ -1,9 +1,10 @@
 export type InfoSettings = {
   filters: {
-    initTime: Date;
-    endTime: Date;
+    initTime: number;
+    endTime: number;
     accUnit: 'second' | 'minute' | 'hour';
-    lastId?: string;
+    lastID: number | null;
+    length: number;
   };
 };
 
@@ -11,6 +12,7 @@ export type PIMMState = {
   timestamp: number;
   counters: Variable[];
   states: Variable[];
+  PLCNumber: number;
 };
 
 export type Variable = {

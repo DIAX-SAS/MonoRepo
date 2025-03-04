@@ -56,5 +56,5 @@ export const config: Config = {
     clientId: '1dgddk7rc0bir0mt3g403kojcc',
     logoutUri: 'http://localhost/auth/sign-in',
     cognitoDomain: 'https://crud-diax.auth.us-east-1.amazoncognito.com',
-  },
+  }
 };
