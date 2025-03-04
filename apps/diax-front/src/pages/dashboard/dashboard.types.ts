@@ -15,6 +15,7 @@ export type Filters = {
   moldes: Map<string, boolean>;
   materiales: Map<string, boolean>;
 };
+
 export interface FEPIMM extends PIMMState {
   buenas: number;
   ineficiencias: number;

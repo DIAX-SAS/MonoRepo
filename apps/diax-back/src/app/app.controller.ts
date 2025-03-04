@@ -6,6 +6,6 @@ import {
 export class AppController {
   @Get('')
   getObjects() {
-    return "Hello world!";
+    return "Hello DIAX!";
   }
 }

@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+          "name": "Attach console backend",
+          "port": 9229,
+          "request": "attach",
+          "skipFiles": ["<node_internals>/**"],
+          "type": "node",
+          "sourceMaps": true,
+          "localRoot": "${workspaceFolder}/apps/lnn-back",
+        },
+        {
+          "name": "Debug Frontend (Chrome)",
+          "type": "chrome",
+          "request": "launch",
+          "url": "http://localhost:4000",
+          "webRoot": "${workspaceFolder}/apps/lnn-front/src",
+          "sourceMaps": true
+        }
+    ]
+}
