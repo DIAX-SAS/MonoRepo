@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3';
 import * as zlib from 'zlib';
 import { Readable } from 'stream';
-import { InfoSettingsDto } from '@backend/dto/info-settings.dto';
+import { InfoSettingsDto } from '@backend/services/pimms/pimms.dto';
 import { PIMMState } from '@repo-hub/internal';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { sign } from 'jsonwebtoken';

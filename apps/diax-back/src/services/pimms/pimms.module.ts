@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PIMMController } from './pimm.controller';
-import { PIMMService } from './pimm.service';
+import { PIMMController } from './pimms.controller';
+import { PIMMService } from './pimms.service';
 
 @Module({
   imports: [

@@ -2734,6 +2734,19 @@
     "@emnapi/runtime" "^1.1.0"
     "@tybys/wasm-util" "^0.9.0"
 
+"@nestjs-cognito/auth@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@nestjs-cognito/auth/-/auth-2.1.0.tgz#f89772ce8c2150263a07bc33f06c86cd6276b74b"
+  integrity sha512-/fCfnCa4TqtOpOopsKaOsPKllCdurR5OoWdB9hPIJWsFFlNxf7bs+0dQWk+iywg1fC5eMfUi3cW/WeYNY4v53Q==
+  dependencies:
+    "@nestjs-cognito/core" "2.1.0"
+    aws-jwt-verify "^4.0.0"
+
+"@nestjs-cognito/core@2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@nestjs-cognito/core/-/core-2.1.0.tgz#a8f08fc8921417541017b6c1b1c9bea270547745"
+  integrity sha512-73t7HRcF87PVbzcYEmwNU9uvTrUtjaufSObxIHnTr1l+JsCimTxsZYVQPa7SbEWJeU3UwNgMmhNEEbL5YykoBg==
+
 "@nestjs/common@^latest":
   version "11.0.11"
   resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-11.0.11.tgz#6ae7bb7a7dce323179fb93ca016b27350853ce5c"
@@ -4952,6 +4965,11 @@ autoprefixer@^10.4.9:
     normalize-range "^0.1.2"
     picocolors "^1.0.1"
     postcss-value-parser "^4.2.0"
+
+aws-jwt-verify@^4.0.0:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/aws-jwt-verify/-/aws-jwt-verify-4.0.1.tgz#d5f36f80f3d1cbe8ffa638347bb80daf72f6ae61"
+  integrity sha512-kzvi71eD3w/mCpYRUY7cz6DX4bfYihGdI2yV3FYQ2JuZZenqAqDPz0gWj0ew6vlAtdEVBNb7p+Dm2TAIxpVYMA==
 
 axios@^1.7.4:
   version "1.8.1"

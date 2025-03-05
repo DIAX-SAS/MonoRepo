@@ -17,6 +17,7 @@
     "@mui/system": "^latest",
     "@mui/utils": "^latest",
     "@mui/x-date-pickers": "^latest",
+    "@nestjs-cognito/auth": "^2.1.0",
     "@nestjs/common": "^latest",
     "@nestjs/config": "^latest",
     "@nestjs/core": "^latest",
