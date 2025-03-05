@@ -8,9 +8,8 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { NavItemConfig } from '@/types/nav';
-import { paths } from '@/paths';
-import { isNavItemActive } from '@/lib/is-nav-item-active';
+import type { NavItemConfig } from '@/components/types/nav';
+import { isNavItemActive } from '@/components/utils/is-nav-item-active';
 import { Logo } from '@/components/core/logo';
 
 import { navItems } from './config';
@@ -48,7 +47,7 @@ export function SideNav(): React.JSX.Element {
       }}
     >
       <Stack spacing={2} sx={{ p: 3 }}>
-        <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
+        <Box component={RouterLink} href={"/redirect"} sx={{ display: 'inline-flex' }}>
           <Logo color="light" height={32} width={122} />
         </Box>
       </Stack>

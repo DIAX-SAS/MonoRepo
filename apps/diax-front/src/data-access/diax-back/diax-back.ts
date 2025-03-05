@@ -1,5 +1,5 @@
-import { getSiteURL } from '@/lib/get-site-url';
-import { InfoSettings, ResponsePIMM } from '@repo-hub/internal';
+import { getSiteURL } from '@/components/utils/get-site-url';
+import { ResponsePIMM } from '@repo-hub/internal';
 
 const URL = getSiteURL('backend').concat('api');
 

@@ -1,6 +1,4 @@
-import type { NavItemConfig } from '@/types/nav';
-import { paths } from '@/paths';
-
+import type { NavItemConfig } from '@/components/types/nav';
 export const navItems = [
-  { key: 'overview', title: 'Overview', href: paths.dashboard.overview, icon: 'chart-pie' },
+  { key: 'overview', title: 'Overview', href: '/redirect', icon: 'chart-pie' },
 ] satisfies NavItemConfig[];

@@ -1,9 +1,6 @@
-import { getSiteURL } from '@/lib/get-site-url';
-import { LogLevel } from '@/lib/logger';
-
+import { getSiteURL } from '@/components/utils/get-site-url';
 export interface Config {
   site: { name: string; description: string; themeColor: string; url: string };
-  logLevel: keyof typeof LogLevel;
   socketURL: string;
   lapseLive: number;
   paginationLength: number;
@@ -24,10 +21,7 @@ export const config: Config = {
     description: '',
     themeColor: '#090a0b',
     url: getSiteURL(),
-  },
-  logLevel:
-    (process.env.NEXT_PUBLIC_LOG_LEVEL as keyof typeof LogLevel) ??
-    LogLevel.ALL,
+  },  
   socketURL: 'wss://d0978261uk2h0hot7q0x-ats.iot.us-east-1.amazonaws.com',
   lapseLive: 2 * 60 * 60 * 1000, // must be in miliseconds
   paginationLength: 500,

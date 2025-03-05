@@ -1,5 +1,5 @@
 import { config } from '@/config';
-import { IdToken } from '@/types/user';
+import { IdToken } from '@/components/types/user';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';

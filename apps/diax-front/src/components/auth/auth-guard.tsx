@@ -3,9 +3,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
-
-import { paths } from '@/paths';
-import { logger } from '@/lib/default-logger';
 import { useAuth } from 'react-oidc-context';
 
 export interface AuthGuardProps {
@@ -28,8 +25,8 @@ export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | nul
     }
 
     if (!auth.isAuthenticated) {
-      logger.debug('[AuthGuard]: User is not logged in, redirecting to sign in');
-      router.replace(paths.auth.signIn);
+      console.log('[AuthGuard]: User is not logged in, redirecting to sign in');
+      router.replace("/redirect");
       return;
     }
 

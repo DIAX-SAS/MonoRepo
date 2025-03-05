@@ -9,7 +9,7 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { FEPIMM } from "@/types/filters";
+import { FEPIMM } from "@/app/dashboard/dashboard.types";
 
 interface MountingTableProps {  
   data: FEPIMM[];

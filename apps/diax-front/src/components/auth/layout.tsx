@@ -3,8 +3,6 @@ import RouterLink from 'next/link';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-
-import { paths } from '@/paths';
 import { DynamicLogo } from '@/components/core/logo';
 
 export interface LayoutProps {
@@ -23,7 +21,7 @@ export function Layout({ children }: LayoutProps): React.JSX.Element {
     >
       <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column' }}>
         <Box sx={{ p: 3 }}>
-          <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-block', fontSize: 0 }}>
+          <Box component={RouterLink} href={"/redirect"} sx={{ display: 'inline-block', fontSize: 0 }}>
             <DynamicLogo colorDark="light" colorLight="dark" height={32} width={122} />
           </Box>
         </Box>

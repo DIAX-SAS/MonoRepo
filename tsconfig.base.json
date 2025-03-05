@@ -15,9 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["apps/frontend/src/*"],
+      "@/*": ["apps/diax-front/src/*"],
       "@repo-hub/internal": ["libs/internal/src/index.ts"],
-      "@backend/*":["apps/backend/src/*"]
+      "@backend/*":["apps/diax-back/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

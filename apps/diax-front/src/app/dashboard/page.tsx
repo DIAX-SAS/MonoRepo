@@ -1,21 +1,21 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import FilterForm from '@/components/dashboard/filters/filter-form';
-import CardFactor from '@/components/dashboard/graphs/CardFactor';
-import TimeSeriesLineChart from '@/components/dashboard/graphs/LineChart';
-import MultiLayerPieChart from '@/components/dashboard/graphs/MultiLayerPieChart';
-import PolarChart from '@/components/dashboard/graphs/PolarChart';
-import StackedBarChart from '@/components/dashboard/graphs/StackedBarChart';
-import Table from '@/components/dashboard/graphs/Table';
+import FilterForm from '@/components/filters/filter-form';
+import CardFactor from '@/components/graphs/CardFactor';
+import TimeSeriesLineChart from '@/components/graphs/LineChart';
+import MultiLayerPieChart from '@/components/graphs/MultiLayerPieChart';
+import PolarChart from '@/components/graphs/PolarChart';
+import StackedBarChart from '@/components/graphs/StackedBarChart';
+import Table from '@/components/graphs/Table';
 import { config } from '@/config';
 import {
   fetchCredentialsCore,
   fetchData,
-} from '@/connections/backend-connections';
-import { type FEPIMM, type Filters, type Parameters } from '@/types/filters';
+} from '@/data-access/diax-back/diax-back';
+import { type FEPIMM, type Filters, type Parameters } from './dashboard.types';
 import { Card, CardContent, CardHeader } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid2';
 import { Box } from '@mui/system';
 import { InfoSettings, PIMMState } from '@repo-hub/internal';
 import mqtt from 'mqtt';
@@ -46,7 +46,7 @@ export default function Page(): React.JSX.Element {
   const [PIMMs, setPIMMs] = React.useState<PIMMState[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
 
-  const MQTT = React.useRef<mqtt.MqttClient>();
+  const MQTT = React.useRef<mqtt.MqttClient | undefined>(undefined);
 
   const MS_CONVERSION: { [key in 'second' | 'minute' | 'hour']: number } = {
     second: 1000,
@@ -496,7 +496,7 @@ export default function Page(): React.JSX.Element {
 
   return (
     <Grid container spacing={3}>
-      <Grid lg={12} sm={12} xs={12}>
+      <Grid size={{lg:12, sm:12,xs:12 }}>
         <Card>
           <CardHeader title="Settings" />
           <CardContent>
@@ -511,7 +511,7 @@ export default function Page(): React.JSX.Element {
           </CardContent>
         </Card>
       </Grid>
-      <Grid lg={12} sm={12} xs={12}>
+      <Grid size={{lg:12, sm:12,xs:12 }}>
         <Card>
           <CardHeader title="Information" />
           <CardContent>

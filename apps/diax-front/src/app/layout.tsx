@@ -1,18 +1,11 @@
-'use client';
-
-import type { Viewport } from 'next';
+"use client";
 import * as React from 'react';
 import '@/styles/global.css';
 import { LocalizationProvider } from '@/components/core/localization-provider';
-import { ThemeProvider } from '@/components/core/theme-provider/theme-provider';
-import { DataStoreProvider } from '@/contexts/data-store';
-import { getSiteURL } from '@/lib/get-site-url';
+import { ThemeProvider } from '@/components/core/theme-provider';
+import { getSiteURL } from '@/components/utils/get-site-url';
 import { AuthProvider } from 'react-oidc-context';
 
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-} satisfies Viewport;
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,10 +26,8 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
       <AuthProvider {...cognitoAuthConfig}>
         <html lang="en">
           <body>
-            <LocalizationProvider>
-              <DataStoreProvider>
-                <ThemeProvider>{children}</ThemeProvider>
-              </DataStoreProvider>
+            <LocalizationProvider>           
+                <ThemeProvider>{children}</ThemeProvider>         
             </LocalizationProvider>
           </body>
         </html>
