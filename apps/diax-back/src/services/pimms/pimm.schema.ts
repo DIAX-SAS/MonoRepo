@@ -22,4 +22,4 @@ export const PIMMSchema = new Schema({
   payload: {
     type: Object, // Required if you have nested JSON data
   },
-});
+},{ saveUnknown: true, timestamps: true });

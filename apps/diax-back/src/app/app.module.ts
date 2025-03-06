@@ -10,14 +10,15 @@ import { PimmsModule } from '@backend/services/pimms/pimms.module';
     CognitoAuthModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        jwtVerifier: {
-          userPoolId: configService.get<string>('COGNITO_USER_POOL_ID'),
-          clientId: configService.get<string>('COGNITO_CLIENT_ID'),
-          region: configService.get('AWS_REGION'),
-          tokenUse: 'id',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {        
+        return {
+          jwtVerifier: {
+            userPoolId: configService.get<string>('COGNITO_USER_POOL_ID'),
+            clientId: configService.get<string>('COGNITO_CLIENT_ID'),
+            tokenUse: null,
+          },
+        };
+      },
     }),
     DynamooseModule.forRootAsync({
       imports: [ConfigModule],

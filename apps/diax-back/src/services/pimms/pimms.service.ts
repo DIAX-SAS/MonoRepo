@@ -5,6 +5,7 @@ import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import * as dynamoose from 'dynamoose';
+import { PIMMSchema } from './pimm.schema';
 
 interface ProcessedResult {
   pimmStates: PIMMState[];
@@ -19,7 +20,8 @@ export class PIMMService {
     region: this.config.get('AWS_REGION'),
   });
 
-  async getPIMMSCredentials() {
+   async getPIMMSCredentials() {
+
     const secretString = JSON.parse(
       await getSecrets(this.config.get('ID_AUTH_TOKEN'))
     );
@@ -43,8 +45,10 @@ export class PIMMService {
     );
 
     return {
-      sessionToken: temporalToken,
-      expiration: expirationDate.toISOString(),
+      token: {
+        sessionToken: temporalToken,
+        expiration: expirationDate.toISOString(),
+      },
     };
   }
 
@@ -55,14 +59,6 @@ export class PIMMService {
 
     const tableName = this.getTableName(step);
 
-    const PIMMSchema = new dynamoose.Schema(
-      {
-        PLCNumber: { type: Number, hashKey: true }, // Partition Key
-        timestamp: { type: Number, rangeKey: true }, // Sort Key
-        payload: { type: Object },
-      },
-      { saveUnknown: true, timestamps: true }
-    );
     const tableModel = dynamoose.model(tableName, PIMMSchema);
 
     /**
