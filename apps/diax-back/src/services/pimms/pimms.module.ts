@@ -9,4 +9,4 @@ import { PIMMService } from './pimms.service';
   providers: [PIMMService],
   exports: [PIMMService],
 })
-export class PIMMModule {}
+export class PimmsModule {}

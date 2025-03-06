@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
+import { useAuth } from "react-oidc-context";
 
 const RedirectPage = () => {
+  const auth = useAuth();
   const searchParams = useSearchParams(); // ✅ Next.js way
 
   useEffect(() => {
@@ -11,9 +13,9 @@ const RedirectPage = () => {
     const state = searchParams.get("state");
 
     if (code && state) {
-      window.location.replace("/dashboard");
+      redirect("/dashboard");
     } else {
-      window.location.replace("/");
+      redirect("/");
     }
   }, [searchParams]);
 

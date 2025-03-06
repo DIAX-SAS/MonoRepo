@@ -48,7 +48,7 @@ export const config: Config = {
   keyPIMMNumber: 'MI31',
   auth: {
     clientId: '1dgddk7rc0bir0mt3g403kojcc',
-    logoutUri: 'http://localhost/auth/sign-in',
+    logoutUri: 'http://localhost/sign-in',
     cognitoDomain: 'https://crud-diax.auth.us-east-1.amazoncognito.com',
   }
 };

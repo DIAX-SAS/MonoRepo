@@ -9,6 +9,7 @@ import { InfoSettingsDto } from '@backend/services/pimms/pimms.dto';
 import { Authentication, CognitoUser } from '@nestjs-cognito/auth';
 
 @Controller('pimms')
+
 @Authentication()
 export class PIMMController {
   constructor(private readonly PIMMService: PIMMService) { }

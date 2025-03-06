@@ -16,7 +16,7 @@
       "executor": "@nx/next:server",
       "dependsOn": ["build"],
       "options": {
-        "port": 4000,
+        "port": 80,
         "buildTarget": "diax-front:build",
         "watch": true
       }

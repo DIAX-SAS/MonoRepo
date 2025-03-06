@@ -15,7 +15,7 @@ export async function fetchData(
   },
   accessToken: string | undefined
 ) {
-  const response = await fetch(URL.concat('/pimm_states/dynamo_db'), {
+  const response = await fetch(URL.concat('/pimms'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ export async function fetchData(
 }
 
 export async function fetchCredentialsCore(accessToken: string | undefined) { 
-    const response = await fetch(URL.concat('/pimm_states/iot_credentials'), {
+    const response = await fetch(URL.concat('/pimms/credentials'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

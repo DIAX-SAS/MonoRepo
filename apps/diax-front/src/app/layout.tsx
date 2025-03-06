@@ -1,11 +1,8 @@
-"use client";
+'use client';
 import * as React from 'react';
 import '@/styles/global.css';
-import { LocalizationProvider } from '@/components/core/localization-provider';
-import { ThemeProvider } from '@/components/core/theme-provider';
 import { getSiteURL } from '@/components/utils/get-site-url';
 import { AuthProvider } from 'react-oidc-context';
-
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +10,7 @@ interface LayoutProps {
 const cognitoAuthConfig = {
   authority: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_bHo9GIUJg',
   client_id: '1dgddk7rc0bir0mt3g403kojcc',
-  redirect_uri: getSiteURL().concat('callback'),
+  redirect_uri: getSiteURL().concat('redirect'),
   response_type: 'code',
   scope: 'email openid phone',
   automaticSilentRenew: true,
@@ -26,9 +23,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
       <AuthProvider {...cognitoAuthConfig}>
         <html lang="en">
           <body>
-            <LocalizationProvider>           
-                <ThemeProvider>{children}</ThemeProvider>         
-            </LocalizationProvider>
+           {children}
           </body>
         </html>
       </AuthProvider>

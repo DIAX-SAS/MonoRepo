@@ -26,7 +26,7 @@ def batch_write_items(table, items):
 def check_partition_exists(table, pimm_number):
     """Checks whether a partition exists in a table."""
     response = table.query(
-        KeyConditionExpression="PIMMNumber = :p",
+        KeyConditionExpression="PLCNumber = :p",
         ExpressionAttributeValues={":p": pimm_number},
         Limit=1,  # Solo necesitamos saber si existe
     )

@@ -1,12 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-
-import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from '@backend/services/account/account.module';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from '@backend/services/account/jwt-auth.guard';
-import { PIMMModule } from '@backend/services/pimms/pimms.module';
-
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DynamooseModule } from 'nestjs-dynamoose';
+import { CognitoAuthModule } from '@nestjs-cognito/auth';
+import { PimmsModule } from '@backend/services/pimms/pimms.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -17,24 +14,26 @@ import { PIMMModule } from '@backend/services/pimms/pimms.module';
         jwtVerifier: {
           userPoolId: configService.get<string>('COGNITO_USER_POOL_ID'),
           clientId: configService.get<string>('COGNITO_CLIENT_ID'),
+          region: configService.get('AWS_REGION'),
           tokenUse: 'id',
         },
       }),
     }),
-    MongooseModule.forRootAsync({
+    DynamooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-        retryAttempts: 2,
-        connectionFactory: (connection) => {
-          connection.on('connected', () => console.log('MongoDB Connected Successfully'));
-          connection.on('error', (err: string) => console.error('MongoDB Connection Error:', err));
-          return connection;
+        aws: {
+          region: configService.get<string>('AWS_REGION'),
+          accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID'),
+          secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY'),
+        },
+        model: {
+          create: false, // Set to true if you want Dynamoose to create tables automatically
+          update: true, // Set to true if you want to update existing table schema
         },
       }),
-    }),
-    AccountModule,
+    }),   
     PimmsModule,
   ],
   controllers: [AppController],

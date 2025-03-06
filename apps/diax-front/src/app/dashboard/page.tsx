@@ -91,110 +91,110 @@ export default function Page(): React.JSX.Element {
     filters: Filters,
     PIMMs: PIMMState[]
   ): FEPIMM[] => {
-      //Offset
+    //Offset
 
-      if (PIMMs.length == 0) return [];
-      const FEPIMMs: FEPIMM[] = [];
-      const offsets: Record<
+    if (PIMMs.length == 0) return [];
+    const FEPIMMs: FEPIMM[] = [];
+    const offsets: Record<
+      string,
+      Record<
         string,
-        Record<
-          string,
-          { start: number; end: number; value: number; previousValue: number }
-        >
-      > = {};
+        { start: number; end: number; value: number; previousValue: number }
+      >
+    > = {};
 
-      const diffDate = PIMMs[PIMMs.length - 1].timestamp - PIMMs[0].timestamp;
-      const allFiltersFalse = Object.values(filters).every((filterMap) =>
-        Array.from(filterMap.values()).every((value) => value === false)
-      );
+    const diffDate = PIMMs[PIMMs.length - 1].timestamp - PIMMs[0].timestamp;
+    const allFiltersFalse = Object.values(filters).every((filterMap) =>
+      Array.from(filterMap.values()).every((value) => value === false)
+    );
 
-      PIMMs.forEach((PIMM: PIMMState, i: number) => {
-        //CHANGE TO  for const pim in pimms, foreach
+    PIMMs.forEach((PIMM: PIMMState, i: number) => {
+      //CHANGE TO  for const pim in pimms, foreach
 
-        const stateMap = new Map(PIMM.states.map((s) => [s.id, s]));
-        const counterMap = new Map(PIMM.counters.map((c) => [c.id, c]));
-        let shouldContinue = allFiltersFalse;
-        if (filters.equipos.get(String(stateMap.get('MI31')?.value)))
-          shouldContinue = true;
-        if (filters.lotes.get(String(stateMap.get('ML5')?.value)))
-          shouldContinue = true;
-        if (filters.materiales.get(String(stateMap.get('MI19')?.value)))
-          shouldContinue = true;
-        if (filters.moldes.get(String(stateMap.get('ML3')?.value)))
-          shouldContinue = true;
-        if (filters.operarios.get(String(stateMap.get('MI18')?.value)))
-          shouldContinue = true;
-        if (filters.ordenes.get(String(stateMap.get('ML1')?.value)))
-          shouldContinue = true;
+      const stateMap = new Map(PIMM.states.map((s) => [s.id, s]));
+      const counterMap = new Map(PIMM.counters.map((c) => [c.id, c]));
+      let shouldContinue = allFiltersFalse;
+      if (filters.equipos.get(String(stateMap.get('MI31')?.value)))
+        shouldContinue = true;
+      if (filters.lotes.get(String(stateMap.get('ML5')?.value)))
+        shouldContinue = true;
+      if (filters.materiales.get(String(stateMap.get('MI19')?.value)))
+        shouldContinue = true;
+      if (filters.moldes.get(String(stateMap.get('ML3')?.value)))
+        shouldContinue = true;
+      if (filters.operarios.get(String(stateMap.get('MI18')?.value)))
+        shouldContinue = true;
+      if (filters.ordenes.get(String(stateMap.get('ML1')?.value)))
+        shouldContinue = true;
 
-        if (shouldContinue) {
-          if (parameters.endDate != parameters.startDate) {
-            const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
-            if (!statePIMMNumber) return;
+      if (shouldContinue) {
+        if (parameters.endDate != parameters.startDate) {
+          const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
+          if (!statePIMMNumber) return;
 
-            if (!offsets[statePIMMNumber]) {
-              offsets[statePIMMNumber] = {};
-            }
-
-            for (const offsetKey of config.offsetKeys) {
-              const counter = counterMap.get(offsetKey);
-              const counterValue = counter ? Number(counter.value) : 0;
-
-              if (!offsets[statePIMMNumber][offsetKey]) {
-                offsets[statePIMMNumber][offsetKey] = {
-                  start: 0,
-                  end: 0,
-                  value: 0,
-                  previousValue: 0,
-                };
-              }
-
-              const offsetEntry = offsets[statePIMMNumber][offsetKey];
-
-              if (i === 0 && offsetEntry.start > 0) {
-                offsetEntry.start = counterValue;
-                if (counter) counter.value = '0';
-              }
-
-              if (counterValue < offsetEntry.previousValue) {
-                offsetEntry.end = offsetEntry.previousValue;
-                offsetEntry.value += offsetEntry.end - offsetEntry.start;
-                offsetEntry.start = 0;
-                if (counter) counter.value = String(offsetEntry.value);
-              }
-
-              offsetEntry.previousValue = counterValue;
-            }
+          if (!offsets[statePIMMNumber]) {
+            offsets[statePIMMNumber] = {};
           }
 
-          FEPIMMs.push({
-            ...PIMM,
-            buenas:
-              Number(counterMap.get('ML135')?.value) -
-              Number(counterMap.get('MI101')?.value) -
-              Number(counterMap.get('MI102')?.value),
-            ineficiencias:
-              (Number(counterMap.get('ML0')?.value) * 60 /
-              Number(counterMap.get('MF5')?.value)) -
-              Number(counterMap.get('ML131')?.value),
-            producidas:
-              diffDate / MS_CONVERSION[parameters.step] -
-              Number(counterMap.get('MI125')?.value) -
-              (Number(counterMap.get('MI121')?.value) +
-                Number(counterMap.get('MI122')?.value) +
-                Number(counterMap.get('MI124')?.value) +
-                Number(counterMap.get('MI127')?.value) +
-                Number(counterMap.get('MI128')?.value) +
-                Number(counterMap.get('MI123')?.value)),
-            maquina:
-              Number(counterMap.get('MF1')?.value) -
-              Number(counterMap.get('MF8')?.value),
-          });
-        }
-      });
+          for (const offsetKey of config.offsetKeys) {
+            const counter = counterMap.get(offsetKey);
+            const counterValue = counter ? Number(counter.value) : 0;
 
-      return FEPIMMs;
-    };
+            if (!offsets[statePIMMNumber][offsetKey]) {
+              offsets[statePIMMNumber][offsetKey] = {
+                start: 0,
+                end: 0,
+                value: 0,
+                previousValue: 0,
+              };
+            }
+
+            const offsetEntry = offsets[statePIMMNumber][offsetKey];
+
+            if (i === 0 && offsetEntry.start > 0) {
+              offsetEntry.start = counterValue;
+              if (counter) counter.value = '0';
+            }
+
+            if (counterValue < offsetEntry.previousValue) {
+              offsetEntry.end = offsetEntry.previousValue;
+              offsetEntry.value += offsetEntry.end - offsetEntry.start;
+              offsetEntry.start = 0;
+              if (counter) counter.value = String(offsetEntry.value);
+            }
+
+            offsetEntry.previousValue = counterValue;
+          }
+        }
+
+        FEPIMMs.push({
+          ...PIMM,
+          buenas:
+            Number(counterMap.get('ML135')?.value) -
+            Number(counterMap.get('MI101')?.value) -
+            Number(counterMap.get('MI102')?.value),
+          ineficiencias:
+            (Number(counterMap.get('ML0')?.value) * 60) /
+              Number(counterMap.get('MF5')?.value) -
+            Number(counterMap.get('ML131')?.value),
+          producidas:
+            diffDate / MS_CONVERSION[parameters.step] -
+            Number(counterMap.get('MI125')?.value) -
+            (Number(counterMap.get('MI121')?.value) +
+              Number(counterMap.get('MI122')?.value) +
+              Number(counterMap.get('MI124')?.value) +
+              Number(counterMap.get('MI127')?.value) +
+              Number(counterMap.get('MI128')?.value) +
+              Number(counterMap.get('MI123')?.value)),
+          maquina:
+            Number(counterMap.get('MF1')?.value) -
+            Number(counterMap.get('MF8')?.value),
+        });
+      }
+    });
+
+    return FEPIMMs;
+  };
 
   const fetchPIMMs = async (parameters: Parameters) => {
     function generateTimestamps(
@@ -215,6 +215,14 @@ export default function Page(): React.JSX.Element {
 
     // Calculate number of pages and start keys
     setPIMMs([]);
+    setFilters({
+      equipos: new Map<string, boolean>(),
+      operarios: new Map<string, boolean>(),
+      ordenes: new Map<string, boolean>(),
+      lotes: new Map<string, boolean>(),
+      moldes: new Map<string, boolean>(),
+      materiales: new Map<string, boolean>(),
+    });
     const partitions = generateTimestamps(
       parameters.startDate,
       parameters.endDate,
@@ -461,7 +469,8 @@ export default function Page(): React.JSX.Element {
   const accInyecciones = lastGroupPLC?.overall.acc_Inyecciones ?? 0;
   const accIneficiencias = lastGroupPLC?.overall.acc_Ineficiencias ?? 0;
   const accBuenas = lastGroupPLC?.overall.acc_buenas ?? 0;
-  const accDefectoInicioTurno = lastGroupPLC?.overall.acc_defectoInicioTurno ?? 0;
+  const accDefectoInicioTurno =
+    lastGroupPLC?.overall.acc_defectoInicioTurno ?? 0;
   const accNoConformes = lastGroupPLC?.overall.acc_noConformes ?? 0;
   const accNoProg = lastGroupPLC?.overall.acc_noProg ?? 0;
   const accMaquina = lastGroupPLC?.overall.acc_maquina ?? 0;
@@ -470,33 +479,40 @@ export default function Page(): React.JSX.Element {
   const accMaterial = lastGroupPLC?.overall.acc_material ?? 0;
   const accCalidad = lastGroupPLC?.overall.acc_calidad ?? 0;
   const accMontaje = lastGroupPLC?.overall.acc_montaje ?? 0;
-  
 
-  const timeTotal = Math.round((filteredPIMMs[filteredPIMMs.length - 1]?.timestamp - filteredPIMMs[0]?.timestamp)/MS_CONVERSION[parameters.step]) *  lastGroupPLC?.items.length;
-  let availability = (timeTotal - accNoProg - (accMaquina + accMolde + accAbandono + accMaterial + accCalidad + accMontaje)) / (timeTotal - accNoProg) 
-  let performance =
-    accInyecciones /
-    (accIneficiencias + accInyecciones ); // Evita división por 0
+  const timeTotal =
+    Math.round(
+      (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
+        filteredPIMMs[0]?.timestamp) /
+        MS_CONVERSION[parameters.step]
+    ) * lastGroupPLC?.items.length;
+  let availability =
+    (timeTotal -
+      accNoProg -
+      (accMaquina +
+        accMolde +
+        accAbandono +
+        accMaterial +
+        accCalidad +
+        accMontaje)) /
+    (timeTotal - accNoProg);
+  let performance = accInyecciones / (accIneficiencias + accInyecciones); // Evita división por 0
 
   let quality =
-    accBuenas /
-    (accBuenas + accDefectoInicioTurno + accNoConformes || 1); // Evita división por 0
-
-  
+    accBuenas / (accBuenas + accDefectoInicioTurno + accNoConformes || 1); // Evita división por 0
 
   // Redondeo final
   performance = Math.round(performance * 1000) / 10;
   availability = Math.round(availability * 1000) / 10;
   quality = Math.round(quality * 1000) / 10;
-  let efficiency = ((availability / 100) * (performance / 100) * (quality / 100));
+  let efficiency = (availability / 100) * (performance / 100) * (quality / 100);
   efficiency = Math.round(efficiency * 1000) / 10;
 
   console.log({ availability, performance, quality, efficiency });
 
-
   return (
     <Grid container spacing={3}>
-      <Grid size={{lg:12, sm:12,xs:12 }}>
+      <Grid size={{ lg: 12, sm: 12, xs: 12 }}>
         <Card>
           <CardHeader title="Settings" />
           <CardContent>
@@ -511,7 +527,7 @@ export default function Page(): React.JSX.Element {
           </CardContent>
         </Card>
       </Grid>
-      <Grid size={{lg:12, sm:12,xs:12 }}>
+      <Grid size={{ lg: 12, sm: 12, xs: 12 }}>
         <Card>
           <CardHeader title="Information" />
           <CardContent>
@@ -594,13 +610,13 @@ export default function Page(): React.JSX.Element {
                       timestamp: groupedFEPIMM.timestamp,
                       value:
                         groupedFEPIMM.overall.acc_Inyecciones /
-                        (groupedFEPIMM.overall.acc_Ineficiencias +
-                          groupedFEPIMM.overall.acc_Inyecciones) +
+                          (groupedFEPIMM.overall.acc_Ineficiencias +
+                            groupedFEPIMM.overall.acc_Inyecciones) +
                         groupedFEPIMM.overall.acc_producidas +
                         groupedFEPIMM.overall.acc_buenas /
-                        (groupedFEPIMM.overall.acc_buenas +
-                          groupedFEPIMM.overall.acc_defectoInicioTurno +
-                          groupedFEPIMM.overall.acc_noConformes),
+                          (groupedFEPIMM.overall.acc_buenas +
+                            groupedFEPIMM.overall.acc_defectoInicioTurno +
+                            groupedFEPIMM.overall.acc_noConformes),
                     };
                   }),
                 },
@@ -994,20 +1010,19 @@ export default function Page(): React.JSX.Element {
             <MultiLayerPieChart
               data={{
                 name: 'Root',
-                children: Object.entries(lastGroupPLC?.overall.moldes || {}).map(
-                  ([molde, cavidades]) => ({
-                    name: molde,
-                    children: Object.entries(cavidades || {})
-                      .filter(([key]) => key !== 'acc_gramosgeneral') // Excluir 'acc_gramosgeneral'
-                      .map(([cavidad, value]) => ({
-                        name: cavidad,
-                        value: Number(value) || 0, // Asegurar valores numéricos
-                      })),
-                  })
-                ),
+                children: Object.entries(
+                  lastGroupPLC?.overall.moldes || {}
+                ).map(([molde, cavidades]) => ({
+                  name: molde,
+                  children: Object.entries(cavidades || {})
+                    .filter(([key]) => key !== 'acc_gramosgeneral') // Excluir 'acc_gramosgeneral'
+                    .map(([cavidad, value]) => ({
+                      name: cavidad,
+                      value: Number(value) || 0, // Asegurar valores numéricos
+                    })),
+                })),
               }}
             />
-
 
             <TimeSeriesLineChart
               series={Object.entries(
