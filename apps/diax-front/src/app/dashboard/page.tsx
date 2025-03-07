@@ -73,9 +73,7 @@ export default function Page(): React.JSX.Element {
   React.useEffect(() => {
     fetchPIMMs(parameters);
     if (parameters.live) {
-      connectToIoT(auth.user?.access_token ?? '').then((client) => {
-        MQTT.current = client;
-      });
+      connectToIoT();
     } else {
       MQTT.current?.removeAllListeners();
       MQTT.current?.end();
@@ -280,14 +278,15 @@ export default function Page(): React.JSX.Element {
     });
   };
 
-  const connectToIoT = async (token: string) => {
+  const connectToIoT = React.useCallback(async () => {   
     if (MQTT.current && MQTT.current.connected) return MQTT.current;
+    const token = auth.user?.access_token ??"";
     const response = await fetchCredentialsCore(token);
     const { sessionToken, expiration } = response.token;
 
     console.log('Conectando a AWS IoT...');
     const url = config.socketURL;
-    const client = mqtt.connect(url, {
+    MQTT.current = mqtt.connect(url, {
       username: 'the_username',
       password: sessionToken,
       clientId: `clientId-${Date.now()}-${Math.random()
@@ -300,6 +299,8 @@ export default function Page(): React.JSX.Element {
       connectTimeout: 5000,
       keepalive: 30,
     });
+
+    const client = MQTT.current;
 
     client.on('connect', () => {
       console.log('Conectado a AWS IoT!');
@@ -327,10 +328,8 @@ export default function Page(): React.JSX.Element {
 
     client.on('close', () => {
       console.log('Conexión MQTT cerrada');
-    });
-
-    return client;
-  };
+    });   
+  },[auth.user])
 
   const groupByUnitTime = (data: FEPIMM[], ms_agrupation: number) => {
     const acc = Object.values(

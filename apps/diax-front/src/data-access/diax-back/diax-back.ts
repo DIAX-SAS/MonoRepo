@@ -1,7 +1,7 @@
-import { getSiteURL } from '@/components/utils/get-site-url';
+import { config } from '@/config';
 import { ResponsePIMM } from '@repo-hub/internal';
 
-const URL = getSiteURL('backend').concat('api');
+const URL = config.backendURL;
 
 export async function fetchData(
   infoSettings: {

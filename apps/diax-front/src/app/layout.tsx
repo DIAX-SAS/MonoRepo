@@ -1,18 +1,18 @@
 'use client';
 import * as React from 'react';
 import '@/styles/global.css';
-import { getSiteURL } from '@/components/utils/get-site-url';
 import { AuthProvider } from 'react-oidc-context';
+import { config } from '@/config';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 const cognitoAuthConfig = {
-  authority: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_bHo9GIUJg',
-  client_id: '1dgddk7rc0bir0mt3g403kojcc',
-  redirect_uri: getSiteURL().concat('redirect'),
-  response_type: 'code',
-  scope: 'email openid phone',
+  authority: config.auth.authority,
+  client_id: config.auth.clientId,
+  redirect_uri: config.auth.redirectUri,
+  response_type: config.auth.response_type,
+  scope: config.auth.scope,
   automaticSilentRenew: true,
   loadUserInfo: true,
 };

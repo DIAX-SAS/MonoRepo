@@ -33,7 +33,7 @@ export function UserPopover({
       extraQueryParams: {
         client_id: config.auth.clientId,
         logout_uri: config.auth.logoutUri,
-        redirect_uri: config.auth.logoutUri
+        redirect_uri: config.auth.redirectUri
       },
     });
   }, [auth]);

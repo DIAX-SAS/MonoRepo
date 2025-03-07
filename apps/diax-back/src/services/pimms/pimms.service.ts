@@ -20,6 +20,7 @@ export class PIMMService {
     region: this.config.get('AWS_REGION'),
   });
 
+  //INSOMNIA
    async getPIMMSCredentials() {
 
     const secretString = JSON.parse(
