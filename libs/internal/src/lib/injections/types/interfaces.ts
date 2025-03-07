@@ -22,7 +22,7 @@ export type Variable = {
 };
 
 export type ResponsePIMM = {
-  hasMore: boolean;
   lastID: number | null;
   pimms: PIMM[];
+  totalProcessed: number;
 };

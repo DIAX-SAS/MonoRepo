@@ -1,16 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InfoSettingsDto } from '@backend/services/pimms/pimms.dto';
-import { getSecrets, type PIMM } from '@repo-hub/internal';
+import { getSecrets, ResponsePIMM, type PIMM } from '@repo-hub/internal';
 import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import * as dynamoose from 'dynamoose';
 import { PIMMSchema } from './pimm.schema';
-
-interface ProcessedResult {
-  pimmStates: PIMM[];
-  lastID: number | null;
-  totalProcessed: number;
-}
 
 @Injectable()
 export class PIMMService {
@@ -46,7 +40,7 @@ export class PIMMService {
     };
   }
 
-  async getPIMMS(settings: InfoSettingsDto): Promise<ProcessedResult> {
+  async getPIMMS(settings: InfoSettingsDto): Promise<ResponsePIMM> {
     const { initTime, endTime, lastID, accUnit: step } = settings.filters;
 
     let allResults = [];
@@ -76,7 +70,7 @@ export class PIMMService {
     }
 
     return {
-      pimmStates: allResults,
+      pimms: allResults,
       lastID: allResults.at(-1)?.timestamp || null,
       totalProcessed: allResults.length,
     };
