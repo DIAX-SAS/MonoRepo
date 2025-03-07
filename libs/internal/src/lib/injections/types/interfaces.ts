@@ -4,7 +4,6 @@ export type InfoSettings = {
     endTime: number;
     accUnit: 'second' | 'minute' | 'hour';
     lastID: number | null;
-    length: number;
   };
 };
 
