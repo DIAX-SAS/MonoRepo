@@ -1,18 +1,10 @@
 import { config } from '@/config';
-import { ResponsePIMM } from '@repo-hub/internal';
+import { InfoSettings, ResponsePIMM } from '@repo-hub/internal';
 
 const URL = config.backendURL;
 
 export async function fetchData(
-  infoSettings: {
-    filters: {
-      initTime: number;
-      endTime: number;
-      accUnit: 'second' | 'minute' | 'hour';
-      lastID: number | null;
-      length: number;
-    };
-  },
+  infoSettings: InfoSettings,
   accessToken: string | undefined
 ) {
   const response = await fetch(URL.concat('/pimms'), {

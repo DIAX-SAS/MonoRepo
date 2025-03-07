@@ -234,7 +234,6 @@ export default function Page(): React.JSX.Element {
           endTime: partition,
           accUnit: parameters.step,
           lastID: null,
-          length: config.paginationLength,
         },
       };
       beforePartition = partition;
@@ -278,9 +277,9 @@ export default function Page(): React.JSX.Element {
     });
   };
 
-  const connectToIoT = React.useCallback(async () => {   
+  const connectToIoT = React.useCallback(async () => {
     if (MQTT.current && MQTT.current.connected) return MQTT.current;
-    const token = auth.user?.access_token ??"";
+    const token = auth.user?.access_token ?? '';
     const response = await fetchCredentialsCore(token);
     const { sessionToken, expiration } = response.token;
 
@@ -328,8 +327,8 @@ export default function Page(): React.JSX.Element {
 
     client.on('close', () => {
       console.log('Conexión MQTT cerrada');
-    });   
-  },[auth.user])
+    });
+  }, [auth.user]);
 
   const groupByUnitTime = (data: FEPIMM[], ms_agrupation: number) => {
     const acc = Object.values(
@@ -484,21 +483,16 @@ export default function Page(): React.JSX.Element {
       (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
         filteredPIMMs[0]?.timestamp) /
         MS_CONVERSION[parameters.step]
-    ) * lastGroupPLC?.items.length;
-  let availability =
-    (timeTotal -
-      accNoProg -
-      (accMaquina +
-        accMolde +
-        accAbandono +
-        accMaterial +
-        accCalidad +
-        accMontaje)) /
-    (timeTotal - accNoProg);
-  let performance = accInyecciones / (accIneficiencias + accInyecciones); // Evita división por 0
+    ) * lastGroupPLC?.items.length || 0;
+  let totalOperationalTime = timeTotal - accNoProg;
+  let totalLosses =
+    accMaquina + accMolde + accAbandono + accMaterial + accCalidad + accMontaje;
 
+  let availability =
+    (totalOperationalTime - totalLosses) / (totalOperationalTime || 1);
+  let performance = accInyecciones / (accIneficiencias + accInyecciones || 1);
   let quality =
-    accBuenas / (accBuenas + accDefectoInicioTurno + accNoConformes || 1); // Evita división por 0
+    accBuenas / (accBuenas + accDefectoInicioTurno + accNoConformes || 1);
 
   // Redondeo final
   performance = Math.round(performance * 1000) / 10;
@@ -506,8 +500,6 @@ export default function Page(): React.JSX.Element {
   quality = Math.round(quality * 1000) / 10;
   let efficiency = (availability / 100) * (performance / 100) * (quality / 100);
   efficiency = Math.round(efficiency * 1000) / 10;
-
-  console.log({ availability, performance, quality, efficiency });
 
   return (
     <Grid container spacing={3}>
@@ -557,9 +549,12 @@ export default function Page(): React.JSX.Element {
             ></CardFactor>
             <PolarChart
               data={[
-                { category: 'Rendimiento', value: Number(performance) },
-                { category: 'Disponibilidad', value: Number(availability) },
-                { category: 'Calidad', value: Number(quality) },
+                { category: 'Rendimiento', value: Number(performance ?? 0) },
+                {
+                  category: 'Disponibilidad',
+                  value: Number(availability ?? 0),
+                },
+                { category: 'Calidad', value: Number(quality ?? 0) },
               ]}
             ></PolarChart>
             <TimeSeriesLineChart

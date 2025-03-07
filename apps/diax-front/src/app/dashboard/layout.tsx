@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { AuthGuard } from '@/components/auth/auth-guard';
-import { MainNav } from '@/components/layout/main-nav';
+import { Navigation } from '@/components/layout/main-nav';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,7 +33,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
           minHeight: '100%',
         }}
       >
-        <MainNav />
+        <Navigation />
         <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column', pl: { lg: 'var(--SideNav-width)' } }}>
           <main>
             <Container maxWidth="xl" sx={{ py: '64px' }}>

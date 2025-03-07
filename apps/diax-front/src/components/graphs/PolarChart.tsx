@@ -30,7 +30,6 @@ const PolarChart: React.FC<PolarChartProps> = ({
     //   { category: 'C', value: 90 },
     // ];
 
-    console.log(data)
     const categories = data.map((d) => d.category);
     // const values = data.map(d => d.value);
 

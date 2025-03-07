@@ -33,14 +33,14 @@ export function UserPopover({
 
   return (
     <Popover
-      anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+      anchorOrigin={{ horizontal: 'right', vertical: 'top' }}
       onClose={() => setOpen(false)}
       open={open}
       slotProps={{ paper: { sx: { width: '240px' } } }}
     >
       <Box sx={{ p: '16px 20px ' }}>
         <Typography variant="subtitle1">
-          { auth.user?.profile["cognito:username"] as string | undefined }
+          {auth.user?.profile["cognito:username"] as string | undefined}
         </Typography>
         <Typography color="text.secondary" variant="body2">
           {auth.user?.profile.email}
