@@ -18,7 +18,7 @@ def process_and_send_data(plc_ips):
             print(f"Invalid IP address: {ip}")
             return
         plc_data = make_modbus_requests(ip)      
-        data_json = json.dumps({"timestamp":timestamp_en_milisegundos,"states":plc_data["states"], "counters":plc_data["counters"]})
+        data_json = json.dumps({"timestamp":timestamp_en_milisegundos,"PLCNumber":plc_data["PIMMNumber"],"states":plc_data["states"], "counters":plc_data["counters"]})
         send_to_iot_core(data_json, "PIMMStateTopic")
    
 

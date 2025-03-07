@@ -146,7 +146,8 @@ def make_modbus_requests(ip):
 
     return {
         "counters":calculate_given_variables(countersNames, variables),
-        "states":calculate_given_variables(statesNames, variables)
+        "states":calculate_given_variables(statesNames, variables),
+        "PIMMNumber":variables.get("MI31")
     }
     
 
