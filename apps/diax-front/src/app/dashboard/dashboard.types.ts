@@ -1,4 +1,4 @@
-import { PIMMState } from '@repo-hub/internal';
+import { PIMM } from '@repo-hub/internal';
 
 export type Parameters = {
   live: boolean;
@@ -16,7 +16,7 @@ export type Filters = {
   materiales: Map<string, boolean>;
 };
 
-export interface FEPIMM extends PIMMState {
+export interface FEPIMM extends PIMM {
   buenas: number;
   ineficiencias: number;
   producidas: number;

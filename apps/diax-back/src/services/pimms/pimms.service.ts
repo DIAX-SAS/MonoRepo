@@ -1,34 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { InfoSettingsDto } from '@backend/services/pimms/pimms.dto';
-import { getSecrets, type PIMMState } from '@repo-hub/internal';
+import { getSecrets, type PIMM } from '@repo-hub/internal';
 import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import * as dynamoose from 'dynamoose';
 import { PIMMSchema } from './pimm.schema';
 
 interface ProcessedResult {
-  pimmStates: PIMMState[];
+  pimmStates: PIMM[];
   lastID: number | null;
   totalProcessed: number;
 }
 
 @Injectable()
 export class PIMMService {
-  constructor(private readonly config: ConfigService) {}
-  private clientDynamo = new DynamoDBClient({
-    region: this.config.get('AWS_REGION'),
-  });
+  constructor(private readonly config: ConfigService) { }
 
-  //INSOMNIA
-   async getPIMMSCredentials() {
-
+  async getPIMMSCredentials() {
     const secretString = JSON.parse(
       await getSecrets(this.config.get('ID_AUTH_TOKEN'))
     );
     const signingKey = Buffer.from(secretString.signingKey, 'base64');
-
     const expiresIn = this.config.get('TEMPORAL_TOKEN_EXPIRATION').concat('m');
+    const expirationDate = new Date();
+    expirationDate.setMinutes(
+      expirationDate.getMinutes() + this.config.get('TEMPORAL_TOKEN_EXPIRATION')
+    );   
     const temporalToken = sign(
       {
         iot: true,
@@ -39,11 +36,7 @@ export class PIMMService {
         expiresIn,
         algorithm: 'HS256',
       }
-    );
-    const expirationDate = new Date();
-    expirationDate.setMinutes(
-      expirationDate.getMinutes() + this.config.get('TEMPORAL_TOKEN_EXPIRATION')
-    );
+    );   
 
     return {
       token: {
@@ -57,48 +50,10 @@ export class PIMMService {
     const { initTime, endTime, lastID, accUnit: step } = settings.filters;
 
     let allResults = [];
-
     const tableName = this.getTableName(step);
-
     const tableModel = dynamoose.model(tableName, PIMMSchema);
 
-    /**
-     * Checks whether a partition exists in a table.
-     * @param table The Dynamoose model to query.
-     * @param pimmNumber The partition number to check.
-     * @returns True if the partition exists, otherwise false.
-     */
-    async function checkPartitionExists(
-      table,
-      pimmNumber: number
-    ): Promise<boolean> {
-      const response = await table
-        .query('PLCNumber')
-        .eq(pimmNumber)
-        .limit(1)
-        .exec();
-      return response.length > 0;
-    }
-
-    async function findPartitions() {
-      let pimmNumber = 0;
-      let falseCount = 0;
-      const partitions: number[] = [];
-
-      while (falseCount < 5) {
-        if (await checkPartitionExists(tableModel, pimmNumber)) {
-          partitions.push(pimmNumber);
-          falseCount = 0; // Reset false counter since we found a valid partition
-        } else {
-          falseCount += 1; // Increment false counter
-        }
-        pimmNumber += 1; // Move to the next number
-      }
-
-      return partitions;
-    }
-
-    const partitions = await findPartitions();
+    const partitions = await this.findPartitions(tableModel);
 
     for (const partition of partitions) {
       let query = tableModel
@@ -135,5 +90,35 @@ export class PIMMService {
     };
     const bucket = buckets[step];
     return bucket;
+  }
+
+  private async checkPartitionExists(
+    table,
+    pimmNumber: number
+  ): Promise<boolean> {
+    const response = await table
+      .query('PLCNumber')
+      .eq(pimmNumber)
+      .limit(1)
+      .exec();
+    return response.length > 0;
+  }
+
+  private async findPartitions(tableModel) {
+    let pimmNumber = 0;
+    let falseCount = 0;
+    const partitions: number[] = [];
+
+    while (falseCount < 5) {
+      if (await this.checkPartitionExists(tableModel, pimmNumber)) {
+        partitions.push(pimmNumber);
+        falseCount = 0; // Reset false counter since we found a valid partition
+      } else {
+        falseCount += 1; // Increment false counter
+      }
+      pimmNumber += 1; // Move to the next number
+    }
+
+    return partitions;
   }
 }

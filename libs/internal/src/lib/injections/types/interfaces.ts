@@ -8,7 +8,7 @@ export type InfoSettings = {
   };
 };
 
-export type PIMMState = {
+export type PIMM = {
   timestamp: number;
   counters: Variable[];
   states: Variable[];
@@ -25,5 +25,5 @@ export type Variable = {
 export type ResponsePIMM = {
   hasMore: boolean;
   lastID: number | null;
-  pimmStates: PIMMState[];
+  pimms: PIMM[];
 };

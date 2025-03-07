@@ -39,13 +39,10 @@ const FilterForm: React.FC<PropsFilter> = ({
     selectedValues: string[]
   ) => {
     setFilters((prevFilters) => {
-      const newMap = new Map(prevFilters[filterKey]);
-
-      // Actualizar cada checkbox según si está en selectedValues
+      const newMap = new Map(prevFilters[filterKey]);     
       newMap.forEach((_, key) => {
         newMap.set(key, selectedValues.includes(key));
       });
-
       return { ...prevFilters, [filterKey]: newMap };
     });
   };

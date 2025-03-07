@@ -1,10 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+
 enum AccUnit {
-    SECOND = 'second',
-    MINUTE = 'minute',
-    HOUR = 'hour',
-  }
+  SECOND = 'second',
+  MINUTE = 'minute',
+  HOUR = 'hour',
+}
 export class FiltersDto {
   @IsNumber()
   @Type(() => Number)
@@ -15,19 +16,17 @@ export class FiltersDto {
   endTime: number;
 
   @IsEnum(AccUnit, {
-    message: `accUnit must be one of the following values: ${Object.values(AccUnit).join(', ')}`,
+    message: `accUnit must be one of the following values: ${Object.values(
+      AccUnit
+    ).join(', ')}`,
   })
   accUnit: 'second' | 'minute' | 'hour';
-  @IsNumber()
-  @Type(() => Number)
-  length: number;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   lastID?: number | null;
 }
-
 export class InfoSettingsDto {
   @ValidateNested()
   @Type(() => FiltersDto)

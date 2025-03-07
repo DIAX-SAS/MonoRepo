@@ -11,30 +11,19 @@ type Color = 'dark' | 'light';
 
 export interface LogoProps {
   color?: Color;
-  emblem?: boolean;
   height?: number;
   width?: number;
 }
 
 export function Logo({
   color = 'dark',
-  emblem,
   height = HEIGHT,
   width = WIDTH,
 }: LogoProps): React.JSX.Element {
   let url: string;
 
-  if (emblem) {
-    url =
-      color === 'light'
-        ? '/assets/logo-company.svg'
-        : '/assets/logo-company.svg';
-  } else {
-    url =
-      color === 'light'
-        ? '/assets/logo-company.svg'
-        : '/assets/logo-company.svg';
-  }
+  url =
+    color === 'light' ? '/assets/logo-company.svg' : '/assets/logo-company.svg';
 
   return (
     <Box alt="logo" component="img" height={height} src={url} width={width} />
@@ -44,7 +33,6 @@ export function Logo({
 export interface DynamicLogoProps {
   colorDark?: Color;
   colorLight?: Color;
-  emblem?: boolean;
   height?: number;
   width?: number;
 }

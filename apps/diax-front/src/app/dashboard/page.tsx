@@ -17,7 +17,7 @@ import { type FEPIMM, type Filters, type Parameters } from './dashboard.types';
 import { Card, CardContent, CardHeader } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { Box } from '@mui/system';
-import { InfoSettings, PIMMState } from '@repo-hub/internal';
+import { InfoSettings, PIMM } from '@repo-hub/internal';
 import mqtt from 'mqtt';
 import { ValueOf } from 'next/dist/shared/lib/constants';
 import * as React from 'react';
@@ -43,7 +43,7 @@ export default function Page(): React.JSX.Element {
 
   const auth = useAuth();
 
-  const [PIMMs, setPIMMs] = React.useState<PIMMState[]>([]);
+  const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
 
   const MQTT = React.useRef<mqtt.MqttClient | undefined>(undefined);
@@ -83,11 +83,11 @@ export default function Page(): React.JSX.Element {
   const applyFilters: (
     parameters: Parameters,
     filters: Filters,
-    PIMMs: PIMMState[]
+    PIMMs: PIMM[]
   ) => FEPIMM[] = (
     parameters: Parameters,
     filters: Filters,
-    PIMMs: PIMMState[]
+    PIMMs: PIMM[]
   ): FEPIMM[] => {
     //Offset
 
@@ -106,7 +106,7 @@ export default function Page(): React.JSX.Element {
       Array.from(filterMap.values()).every((value) => value === false)
     );
 
-    PIMMs.forEach((PIMM: PIMMState, i: number) => {
+    PIMMs.forEach((PIMM: PIMM, i: number) => {
       //CHANGE TO  for const pim in pimms, foreach
 
       const stateMap = new Map(PIMM.states.map((s) => [s.id, s]));
@@ -244,8 +244,8 @@ export default function Page(): React.JSX.Element {
       );
 
       setPIMMs((prevState) => {
-        const newPimmState = [...prevState, ...data.pimmStates];
-        return newPimmState.sort((a, b) => a.timestamp - b.timestamp);
+        const newPIMMS = [...prevState, ...data.pimms];
+        return newPIMMS.sort((a, b) => a.timestamp - b.timestamp);
       });
       setFilters((prevFilters) => {
         const updatedFilters = {
@@ -257,8 +257,8 @@ export default function Page(): React.JSX.Element {
           ordenes: new Map(prevFilters.ordenes),
         };
 
-        for (const PIMMState of data.pimmStates) {
-          const stateMap = new Map(PIMMState.states.map((s) => [s.id, s]));
+        for (const pimm of data.pimms) {
+          const stateMap = new Map(pimm.states.map((s) => [s.id, s]));
 
           const setIfDefined = (map: Map<string, boolean>, key: string) => {
             const value = String(stateMap.get(key)?.value);

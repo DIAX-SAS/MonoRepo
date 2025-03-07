@@ -1,15 +1,9 @@
 import { Schema } from 'dynamoose';
-import { PIMMState } from '@repo-hub/internal';
+import { PIMM } from '@repo-hub/internal';
 import {Item} from "dynamoose/dist/Item";
 
-// ✅ Define an interface extending Document for correct typing
-export interface PIMMDocument extends Item {
-  PLCNumber: number;
-  timestamp: number;
-  payload: PIMMState;
-}
+export interface PIMMDocument extends PIMM, Item {};
 
-// ✅ Define the Schema using nestjs-dynamoose
 export const PIMMSchema = new Schema({
   PLCNumber: {
     type: Number,
@@ -20,6 +14,6 @@ export const PIMMSchema = new Schema({
     rangeKey: true, // Sort key
   },
   payload: {
-    type: Object, // Required if you have nested JSON data
+    type: Object, 
   },
 },{ saveUnknown: true, timestamps: true });

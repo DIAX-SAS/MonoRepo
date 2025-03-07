@@ -3,8 +3,7 @@ import { PIMMController } from './pimms.controller';
 import { PIMMService } from './pimms.service';
 
 @Module({
-  imports: [
-  ],
+  imports: [],
   controllers: [PIMMController],
   providers: [PIMMService],
   exports: [PIMMService],

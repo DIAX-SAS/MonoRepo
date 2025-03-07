@@ -6,16 +6,12 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import { List as ListIcon } from '@phosphor-icons/react/dist/ssr/List';
-
-import { usePopover } from '@/hooks/use-popover';
-
 import { MobileNav } from './mobile-nav';
 import { UserPopover } from './user-popover';
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
-
-  const userPopover = usePopover<HTMLDivElement>();
+  const [open, setOpen] = React.useState<boolean>(false);
 
   return (
     <React.Fragment>
@@ -32,7 +28,12 @@ export function MainNav(): React.JSX.Element {
         <Stack
           direction="row"
           spacing={2}
-          sx={{ alignItems: 'center', justifyContent: 'space-between', minHeight: '64px', px: 2 }}
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: '64px',
+            px: 2,
+          }}
         >
           <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
             <IconButton
@@ -43,19 +44,17 @@ export function MainNav(): React.JSX.Element {
             >
               <ListIcon />
             </IconButton>
-           
           </Stack>
           <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
             <Avatar
-              onClick={userPopover.handleOpen}
-              ref={userPopover.anchorRef}
+              onClick={() => setOpen(true)}             
               src=""
               sx={{ cursor: 'pointer' }}
             />
           </Stack>
         </Stack>
       </Box>
-      <UserPopover anchorEl={userPopover.anchorRef.current} onClose={userPopover.handleClose} open={userPopover.open} />
+      <UserPopover setOpen={setOpen} open={open} />
       <MobileNav
         onClose={() => {
           setOpenNav(false);

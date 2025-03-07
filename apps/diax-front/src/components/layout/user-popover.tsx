@@ -1,5 +1,4 @@
 import { config } from '@/config';
-import { IdToken } from '@/components/types/user';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -8,25 +7,19 @@ import MenuList from '@mui/material/MenuList';
 import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
-import { jwtDecode } from 'jwt-decode';
 import * as React from 'react';
 import { useAuth } from 'react-oidc-context';
 
 export interface UserPopoverProps {
-  anchorEl: Element | null;
-  onClose: () => void;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   open: boolean;
 }
 
 export function UserPopover({
-  anchorEl,
-  onClose,
+  setOpen,
   open,
 }: UserPopoverProps): React.JSX.Element {
   const auth = useAuth();
-  const user: IdToken | null = auth.user?.id_token
-    ? jwtDecode(auth.user.id_token)
-    : null;
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     await auth.signoutRedirect({
       post_logout_redirect_uri: config.auth.cognitoDomain,
@@ -40,18 +33,17 @@ export function UserPopover({
 
   return (
     <Popover
-      anchorEl={anchorEl}
       anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-      onClose={onClose}
+      onClose={() => setOpen(false)}
       open={open}
       slotProps={{ paper: { sx: { width: '240px' } } }}
     >
       <Box sx={{ p: '16px 20px ' }}>
         <Typography variant="subtitle1">
-          {user ? user['cognito:username'] : null}
+          { auth.user?.profile["cognito:username"] as string | undefined }
         </Typography>
         <Typography color="text.secondary" variant="body2">
-          {user ? user.email : null}
+          {auth.user?.profile.email}
         </Typography>
       </Box>
       <Divider />
