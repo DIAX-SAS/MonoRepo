@@ -60,6 +60,7 @@
     "class-validator": "^latest",
     "jest": "^latest",
     "ts-jest": "^latest",
-    "typescript": "^latest"
+    "typescript": "^latest",
+    "vite": "^6.2.1"
   }
 }
