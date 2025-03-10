@@ -66,6 +66,12 @@ export default function Page(): React.JSX.Element {
     };
   };
 
+  interface GroupedFEPIMM {
+    items: FEPIMM[];
+    timestamp: number;
+    overall: { [key: string]: number };
+  }
+
   React.useEffect(() => {
     setFilteredPIMMs(applyFilters(parameters, filters, PIMMs));
   }, [PIMMs, filters]);
@@ -330,7 +336,7 @@ export default function Page(): React.JSX.Element {
     });
   }, [auth.user]);
 
-  const groupByUnitTime = (data: FEPIMM[], ms_agrupation: number) => {
+  const groupByUnitTime = (data: FEPIMM[], ms_agrupation: number) : GroupedFEPIMM[] => {
     const acc = Object.values(
       data.reduce(
         (
@@ -463,44 +469,69 @@ export default function Page(): React.JSX.Element {
 
   const lastGroupPLC = groupedFEPIMMs[groupedFEPIMMs.length - 1];
 
-  const accProducidas = lastGroupPLC?.overall.acc_producidas ?? 0;
-  const accInyecciones = lastGroupPLC?.overall.acc_Inyecciones ?? 0;
-  const accIneficiencias = lastGroupPLC?.overall.acc_Ineficiencias ?? 0;
-  const accBuenas = lastGroupPLC?.overall.acc_buenas ?? 0;
-  const accDefectoInicioTurno =
-    lastGroupPLC?.overall.acc_defectoInicioTurno ?? 0;
-  const accNoConformes = lastGroupPLC?.overall.acc_noConformes ?? 0;
-  const accNoProg = lastGroupPLC?.overall.acc_noProg ?? 0;
-  const accMaquina = lastGroupPLC?.overall.acc_maquina ?? 0;
-  const accMolde = lastGroupPLC?.overall.acc_molde ?? 0;
-  const accAbandono = lastGroupPLC?.overall.acc_abandono ?? 0;
-  const accMaterial = lastGroupPLC?.overall.acc_material ?? 0;
-  const accCalidad = lastGroupPLC?.overall.acc_calidad ?? 0;
-  const accMontaje = lastGroupPLC?.overall.acc_montaje ?? 0;
+  function calculateOEE(groupedFEPIMM: GroupedFEPIMM) {
+    let [performance, availability, quality, efficiency] = [0, 0, 0, 0];
+    if (groupedFEPIMM && groupedFEPIMM.items.length === 0) {
+      return {
+        performance: performance,
+        availability: availability,
+        quality: quality,
+        efficiency: efficiency,
+      };
+    }
 
-  const timeTotal =
-    Math.round(
-      (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
-        filteredPIMMs[0]?.timestamp) /
-        MS_CONVERSION[parameters.step]
-    ) * lastGroupPLC?.items.length || 0;
-  let totalOperationalTime = timeTotal - accNoProg;
-  let totalLosses =
-    accMaquina + accMolde + accAbandono + accMaterial + accCalidad + accMontaje;
+    const accProducidas = groupedFEPIMM?.overall.acc_producidas ?? 0;
+    const accInyecciones = groupedFEPIMM?.overall.acc_Inyecciones ?? 0;
+    const accIneficiencias = groupedFEPIMM?.overall.acc_Ineficiencias ?? 0;
+    const accBuenas = groupedFEPIMM?.overall.acc_buenas ?? 0;
+    const accDefectoInicioTurno =
+      groupedFEPIMM?.overall.acc_defectoInicioTurno ?? 0;
+    const accNoConformes = groupedFEPIMM?.overall.acc_noConformes ?? 0;
+    const accNoProg = groupedFEPIMM?.overall.acc_noProg ?? 0;
+    const accMaquina = groupedFEPIMM?.overall.acc_maquina ?? 0;
+    const accMolde = groupedFEPIMM?.overall.acc_molde ?? 0;
+    const accAbandono = groupedFEPIMM?.overall.acc_abandono ?? 0;
+    const accMaterial = groupedFEPIMM?.overall.acc_material ?? 0;
+    const accCalidad = groupedFEPIMM?.overall.acc_calidad ?? 0;
+    const accMontaje = groupedFEPIMM?.overall.acc_montaje ?? 0;
+    const timeTotal =
+      Math.round(
+        (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
+          filteredPIMMs[0]?.timestamp) /
+          MS_CONVERSION[parameters.step]
+      ) * groupedFEPIMM?.items.length || 0;
+    let totalOperationalTime = timeTotal - accNoProg;
+    let totalLosses =
+      accMaquina +
+      accMolde +
+      accAbandono +
+      accMaterial +
+      accCalidad +
+      accMontaje;
 
-  let availability =
-    (totalOperationalTime - totalLosses) / (totalOperationalTime || 1);
-  let performance = accInyecciones / (accIneficiencias + accInyecciones || 1);
-  let quality =
-    accBuenas / (accBuenas + accDefectoInicioTurno + accNoConformes || 1);
+    availability =
+      (totalOperationalTime - totalLosses) / (totalOperationalTime || 1);
+    performance = accInyecciones / (accIneficiencias + accInyecciones || 1);
+    quality =
+      accBuenas / (accBuenas + accDefectoInicioTurno + accNoConformes || 1);
 
-  // Redondeo final
-  performance = Math.round(performance * 1000) / 10;
-  availability = Math.round(availability * 1000) / 10;
-  quality = Math.round(quality * 1000) / 10;
-  let efficiency = (availability / 100) * (performance / 100) * (quality / 100);
-  efficiency = Math.round(efficiency * 1000) / 10;
+    // Redondeo final
+    performance = Math.round(performance * 1000) / 10;
+    availability = Math.round(availability * 1000) / 10;
+    quality = Math.round(quality * 1000) / 10;
+    efficiency = (availability / 100) * (performance / 100) * (quality / 100);
+    efficiency = Math.round(efficiency * 1000) / 10;
 
+    return {
+      performance: performance,
+      availability: availability,
+      quality: quality,
+      efficiency: efficiency,
+    };
+  }
+
+  const { performance, availability, quality, efficiency } =
+    calculateOEE(lastGroupPLC);
   return (
     <Grid container spacing={3}>
       <Grid size={{ lg: 12, sm: 12, xs: 12 }}>
@@ -563,12 +594,10 @@ export default function Page(): React.JSX.Element {
                   name: 'Rendimiento',
                   color: 'Red',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
+                    const { performance } = calculateOEE(groupedFEPIMM);
                     return {
                       timestamp: groupedFEPIMM.timestamp,
-                      value:
-                        groupedFEPIMM.overall.acc_Inyecciones /
-                        (groupedFEPIMM.overall.acc_Ineficiencias +
-                          groupedFEPIMM.overall.acc_Inyecciones),
+                      value: performance,
                     };
                   }),
                 },
@@ -576,9 +605,10 @@ export default function Page(): React.JSX.Element {
                   name: 'Disponibilidad',
                   color: 'Green',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
+                    const { availability } = calculateOEE(groupedFEPIMM);
                     return {
                       timestamp: groupedFEPIMM.timestamp,
-                      value: groupedFEPIMM.overall.acc_producidas,
+                      value: availability,
                     };
                   }),
                 },
@@ -586,13 +616,10 @@ export default function Page(): React.JSX.Element {
                   name: 'Calidad',
                   color: 'Blue',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
+                    const { quality } = calculateOEE(groupedFEPIMM);
                     return {
                       timestamp: groupedFEPIMM.timestamp,
-                      value:
-                        groupedFEPIMM.overall.acc_buenas /
-                        (groupedFEPIMM.overall.acc_buenas +
-                          groupedFEPIMM.overall.acc_defectoInicioTurno +
-                          groupedFEPIMM.overall.acc_noConformes),
+                      value: quality,
                     };
                   }),
                 },
@@ -600,17 +627,10 @@ export default function Page(): React.JSX.Element {
                   name: 'Eficiencia',
                   color: 'Yellow',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
+                    const { efficiency } = calculateOEE(groupedFEPIMM);
                     return {
                       timestamp: groupedFEPIMM.timestamp,
-                      value:
-                        groupedFEPIMM.overall.acc_Inyecciones /
-                          (groupedFEPIMM.overall.acc_Ineficiencias +
-                            groupedFEPIMM.overall.acc_Inyecciones) +
-                        groupedFEPIMM.overall.acc_producidas +
-                        groupedFEPIMM.overall.acc_buenas /
-                          (groupedFEPIMM.overall.acc_buenas +
-                            groupedFEPIMM.overall.acc_defectoInicioTurno +
-                            groupedFEPIMM.overall.acc_noConformes),
+                      value: efficiency,
                     };
                   }),
                 },
