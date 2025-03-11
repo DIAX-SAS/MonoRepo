@@ -115,20 +115,20 @@ export default function Page(): React.JSX.Element {
     PIMMs.forEach((PIMM: PIMM, i: number) => {
       //CHANGE TO  for const pim in pimms, foreach
 
-      const stateMap = new Map(PIMM.states.map((s) => [s.id, s]));
-      const counterMap = new Map(PIMM.counters.map((c) => [c.id, c]));
+      const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
+      const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
       let shouldContinue = allFiltersFalse;
-      if (filters.equipos.get(String(stateMap.get('MI31')?.value)))
+      if (filters.equipos.get(String(stateMap.get('Numero Inyectora')?.value)))
         shouldContinue = true;
-      if (filters.lotes.get(String(stateMap.get('ML5')?.value)))
+      if (filters.lotes.get(String(stateMap.get('Lote')?.value)))
         shouldContinue = true;
-      if (filters.materiales.get(String(stateMap.get('MI19')?.value)))
+      if (filters.materiales.get(String(stateMap.get('Material')?.value)))
         shouldContinue = true;
-      if (filters.moldes.get(String(stateMap.get('ML3')?.value)))
+      if (filters.moldes.get(String(stateMap.get('Molde')?.value)))
         shouldContinue = true;
-      if (filters.operarios.get(String(stateMap.get('MI18')?.value)))
+      if (filters.operarios.get(String(stateMap.get('Operario')?.value)))
         shouldContinue = true;
-      if (filters.ordenes.get(String(stateMap.get('ML1')?.value)))
+      if (filters.ordenes.get(String(stateMap.get('Orden')?.value)))
         shouldContinue = true;
 
       if (shouldContinue) {
@@ -174,25 +174,25 @@ export default function Page(): React.JSX.Element {
         FEPIMMs.push({
           ...PIMM,
           buenas:
-            Number(counterMap.get('ML135')?.value) -
-            Number(counterMap.get('MI101')?.value) -
-            Number(counterMap.get('MI102')?.value),
+            Number(counterMap.get('Contador Unidades')?.value) -
+            Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) -
+            Number(counterMap.get('Unidades No Conformes')?.value),
           ineficiencias:
-            (Number(counterMap.get('ML0')?.value) * 60) /
-              Number(counterMap.get('MF5')?.value) -
-            Number(counterMap.get('ML131')?.value),
+            (Number(counterMap.get('Minutos Motor Encendido')?.value) * 60) /
+              Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
+            Number(counterMap.get('Contador Inyecciones')?.value),
           producidas:
             diffDate / MS_CONVERSION[parameters.step] -
-            Number(counterMap.get('MI125')?.value) -
-            (Number(counterMap.get('MI121')?.value) +
-              Number(counterMap.get('MI122')?.value) +
-              Number(counterMap.get('MI124')?.value) +
-              Number(counterMap.get('MI127')?.value) +
-              Number(counterMap.get('MI128')?.value) +
-              Number(counterMap.get('MI123')?.value)),
+            Number(counterMap.get('Minutos No Programada')?.value) -
+            (Number(counterMap.get('Minutos Mantto Maquina')?.value) +
+              Number(counterMap.get('Minutos Mantto Molde')?.value) +
+              Number(counterMap.get('Minutos Sin Operario')?.value) +
+              Number(counterMap.get('Minutos Por Material')?.value) +
+              Number(counterMap.get('Minutos Calidad')?.value) +
+              Number(counterMap.get('Minutos Montaje')?.value)),
           maquina:
-            Number(counterMap.get('MF1')?.value) -
-            Number(counterMap.get('MF8')?.value),
+            Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
+            Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value),
         });
       }
     });
@@ -263,19 +263,19 @@ export default function Page(): React.JSX.Element {
         };
 
         for (const pimm of data.pimms) {
-          const stateMap = new Map(pimm.states.map((s) => [s.id, s]));
+          const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
 
           const setIfDefined = (map: Map<string, boolean>, key: string) => {
             const value = String(stateMap.get(key)?.value);
             if (value !== undefined) map.set(value, false);
           };
 
-          setIfDefined(updatedFilters.operarios, 'MI18');
-          setIfDefined(updatedFilters.moldes, 'ML3');
-          setIfDefined(updatedFilters.materiales, 'MI19');
-          setIfDefined(updatedFilters.lotes, 'ML5');
-          setIfDefined(updatedFilters.equipos, 'MI31');
-          setIfDefined(updatedFilters.ordenes, 'ML1');
+          setIfDefined(updatedFilters.operarios, 'Operario');
+          setIfDefined(updatedFilters.moldes, 'Molde');
+          setIfDefined(updatedFilters.materiales, 'Material');
+          setIfDefined(updatedFilters.lotes, 'Lote');
+          setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
+          setIfDefined(updatedFilters.ordenes, 'Orden');
         }
 
         return updatedFilters;
@@ -373,12 +373,12 @@ export default function Page(): React.JSX.Element {
       // Reduce function to accumulate data
       const inyecciones = grouped.items.reduce(
         (acc, item: FEPIMM) => {
-          const stateMap = new Map(item.states.map((s) => [s.id, s]));
-          const counterMap = new Map(item.counters.map((c) => [c.id, c]));
+          const stateMap = new Map(item.states.map((s) => [s.name, s]));
+          const counterMap = new Map(item.counters.map((c) => [c.name, c]));
           const moldes: Molde = {};
 
-          if (!moldes[String(stateMap.get('ML3')?.value)]) {
-            moldes[String(stateMap.get('ML3')?.value)] = {
+          if (!moldes[String(stateMap.get('Molde')?.value)]) {
+            moldes[String(stateMap.get('Molde')?.value)] = {
               acc_cav1: 0,
               acc_cav2: 0,
               acc_cav3: 0,
@@ -388,51 +388,51 @@ export default function Page(): React.JSX.Element {
               acc_gramosgeneral: 0,
             };
           }
-          moldes[String(stateMap.get('ML3')?.value)].acc_cav1 +=
-            Number(counterMap.get('MF13')?.value) || 0;
-          moldes[String(stateMap.get('ML3')?.value)].acc_cav2 +=
-            Number(counterMap.get('MF14')?.value) || 0;
-          moldes[String(stateMap.get('ML3')?.value)].acc_cav3 +=
-            Number(counterMap.get('MF15')?.value) || 0;
-          moldes[String(stateMap.get('ML3')?.value)].acc_cav4 +=
-            Number(counterMap.get('MF16')?.value) || 0;
-          moldes[String(stateMap.get('ML3')?.value)].acc_cav5 +=
-            Number(counterMap.get('MF17')?.value) || 0;
-          moldes[String(stateMap.get('ML3')?.value)].acc_cav6 +=
-            Number(counterMap.get('MF18')?.value) || 0;
-          moldes[String(stateMap.get('ML3')?.value)].acc_gramosgeneral +=
-            Number(counterMap.get('MF12')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_cav1 +=
+            Number(counterMap.get('Gramos Cavidad 1')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_cav2 +=
+            Number(counterMap.get('Gramos Cavidad 2')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_cav3 +=
+            Number(counterMap.get('Gramos Cavidad 3')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_cav4 +=
+            Number(counterMap.get('Gramos Cavidad 4')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_cav5 +=
+            Number(counterMap.get('Gramos Cavidad 5')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_cav6 +=
+            Number(counterMap.get('Gramos Cavidad 6')?.value) || 0;
+          moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral +=
+            Number(counterMap.get('Gramos Inyeccion')?.value) || 0;
 
           return {
             acc_buenas: acc.acc_buenas + (item.buenas || 0),
             acc_noConformes:
               acc.acc_noConformes +
-              (Number(counterMap.get('MI102')?.value) || 0),
+              (Number(counterMap.get('Unidades No Conformes')?.value) || 0),
             acc_defectoInicioTurno:
               acc.acc_defectoInicioTurno +
-              (Number(counterMap.get('MI101')?.value) || 0),
+              (Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) || 0),
             acc_Inyecciones:
               acc.acc_Inyecciones +
-              (Number(counterMap.get('ML131')?.value) || 0),
+              (Number(counterMap.get('Contador Inyecciones')?.value) || 0),
             acc_Ineficiencias:
               acc.acc_Ineficiencias + (Number(item.ineficiencias) || 0),
             acc_producidas: acc.acc_producidas + (item.producidas || 0),
             acc_montaje:
-              acc.acc_montaje + (Number(counterMap.get('MI123')?.value) || 0),
+              acc.acc_montaje + (Number(counterMap.get('Minutos Montaje')?.value) || 0),
             acc_calidad:
-              acc.acc_calidad + (Number(counterMap.get('MI128')?.value) || 0),
+              acc.acc_calidad + (Number(counterMap.get('Minutos Calidad')?.value) || 0),
             acc_material:
-              acc.acc_material + (Number(counterMap.get('MI127')?.value) || 0),
+              acc.acc_material + (Number(counterMap.get('Minutos Por Material')?.value) || 0),
             acc_abandono:
-              acc.acc_abandono + (Number(counterMap.get('MI124')?.value) || 0),
+              acc.acc_abandono + (Number(counterMap.get('Minutos Sin Operario')?.value) || 0),
             acc_molde:
-              acc.acc_molde + (Number(counterMap.get('MI122')?.value) || 0),
+              acc.acc_molde + (Number(counterMap.get('Minutos Mantto Molde')?.value) || 0),
             acc_maquina:
-              acc.acc_maquina + (Number(counterMap.get('MI121')?.value) || 0),
+              acc.acc_maquina + (Number(counterMap.get('Minutos Mantto Maquina')?.value) || 0),
             acc_noprog:
-              acc.acc_noprog + (Number(counterMap.get('MI125')?.value) || 0),
+              acc.acc_noprog + (Number(counterMap.get('Minutos No Programada')?.value) || 0),
             acc_motor:
-              acc.acc_motor + (Number(counterMap.get('MI100')?.value) || 0),
+              acc.acc_motor + (Number(counterMap.get('KW Motor')?.value) || 0),
             moldes: {
               ...acc.moldes,
               ...(moldes || {}),
@@ -663,7 +663,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI102'
+                                (counter) => counter.name === 'Unidades No Conformes'
                               )?.value
                             ) || 0, // Ensure valid ID
                         })),
@@ -675,7 +675,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI101'
+                                (counter) => counter.name === 'Unidades Defecto Inicio Turno'
                               )?.value
                             ) || 0, // Ensure valid ID
                         })),
@@ -745,7 +745,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI121'
+                                (counter) => counter.name === 'Minutos Mantto Maquina'
                               )?.value
                             ) || 0,
                         })),
@@ -757,7 +757,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI124'
+                                (counter) => counter.name === 'Minutos Sin Operario'
                               )?.value
                             ) || 0,
                         })),
@@ -769,7 +769,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI128'
+                                (counter) => counter.name === 'Minutos Calidad'
                               )?.value
                             ) || 0,
                         })),
@@ -781,7 +781,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI123'
+                                (counter) => counter.name === 'Minutos Montaje'
                               )?.value
                             ) || 0,
                         })),
@@ -793,7 +793,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI122'
+                                (counter) => counter.name === 'Minutos Mantto Molde'
                               )?.value
                             ) || 0,
                         })),
@@ -805,7 +805,7 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.id === 'MI127'
+                                (counter) => counter.name === 'Minutos Por Material'
                               )?.value
                             ) || 0,
                         })),
@@ -884,7 +884,7 @@ export default function Page(): React.JSX.Element {
                       value:
                         Number(
                           FEPIMM.counters.find(
-                            (counter) => counter.id === 'ML131'
+                            (counter) => counter.name === 'Contador Inyecciones'
                           )?.value
                         ) || 0, // Ensure valid ID
                     })),
@@ -932,12 +932,12 @@ export default function Page(): React.JSX.Element {
                 category: 'PIMM ' + FEPIMM.PLCNumber,
                 motor:
                   Number(
-                    FEPIMM.counters.find((counter) => counter.id === 'MI100')
+                    FEPIMM.counters.find((counter) => counter.name === 'KW Motor')
                       ?.value
                   ) || 0,
                 maquina:
                   Number(
-                    FEPIMM.counters.find((counter) => counter.id === 'MI99')
+                    FEPIMM.counters.find((counter) => counter.name === 'KW Total Maquina')
                       ?.value
                   ) || 0,
               }))}
@@ -992,7 +992,7 @@ export default function Page(): React.JSX.Element {
                     }
 
                     const counter = FEPIMM.counters.find(
-                      (counter) => counter.id === 'MF12'
+                      (counter) => counter.name === 'Gramos Inyeccion'
                     );
                     const value = counter ? Number(counter.value) : 0;
 
@@ -1067,7 +1067,7 @@ export default function Page(): React.JSX.Element {
                 children: lastGroupPLC?.items.map((FEPIMM) => {
                   const puerta =
                     Number(
-                      FEPIMM.counters.find((counter) => counter.id === 'MF8')
+                      FEPIMM.counters.find((counter) => counter.name === 'Segundos Ultimo Ciclo Puerta')
                         ?.value
                     ) || 0;
 
@@ -1076,12 +1076,12 @@ export default function Page(): React.JSX.Element {
                     children: FEPIMM.counters
                       .filter(
                         (counter) =>
-                          counter.id === 'MF1' || counter.id === 'MF8'
+                          counter.name === 'Segundos Ultimo Ciclo Total' || counter.name === 'Segundos Ultimo Ciclo Puerta'
                       )
                       .map((counter) => ({
-                        name: counter.id === 'MF1' ? 'Maquina' : 'Puerta',
+                        name: counter.name === 'Segundos Ultimo Ciclo Total' ? 'Maquina' : 'Puerta',
                         value:
-                          counter.id === 'MF1'
+                          counter.name === 'Segundos Ultimo Ciclo Total'
                             ? Number(counter.value) - puerta
                             : Number(counter.value),
                       })),
@@ -1100,12 +1100,12 @@ export default function Page(): React.JSX.Element {
 
                     const value = groupedFEPIMM.items.reduce((acc, item) => {
                       const counterMap = new Map(
-                        item.counters.map((c) => [c.id, c])
+                        item.counters.map((c) => [c.name, c])
                       );
                       return (
                         acc +
-                        Number(counterMap.get('MF1')?.value) -
-                        Number(counterMap.get('MF8')?.value)
+                        Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
+                        Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value)
                       );
                     }, 0);
 
@@ -1133,9 +1133,9 @@ export default function Page(): React.JSX.Element {
                     }
                     const value = groupedFEPIMM.items.reduce((acc, item) => {
                       const counterMap = new Map(
-                        item.counters.map((c) => [c.id, c])
+                        item.counters.map((c) => [c.name, c])
                       );
-                      return acc + Number(counterMap.get('MF8')?.value);
+                      return acc + Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value);
                     }, 0);
 
                     acc[FEPIMM.PLCNumber].push({
