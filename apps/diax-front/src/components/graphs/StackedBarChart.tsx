@@ -7,6 +7,7 @@ interface StackedBarChartProps {
   height?: number;
   keys: string[];
   data: Category[];
+  labelY: string;
 }
 
 type Category = {
@@ -20,6 +21,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   height = 400,
   keys,
   data,
+  labelY
 }) => {
   const ref = useRef<SVGSVGElement | null>(null);
 
@@ -30,7 +32,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     svg.selectAll('*').remove(); // Clear previous SVG content
 
     // Fallback data if empty
-    const formattedData = data && data.length ? data : [{ category: 'Motor', motor: 0, maquina: 0 }];
+    const formattedData =
+      data && data.length
+        ? data
+        : [{ category: 'Motor', motor: 0, maquina: 0 }];
 
     const stack = d3.stack<Category>().keys(keys);
     const stackedData = stack(formattedData);
@@ -46,7 +51,11 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       .padding(0.3);
 
     const yMax = d3.max(stackedData[stackedData.length - 1], (d) => d[1]) || 0;
-    const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([chartHeight, 0]);
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, yMax])
+      .nice()
+      .range([chartHeight, 0]);
 
     const color = d3.scaleOrdinal(d3.schemeCategory10).domain(keys);
 
@@ -101,16 +110,38 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
 
     // Y Axis
     g.append('g').call(d3.axisLeft(yScale));
+    // Y Axis Label
+    g.append('text')
+      .attr('transform', 'rotate(-90)') // Rotate text vertically
+      .attr('x', -chartHeight / 2) // Center it along the Y-axis
+      .attr('y', -margin.left + 15) // Position it left of the Y-axis
+      .attr('text-anchor', 'middle') // Center the text
+      .style('font-size', '14px')
+      .style('font-weight', 'bold')
+      .text(labelY); // Change to your desired label
 
     // Legend
-    const legend = svg.append('g').attr('transform', `translate(${chartWidth + margin.left + 10}, 20)`);
+    const legend = svg
+      .append('g')
+      .attr('transform', `translate(${chartWidth + margin.left + 10}, 20)`);
 
     keys.forEach((key, i) => {
-      const legendRow = legend.append('g').attr('transform', `translate(0, ${i * 20})`);
+      const legendRow = legend
+        .append('g')
+        .attr('transform', `translate(0, ${i * 20})`);
 
-      legendRow.append('rect').attr('width', 15).attr('height', 15).attr('fill', color(key)!);
+      legendRow
+        .append('rect')
+        .attr('width', 15)
+        .attr('height', 15)
+        .attr('fill', color(key)!);
 
-      legendRow.append('text').attr('x', 20).attr('y', 12).style('font-size', '12px').text(key);
+      legendRow
+        .append('text')
+        .attr('x', 20)
+        .attr('y', 12)
+        .style('font-size', '12px')
+        .text(key);
     });
   }, [width, height, keys, data]);
 
