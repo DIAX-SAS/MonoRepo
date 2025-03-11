@@ -1,13 +1,10 @@
 import boto3
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from boto3.dynamodb.conditions import Key
 from itertools import islice
-import logging
 # AWS clients
 dynamodb = boto3.resource("dynamodb")
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 def chunked_iterable(iterable, size):
     """Splits list into chunks of given size."""
@@ -33,17 +30,13 @@ def check_partition_exists(table, pimm_number):
     return len(response.get("Items", [])) > 0
 
 
-def lambda_handler(event, context):
-
-    logger.info(event)
-    logger.info(context)
- 
+def lambda_handler(event, context):   
     
     # Table names
-    SOURCE_TABLE_NAME = event["detail"]["SOURCE_TABLE_NAME"]
-    TARGET_TABLE_NAME = event["detail"]["TARGET_TABLE_NAME"]
-    MS_CONVERSION = event["detail"]["MS_CONVERSION"]
-    TIME_EVENT = int(datetime.fromisoformat(event["time"].replace("Z", "+00:00")).timestamp() * 1000)
+    SOURCE_TABLE_NAME = event["SOURCE_TABLE_NAME"]
+    TARGET_TABLE_NAME = event["TARGET_TABLE_NAME"]
+    MS_CONVERSION = event["MS_CONVERSION"]
+    TIME_EVENT = int(datetime.now().timestamp() * 1000)
 
     source_table = dynamodb.Table(SOURCE_TABLE_NAME)
     target_table = dynamodb.Table(TARGET_TABLE_NAME)
@@ -55,8 +48,8 @@ def lambda_handler(event, context):
     false_count = 0
     partitions = []
 
-    while false_count < 5:
-        if check_partition_exists(SOURCE_TABLE_NAME, pimm_number):
+    while false_count < 5 and partitions:
+        if check_partition_exists(source_table, pimm_number):
             partitions.append(pimm_number)
             false_count = 0  # Reset false counter since we found a valid partition
         else:
