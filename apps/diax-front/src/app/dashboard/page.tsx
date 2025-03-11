@@ -336,7 +336,10 @@ export default function Page(): React.JSX.Element {
     });
   }, [auth.user]);
 
-  const groupByUnitTime = (data: FEPIMM[], ms_agrupation: number) : GroupedFEPIMM[] => {
+  const groupByUnitTime = (
+    data: FEPIMM[],
+    ms_agrupation: number
+  ): GroupedFEPIMM[] => {
     const acc = Object.values(
       data.reduce(
         (
@@ -532,6 +535,7 @@ export default function Page(): React.JSX.Element {
 
   const { performance, availability, quality, efficiency } =
     calculateOEE(lastGroupPLC);
+
   return (
     <Grid container spacing={3}>
       <Grid size={{ lg: 12, sm: 12, xs: 12 }}>
@@ -588,11 +592,11 @@ export default function Page(): React.JSX.Element {
                 { category: 'Calidad', value: Number(quality ?? 0) },
               ]}
             ></PolarChart>
+
             <TimeSeriesLineChart
               series={[
                 {
                   name: 'Rendimiento',
-                  color: 'Red',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
                     const { performance } = calculateOEE(groupedFEPIMM);
                     return {
@@ -603,7 +607,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Disponibilidad',
-                  color: 'Green',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
                     const { availability } = calculateOEE(groupedFEPIMM);
                     return {
@@ -614,7 +617,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Calidad',
-                  color: 'Blue',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
                     const { quality } = calculateOEE(groupedFEPIMM);
                     return {
@@ -625,7 +627,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Eficiencia',
-                  color: 'Yellow',
                   data: groupedFEPIMMs.map((groupedFEPIMM) => {
                     const { efficiency } = calculateOEE(groupedFEPIMM);
                     return {
@@ -635,6 +636,7 @@ export default function Page(): React.JSX.Element {
                   }),
                 },
               ]}
+              labelY="OEE(%)"
             />
 
             {
@@ -642,7 +644,7 @@ export default function Page(): React.JSX.Element {
             }
             <MultiLayerPieChart
               data={{
-                name: 'root',
+                name: 'Producción',
                 children: [
                   {
                     name: 'Buenas',
@@ -688,7 +690,6 @@ export default function Page(): React.JSX.Element {
               series={[
                 {
                   name: 'Buenas',
-                  color: 'blue',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_buenas,
@@ -696,7 +697,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Malas',
-                  color: 'yellow',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value:
@@ -706,7 +706,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Arranque',
-                  color: 'black',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_noConformes,
@@ -714,20 +713,20 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Rechazo',
-                  color: 'white',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_defectoInicioTurno,
                   })),
                 },
               ]}
+              labelY="Piezas (Unidades)"
             ></TimeSeriesLineChart>
             {
               //Disponibilidad
             }
             <MultiLayerPieChart
               data={{
-                name: 'root',
+                name: 'Disponible',
                 children: [
                   {
                     name: 'Productivo',
@@ -818,10 +817,10 @@ export default function Page(): React.JSX.Element {
             />
 
             <TimeSeriesLineChart
+              labelY="Piezas (Unidades)"
               series={[
                 {
                   name: 'Productivo',
-                  color: 'green',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_producidas,
@@ -829,7 +828,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Maquina',
-                  color: 'red',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_maquina,
@@ -837,7 +835,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'SinOperario',
-                  color: 'black',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_abandono,
@@ -845,7 +842,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Calidad',
-                  color: 'white',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_calidad,
@@ -853,7 +849,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Montaje',
-                  color: 'blue',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_montaje,
@@ -861,7 +856,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Molde',
-                  color: 'pink',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_molde,
@@ -869,7 +863,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Material',
-                  color: 'black',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_material,
@@ -908,21 +901,20 @@ export default function Page(): React.JSX.Element {
             />
 
             <TimeSeriesLineChart
+              labelY="Piezas (Unidades)"
               series={[
                 {
                   name: 'Producido',
-                  color: 'Red',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
-                    value: FEPIMM.overall.acc_inyecciones,
+                    value: FEPIMM.overall.acc_Inyecciones,
                   })),
                 },
                 {
                   name: 'Ineficiencias',
-                  color: 'green',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
-                    value: FEPIMM.overall.acc_ineficiencias,
+                    value: FEPIMM.overall.acc_Ineficiencias,
                   })),
                 },
               ]}
@@ -935,6 +927,7 @@ export default function Page(): React.JSX.Element {
               //Energía
             }
             <StackedBarChart
+              labelY="Energía (kWh)"
               data={lastGroupPLC?.items.map((FEPIMM, index) => ({
                 category: 'PIMM ' + FEPIMM.PLCNumber,
                 motor:
@@ -952,10 +945,10 @@ export default function Page(): React.JSX.Element {
             />
 
             <TimeSeriesLineChart
+              labelY="Energía (kWh)"
               series={[
                 {
                   name: 'Motor',
-                  color: 'red',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_motor,
@@ -963,7 +956,6 @@ export default function Page(): React.JSX.Element {
                 },
                 {
                   name: 'Maquina',
-                  color: 'green',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
                     value: FEPIMM.overall.acc_maquina,
@@ -976,7 +968,7 @@ export default function Page(): React.JSX.Element {
             }
             <MultiLayerPieChart
               data={{
-                name: 'Root',
+                name: 'Total',
                 children: lastGroupPLC?.items.map((FEPIMM) => ({
                   name: `PIMM ${FEPIMM.PLCNumber}`,
                   children: FEPIMM.counters
@@ -991,6 +983,7 @@ export default function Page(): React.JSX.Element {
               }}
             />
             <TimeSeriesLineChart
+              labelY="Material (g)"
               series={Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   groupedFEPIMM.items.forEach((FEPIMM) => {
@@ -1023,7 +1016,7 @@ export default function Page(): React.JSX.Element {
             }
             <MultiLayerPieChart
               data={{
-                name: 'Root',
+                name: 'Total',
                 children: Object.entries(
                   lastGroupPLC?.overall.moldes || {}
                 ).map(([molde, cavidades]) => ({
@@ -1039,6 +1032,7 @@ export default function Page(): React.JSX.Element {
             />
 
             <TimeSeriesLineChart
+              labelY="Material (g)"
               series={Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   Object.entries(groupedFEPIMM.overall.moldes).forEach(
@@ -1069,7 +1063,7 @@ export default function Page(): React.JSX.Element {
             }
             <MultiLayerPieChart
               data={{
-                name: 'Root',
+                name: 'Ciclos',
                 children: lastGroupPLC?.items.map((FEPIMM) => {
                   const puerta =
                     Number(
@@ -1096,6 +1090,7 @@ export default function Page(): React.JSX.Element {
               }}
             />
             <TimeSeriesLineChart
+              labelY="Maquina (Ciclos)"
               series={Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   groupedFEPIMM.items.forEach((FEPIMM) => {
@@ -1129,6 +1124,7 @@ export default function Page(): React.JSX.Element {
               }))}
             />
             <TimeSeriesLineChart
+              labelY="Puerta (Ciclos)"
               series={Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   groupedFEPIMM.items.forEach((FEPIMM) => {

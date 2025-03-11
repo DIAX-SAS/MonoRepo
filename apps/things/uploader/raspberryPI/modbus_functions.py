@@ -238,10 +238,10 @@ def send_to_iot_core(data, topic):
     mqtt_client.configureOfflinePublishQueueing(-1)  # Cola ilimitada
     mqtt_client.configureDrainingFrequency(2)  # Frecuencia de drenaje de la cola
     mqtt_client.configureConnectDisconnectTimeout(
-        10
+        5
     )  # Tiempo de espera para conectar/desconectar
     mqtt_client.configureMQTTOperationTimeout(
-        5
+        3
     )  # Tiempo de espera para operaciones MQTT
 
     mqtt_client.connect()
