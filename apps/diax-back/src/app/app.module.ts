@@ -3,7 +3,8 @@ import { AppController } from './app.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DynamooseModule } from 'nestjs-dynamoose';
 import { CognitoAuthModule } from '@nestjs-cognito/auth';
-import { PimmsModule } from '@backend/services/pimms/pimms.module';
+import { PimmsModule } from '../services/pimms/pimms.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

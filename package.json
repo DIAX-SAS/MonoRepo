@@ -51,6 +51,7 @@
     "@eslint/compat": "^latest",
     "@eslint/eslintrc": "^latest",
     "@eslint/js": "^latest",
+    "@nestjs/testing": "^11.0.11",
     "@nx/eslint-plugin": "^latest",
     "@nx/jest": "^latest",
     "@types/d3": "^7.4.3",
@@ -58,9 +59,11 @@
     "@types/node": "^latest",
     "class-transformer": "^latest",
     "class-validator": "^latest",
+    "eslint": "^9.22.0",
     "jest": "^latest",
     "ts-jest": "^latest",
     "typescript": "^latest",
+    "typescript-eslint": "^8.26.1",
     "vite": "^6.2.1"
   }
 }

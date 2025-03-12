@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InfoSettingsDto } from '@backend/services/pimms/pimms.dto';
-import { getSecrets, ResponsePIMM, type PIMM } from '@repo-hub/internal';
+import { InfoSettingsDto } from './pimms.dto';
+import { getSecrets, ResponsePIMM } from '@repo-hub/internal';
 import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import * as dynamoose from 'dynamoose';

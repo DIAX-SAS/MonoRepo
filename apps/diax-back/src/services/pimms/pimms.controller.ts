@@ -5,8 +5,8 @@ import {
   Get
 } from '@nestjs/common';
 import { PIMMService } from './pimms.service';
-import { InfoSettingsDto } from '@backend/services/pimms/pimms.dto';
-import { Authentication, CognitoUser } from '@nestjs-cognito/auth';
+import { InfoSettingsDto } from './pimms.dto';
+import { Authentication } from '@nestjs-cognito/auth';
 
 @Controller('pimms')
 
