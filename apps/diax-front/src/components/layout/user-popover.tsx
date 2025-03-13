@@ -1,4 +1,4 @@
-import { config } from '@/config';
+import { config } from '../../config';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';

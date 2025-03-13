@@ -13,7 +13,7 @@ import {
 import { List as ListIcon } from '@phosphor-icons/react';
 import RouterLink from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Logo } from '@/components/core/logo';
+import { Logo } from '../../components/core/logo';
 import { UserPopover } from './user-popover';
 import type { Icon } from '@phosphor-icons/react/dist/lib/types';
 import { ChartPie as ChartPieIcon } from '@phosphor-icons/react/dist/ssr/ChartPie';
@@ -46,24 +46,11 @@ function isNavItemActive({
   disabled,
   external,
   href,
-  matcher,
   pathname,
 }: Pick<NavItemConfig, 'disabled' | 'external' | 'href' | 'matcher'> & {
   pathname: string;
 }): boolean {
   if (disabled || !href || external) {
-    return false;
-  }
-
-  if (matcher) {
-    if (matcher.type === 'startsWith') {
-      return pathname.startsWith(matcher.href);
-    }
-
-    if (matcher.type === 'equals') {
-      return pathname === matcher.href;
-    }
-
     return false;
   }
 
@@ -73,8 +60,8 @@ function isNavItemActive({
 // Reducer for managing navigation state
 const initialState = { openNav: false, openUser: false };
 function reducer(
-  state: { openNav: any; openUser: any },
-  action: { type: any }
+  state: { openNav: boolean; openUser: boolean },
+  action: { type: string }
 ) {
   switch (action.type) {
     case 'TOGGLE_NAV':
@@ -204,7 +191,7 @@ interface NavItemProps {
   external?: boolean;
   href?: string;
   icon?: string;
-  matcher?: any;
+  matcher?: string;
   pathname: string;
   title: string;
 }
@@ -222,7 +209,6 @@ function NavItem({
     disabled,
     external,
     href,
-    matcher,
     pathname,
   });
   const Icon = icon ? navIcons[icon] : null;

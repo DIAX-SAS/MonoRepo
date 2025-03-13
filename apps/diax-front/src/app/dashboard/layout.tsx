@@ -2,8 +2,8 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import GlobalStyles from '@mui/material/GlobalStyles';
-import { AuthGuard } from '@/components/auth/auth-guard';
-import { Navigation } from '@/components/layout/main-nav';
+import { AuthGuard } from '../../components/auth/auth-guard';
+import { Navigation } from '../../components/layout/main-nav';
 
 interface LayoutProps {
   children: React.ReactNode;

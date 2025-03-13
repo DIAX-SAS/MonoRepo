@@ -1,25 +1,23 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import FilterForm from '@/components/filters/filter-form';
-import CardFactor from '@/components/graphs/CardFactor';
-import TimeSeriesLineChart from '@/components/graphs/LineChart';
-import MultiLayerPieChart from '@/components/graphs/MultiLayerPieChart';
-import PolarChart from '@/components/graphs/PolarChart';
-import StackedBarChart from '@/components/graphs/StackedBarChart';
-import Table from '@/components/graphs/Table';
-import { config } from '@/config';
+import FilterForm from '../../components/filters/filter-form';
+import CardFactor from '../../components/graphs/CardFactor';
+import TimeSeriesLineChart from '../../components/graphs/LineChart';
+import MultiLayerPieChart from '../../components/graphs/MultiLayerPieChart';
+import PolarChart from '../../components/graphs/PolarChart';
+import StackedBarChart from '../../components/graphs/StackedBarChart';
+import Table from '../../components/graphs/Table';
+import { config } from '../../config';
 import {
   fetchCredentialsCore,
   fetchData,
-} from '@/data-access/diax-back/diax-back';
+} from '../../data-access/diax-back/diax-back';
 import { type FEPIMM, type Filters, type Parameters } from './dashboard.types';
 import { Card, CardContent, CardHeader } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { Box } from '@mui/system';
 import { InfoSettings, PIMM } from '@repo-hub/internal';
 import mqtt from 'mqtt';
-import { ValueOf } from 'next/dist/shared/lib/constants';
 import * as React from 'react';
 import { JSONTree } from 'react-json-tree';
 import { useAuth } from 'react-oidc-context';
@@ -46,7 +44,8 @@ export default function Page(): React.JSX.Element {
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
 
-  const MQTT = React.useRef<mqtt.MqttClient | undefined>(undefined);
+  const MQTTRef = React.useRef<mqtt.MqttClient | undefined>(undefined);
+  const accessTokenRef = React.useRef<string | undefined>(auth.user?.access_token);
 
   const MS_CONVERSION: { [key in 'second' | 'minute' | 'hour']: number } = {
     second: 1000,
@@ -54,8 +53,30 @@ export default function Page(): React.JSX.Element {
     hour: 1000 * 60 * 60,
   };
 
+  type AccumulatedData = {
+    acc_buenas: number;
+    acc_noConformes: number;
+    acc_defectoInicioTurno: number;
+    acc_Inyecciones: number;
+    acc_Ineficiencias: number;
+    acc_producidas: number;
+    acc_montaje: number;
+    acc_calidad: number;
+    acc_material: number;
+    acc_abandono: number;
+    acc_molde: number;
+    acc_maquina: number;
+    acc_noProg: number;
+    acc_motor: number;
+    moldes: Record<string, WeighMetric>;
+  };
+
   type Molde = {
-    [key: string]: {
+    [key: string]: WeighMetric;
+  };
+
+  type WeighMetric =
+    {
       acc_cav1: number;
       acc_cav2: number;
       acc_cav3: number;
@@ -64,287 +85,283 @@ export default function Page(): React.JSX.Element {
       acc_cav6: number;
       acc_gramosgeneral: number;
     };
-  };
+
 
   interface GroupedFEPIMM {
     items: FEPIMM[];
     timestamp: number;
-    overall: { [key: string]: number };
+    overall: AccumulatedData;
   }
 
   React.useEffect(() => {
-    setFilteredPIMMs(applyFilters(parameters, filters, PIMMs));
+    const applyFilters: (filters: Filters, PIMMs: PIMM[]) => FEPIMM[] = (
+      filters: Filters,
+      PIMMs: PIMM[]
+    ): FEPIMM[] => {
+      //Offset
+
+      if (PIMMs.length == 0) return [];
+      const FEPIMMs: FEPIMM[] = [];
+      const offsets: Record<
+        string,
+        Record<
+          string,
+          { start: number; end: number; value: number; previousValue: number }
+        >
+      > = {};
+
+      const allFiltersFalse = Object.values(filters).every((filterMap) =>
+        Array.from(filterMap.values()).every((value) => value === false)
+      );
+      const isOffset =
+        PIMMs?.length > 1 &&
+        new Date(PIMMs.at(0)?.timestamp ?? 0).getSeconds() ===
+        new Date(PIMMs.at(-1)?.timestamp ?? 0).getSeconds();
+
+      PIMMs.forEach((PIMM: PIMM, i: number) => {
+        //CHANGE TO  for const pim in pimms, foreach
+
+        const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
+        const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
+        let shouldContinue = allFiltersFalse;
+        if (
+          filters.equipos.get(String(stateMap.get('Numero Inyectora')?.value))
+        )
+          shouldContinue = true;
+        if (filters.lotes.get(String(stateMap.get('Lote')?.value)))
+          shouldContinue = true;
+        if (filters.materiales.get(String(stateMap.get('Material')?.value)))
+          shouldContinue = true;
+        if (filters.moldes.get(String(stateMap.get('Molde')?.value)))
+          shouldContinue = true;
+        if (filters.operarios.get(String(stateMap.get('Operario')?.value)))
+          shouldContinue = true;
+        if (filters.ordenes.get(String(stateMap.get('Orden')?.value)))
+          shouldContinue = true;
+
+        if (shouldContinue) {
+          if (isOffset) {
+            const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
+            if (!statePIMMNumber) return;
+
+            if (!offsets[statePIMMNumber]) {
+              offsets[statePIMMNumber] = {};
+            }
+
+            for (const offsetKey of config.offsetKeys) {
+              const counter = counterMap.get(offsetKey);
+              const counterValue = counter ? Number(counter.value) : 0;
+
+              if (!offsets[statePIMMNumber][offsetKey]) {
+                offsets[statePIMMNumber][offsetKey] = {
+                  start: 0,
+                  end: 0,
+                  value: 0,
+                  previousValue: 0,
+                };
+              }
+
+              const offsetEntry = offsets[statePIMMNumber][offsetKey];
+
+              if (i === 0 && offsetEntry.start > 0) {
+                offsetEntry.start = counterValue;
+                if (counter) counter.value = '0';
+              }
+
+              if (counterValue < offsetEntry.previousValue) {
+                offsetEntry.end = offsetEntry.previousValue;
+                offsetEntry.value += offsetEntry.end - offsetEntry.start;
+                offsetEntry.start = 0;
+                if (counter) counter.value = String(offsetEntry.value);
+              }
+
+              offsetEntry.previousValue = counterValue;
+            }
+          }
+
+          FEPIMMs.push({
+            ...PIMM,
+            buenas:
+              Number(counterMap.get('Contador Unidades')?.value) -
+              Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) -
+              Number(counterMap.get('Unidades No Conformes')?.value),
+            ineficiencias:
+              (Number(counterMap.get('Minutos Motor Encendido')?.value) * 60) /
+              Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
+              Number(counterMap.get('Contador Inyecciones')?.value),
+            maquina:
+              Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
+              Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value),
+          });
+        }
+      });
+
+      return FEPIMMs;
+    };
+    setFilteredPIMMs(applyFilters(filters, PIMMs));
   }, [PIMMs, filters]);
 
   React.useEffect(() => {
+
+    const connectToIoT = async () => {
+      if (MQTTRef.current && MQTTRef.current.connected) return MQTTRef.current;
+      const response = await fetchCredentialsCore({ accessToken: accessTokenRef.current });
+      const { sessionToken } = response.token;
+
+      console.log('Conectando a AWS IoT...');
+      const url = config.socketURL;
+      MQTTRef.current = mqtt.connect(url, {
+        username: 'the_username',
+        password: sessionToken,
+        clientId: `clientId-${Date.now()}-${Math.random()
+          .toString(16)
+          .substring(2)}`,
+        protocolId: 'MQTT',
+        protocolVersion: 5,
+        clean: true,
+        reconnectPeriod: 0,
+        connectTimeout: 5000,
+        keepalive: 30,
+      });
+
+      const client = MQTTRef.current;
+
+      client.on('connect', () => {
+        console.log('Conectado a AWS IoT!');
+        client.subscribe('PIMMStateTopic', (err) => {
+          if (err) {
+            console.error('Error al suscribirse:', err);
+          } else {
+            console.log('Suscrito a PIMMStateTopic');
+          }
+        });
+      });
+
+      client.on('message', (topic, message) => {
+        const data = JSON.parse(message.toString());
+        setPIMMs((prev) => {
+          const newData = [...prev, data];
+          newData.shift();
+          return newData;
+        });
+      });
+
+      client.on('error', (err) => {
+        console.error('Error en la conexión MQTTRef:', err);
+      });
+
+      client.on('close', () => {
+        console.log('Conexión MQTTRef cerrada');
+      });
+    };
+
+    const fetchPIMMs = async (parameters: Parameters) => {
+      function generateTimestamps(
+        startTimestamp: number,
+        endTimestamp: number,
+        intervalInMLSeconds: number
+      ) {
+        const timestamps = [];
+        for (
+          let current = startTimestamp;
+          current <= endTimestamp;
+          current += intervalInMLSeconds
+        ) {
+          timestamps.push(current);
+        }
+        return timestamps;
+      }
+
+      // Calculate number of pages and start keys
+      setPIMMs([]);
+      setFilters({
+        equipos: new Map<string, boolean>(),
+        operarios: new Map<string, boolean>(),
+        ordenes: new Map<string, boolean>(),
+        lotes: new Map<string, boolean>(),
+        moldes: new Map<string, boolean>(),
+        materiales: new Map<string, boolean>(),
+      });
+      const partitions = generateTimestamps(
+        parameters.startDate,
+        parameters.endDate,
+        6 * 60 * 1000
+      );
+      let beforePartition = parameters.startDate;
+      partitions.map(async (partition) => {
+        const partitionParameters: InfoSettings = {
+          filters: {
+            initTime: beforePartition,
+            endTime: partition,
+            accUnit: parameters.step,
+            lastID: null,
+          },
+        };
+        beforePartition = partition;
+        const data = await fetchData({ accessToken: accessTokenRef.current }, partitionParameters);
+
+        setPIMMs((prevState) => {
+          const newPIMMS = [...prevState, ...data.pimms];
+          return newPIMMS.sort((a, b) => a.timestamp - b.timestamp);
+        });
+        setFilters((prevFilters) => {
+          const updatedFilters = {
+            operarios: new Map(prevFilters.operarios),
+            moldes: new Map(prevFilters.moldes),
+            materiales: new Map(prevFilters.materiales),
+            lotes: new Map(prevFilters.lotes),
+            equipos: new Map(prevFilters.equipos),
+            ordenes: new Map(prevFilters.ordenes),
+          };
+
+          for (const pimm of data.pimms) {
+            const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
+
+            const setIfDefined = (map: Map<string, boolean>, key: string) => {
+              const value = String(stateMap.get(key)?.value);
+              if (value !== undefined) map.set(value, false);
+            };
+
+            setIfDefined(updatedFilters.operarios, 'Operario');
+            setIfDefined(updatedFilters.moldes, 'Molde');
+            setIfDefined(updatedFilters.materiales, 'Material');
+            setIfDefined(updatedFilters.lotes, 'Lote');
+            setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
+            setIfDefined(updatedFilters.ordenes, 'Orden');
+          }
+
+          return updatedFilters;
+        });
+      });
+    };
+
     fetchPIMMs(parameters);
+
     if (parameters.live) {
       connectToIoT();
     } else {
-      MQTT.current?.removeAllListeners();
-      MQTT.current?.end();
+      MQTTRef.current?.removeAllListeners();
+      MQTTRef.current?.end();
     }
   }, [parameters]);
 
-  const applyFilters: (
-    parameters: Parameters,
-    filters: Filters,
-    PIMMs: PIMM[]
-  ) => FEPIMM[] = (
-    parameters: Parameters,
-    filters: Filters,
-    PIMMs: PIMM[]
-  ): FEPIMM[] => {
-    //Offset
 
-    if (PIMMs.length == 0) return [];
-    const FEPIMMs: FEPIMM[] = [];
-    const offsets: Record<
-      string,
-      Record<
-        string,
-        { start: number; end: number; value: number; previousValue: number }
-      >
-    > = {};
 
-    const diffDate = PIMMs[PIMMs.length - 1].timestamp - PIMMs[0].timestamp;
-    const allFiltersFalse = Object.values(filters).every((filterMap) =>
-      Array.from(filterMap.values()).every((value) => value === false)
-    );
 
-    PIMMs.forEach((PIMM: PIMM, i: number) => {
-      //CHANGE TO  for const pim in pimms, foreach
-
-      const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
-      const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
-      let shouldContinue = allFiltersFalse;
-      if (filters.equipos.get(String(stateMap.get('Numero Inyectora')?.value)))
-        shouldContinue = true;
-      if (filters.lotes.get(String(stateMap.get('Lote')?.value)))
-        shouldContinue = true;
-      if (filters.materiales.get(String(stateMap.get('Material')?.value)))
-        shouldContinue = true;
-      if (filters.moldes.get(String(stateMap.get('Molde')?.value)))
-        shouldContinue = true;
-      if (filters.operarios.get(String(stateMap.get('Operario')?.value)))
-        shouldContinue = true;
-      if (filters.ordenes.get(String(stateMap.get('Orden')?.value)))
-        shouldContinue = true;
-
-      if (shouldContinue) {
-        if (parameters.endDate != parameters.startDate) {
-          const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
-          if (!statePIMMNumber) return;
-
-          if (!offsets[statePIMMNumber]) {
-            offsets[statePIMMNumber] = {};
-          }
-
-          for (const offsetKey of config.offsetKeys) {
-            const counter = counterMap.get(offsetKey);
-            const counterValue = counter ? Number(counter.value) : 0;
-
-            if (!offsets[statePIMMNumber][offsetKey]) {
-              offsets[statePIMMNumber][offsetKey] = {
-                start: 0,
-                end: 0,
-                value: 0,
-                previousValue: 0,
-              };
-            }
-
-            const offsetEntry = offsets[statePIMMNumber][offsetKey];
-
-            if (i === 0 && offsetEntry.start > 0) {
-              offsetEntry.start = counterValue;
-              if (counter) counter.value = '0';
-            }
-
-            if (counterValue < offsetEntry.previousValue) {
-              offsetEntry.end = offsetEntry.previousValue;
-              offsetEntry.value += offsetEntry.end - offsetEntry.start;
-              offsetEntry.start = 0;
-              if (counter) counter.value = String(offsetEntry.value);
-            }
-
-            offsetEntry.previousValue = counterValue;
-          }
-        }
-
-        FEPIMMs.push({
-          ...PIMM,
-          buenas:
-            Number(counterMap.get('Contador Unidades')?.value) -
-            Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) -
-            Number(counterMap.get('Unidades No Conformes')?.value),
-          ineficiencias:
-            (Number(counterMap.get('Minutos Motor Encendido')?.value) * 60) /
-              Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
-            Number(counterMap.get('Contador Inyecciones')?.value),
-          producidas:
-            diffDate / MS_CONVERSION[parameters.step] -
-            Number(counterMap.get('Minutos No Programada')?.value) -
-            (Number(counterMap.get('Minutos Mantto Maquina')?.value) +
-              Number(counterMap.get('Minutos Mantto Molde')?.value) +
-              Number(counterMap.get('Minutos Sin Operario')?.value) +
-              Number(counterMap.get('Minutos Por Material')?.value) +
-              Number(counterMap.get('Minutos Calidad')?.value) +
-              Number(counterMap.get('Minutos Montaje')?.value)),
-          maquina:
-            Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
-            Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value),
-        });
-      }
-    });
-
-    return FEPIMMs;
-  };
-
-  const fetchPIMMs = async (parameters: Parameters) => {
-    function generateTimestamps(
-      startTimestamp: number,
-      endTimestamp: number,
-      intervalInMLSeconds: number
-    ) {
-      const timestamps = [];
-      for (
-        let current = startTimestamp;
-        current <= endTimestamp;
-        current += intervalInMLSeconds
-      ) {
-        timestamps.push(current);
-      }
-      return timestamps;
-    }
-
-    // Calculate number of pages and start keys
-    setPIMMs([]);
-    setFilters({
-      equipos: new Map<string, boolean>(),
-      operarios: new Map<string, boolean>(),
-      ordenes: new Map<string, boolean>(),
-      lotes: new Map<string, boolean>(),
-      moldes: new Map<string, boolean>(),
-      materiales: new Map<string, boolean>(),
-    });
-    const partitions = generateTimestamps(
-      parameters.startDate,
-      parameters.endDate,
-      6 * 60 * 1000
-    );
-    let beforePartition = parameters.startDate;
-    partitions.map(async (partition) => {
-      const partitionParameters: InfoSettings = {
-        filters: {
-          initTime: beforePartition,
-          endTime: partition,
-          accUnit: parameters.step,
-          lastID: null,
-        },
-      };
-      beforePartition = partition;
-      const data = await fetchData(
-        partitionParameters,
-        auth.user?.access_token
-      );
-
-      setPIMMs((prevState) => {
-        const newPIMMS = [...prevState, ...data.pimms];
-        return newPIMMS.sort((a, b) => a.timestamp - b.timestamp);
-      });
-      setFilters((prevFilters) => {
-        const updatedFilters = {
-          operarios: new Map(prevFilters.operarios),
-          moldes: new Map(prevFilters.moldes),
-          materiales: new Map(prevFilters.materiales),
-          lotes: new Map(prevFilters.lotes),
-          equipos: new Map(prevFilters.equipos),
-          ordenes: new Map(prevFilters.ordenes),
-        };
-
-        for (const pimm of data.pimms) {
-          const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
-
-          const setIfDefined = (map: Map<string, boolean>, key: string) => {
-            const value = String(stateMap.get(key)?.value);
-            if (value !== undefined) map.set(value, false);
-          };
-
-          setIfDefined(updatedFilters.operarios, 'Operario');
-          setIfDefined(updatedFilters.moldes, 'Molde');
-          setIfDefined(updatedFilters.materiales, 'Material');
-          setIfDefined(updatedFilters.lotes, 'Lote');
-          setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
-          setIfDefined(updatedFilters.ordenes, 'Orden');
-        }
-
-        return updatedFilters;
-      });
-    });
-  };
-
-  const connectToIoT = React.useCallback(async () => {
-    if (MQTT.current && MQTT.current.connected) return MQTT.current;
-    const token = auth.user?.access_token ?? '';
-    const response = await fetchCredentialsCore(token);
-    const { sessionToken, expiration } = response.token;
-
-    console.log('Conectando a AWS IoT...');
-    const url = config.socketURL;
-    MQTT.current = mqtt.connect(url, {
-      username: 'the_username',
-      password: sessionToken,
-      clientId: `clientId-${Date.now()}-${Math.random()
-        .toString(16)
-        .substring(2)}`,
-      protocolId: 'MQTT',
-      protocolVersion: 5,
-      clean: true,
-      reconnectPeriod: 0,
-      connectTimeout: 5000,
-      keepalive: 30,
-    });
-
-    const client = MQTT.current;
-
-    client.on('connect', () => {
-      console.log('Conectado a AWS IoT!');
-      client.subscribe('PIMMStateTopic', (err) => {
-        if (err) {
-          console.error('Error al suscribirse:', err);
-        } else {
-          console.log('Suscrito a PIMMStateTopic');
-        }
-      });
-    });
-
-    client.on('message', (topic, message) => {
-      const data = JSON.parse(message.toString());
-      setPIMMs((prev) => {
-        const newData = [...prev, data];
-        newData.shift();
-        return newData;
-      });
-    });
-
-    client.on('error', (err) => {
-      console.error('Error en la conexión MQTT:', err);
-    });
-
-    client.on('close', () => {
-      console.log('Conexión MQTT cerrada');
-    });
-  }, [auth.user]);
 
   const groupByUnitTime = (
     data: FEPIMM[],
     ms_agrupation: number
   ): GroupedFEPIMM[] => {
-    const acc = Object.values(
+    const accGlobal = Object.values(
       data.reduce(
         (
-          acc: {
-            [key: number]: { timestamp: number; items: FEPIMM[]; overall: any };
+          accGlobal: {
+            [key: number]: {
+              timestamp: number;
+              items: FEPIMM[];
+              overall: AccumulatedData;
+            };
           },
           item
         ) => {
@@ -352,27 +369,43 @@ export default function Page(): React.JSX.Element {
           const timestampKey = Math.floor(item.timestamp / ms_agrupation);
 
           // Initialize group if not present
-          if (!acc[timestampKey]) {
-            acc[timestampKey] = {
+          if (!accGlobal[timestampKey]) {
+            accGlobal[timestampKey] = {
               timestamp: timestampKey,
               items: [],
-              overall: {},
+              overall: {
+                acc_buenas: 0,
+                acc_noConformes: 0,
+                acc_defectoInicioTurno: 0,
+                acc_Inyecciones: 0,
+                acc_Ineficiencias: 0,
+                acc_producidas: 0,
+                acc_montaje: 0,
+                acc_calidad: 0,
+                acc_material: 0,
+                acc_abandono: 0,
+                acc_molde: 0,
+                acc_maquina: 0,
+                acc_noProg: 0,
+                acc_motor: 0,
+                moldes: {},
+              },
             };
           }
 
           // Add item to the corresponding group
-          acc[timestampKey].items.push(item);
+          accGlobal[timestampKey].items.push(item);
 
-          return acc;
+          return accGlobal;
         },
         {}
       )
     );
 
-    acc.forEach((grouped) => {
+    accGlobal.forEach((grouped) => {
       // Reduce function to accumulate data
       const inyecciones = grouped.items.reduce(
-        (acc, item: FEPIMM) => {
+        (acc, item: FEPIMM): AccumulatedData => {
           const stateMap = new Map(item.states.map((s) => [s.name, s]));
           const counterMap = new Map(item.counters.map((c) => [c.name, c]));
           const moldes: Molde = {};
@@ -403,6 +436,21 @@ export default function Page(): React.JSX.Element {
           moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral +=
             Number(counterMap.get('Gramos Inyeccion')?.value) || 0;
 
+          const diffDate =
+            grouped.items.length > 1
+              ? (grouped.items.at(-1)?.timestamp ?? 0) -
+              (grouped.items.at(0)?.timestamp ?? 0)
+              : 0;
+
+          item.producidas =
+            diffDate / MS_CONVERSION[parameters.step] -
+            Number(counterMap.get('Minutos No Programada')?.value) -
+            (Number(counterMap.get('Minutos Mantto Maquina')?.value) +
+              Number(counterMap.get('Minutos Mantto Molde')?.value) +
+              Number(counterMap.get('Minutos Sin Operario')?.value) +
+              Number(counterMap.get('Minutos Por Material')?.value) +
+              Number(counterMap.get('Minutos Calidad')?.value) +
+              Number(counterMap.get('Minutos Montaje')?.value));
           return {
             acc_buenas: acc.acc_buenas + (item.buenas || 0),
             acc_noConformes:
@@ -410,7 +458,8 @@ export default function Page(): React.JSX.Element {
               (Number(counterMap.get('Unidades No Conformes')?.value) || 0),
             acc_defectoInicioTurno:
               acc.acc_defectoInicioTurno +
-              (Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) || 0),
+              (Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) ||
+                0),
             acc_Inyecciones:
               acc.acc_Inyecciones +
               (Number(counterMap.get('Contador Inyecciones')?.value) || 0),
@@ -418,19 +467,26 @@ export default function Page(): React.JSX.Element {
               acc.acc_Ineficiencias + (Number(item.ineficiencias) || 0),
             acc_producidas: acc.acc_producidas + (item.producidas || 0),
             acc_montaje:
-              acc.acc_montaje + (Number(counterMap.get('Minutos Montaje')?.value) || 0),
+              acc.acc_montaje +
+              (Number(counterMap.get('Minutos Montaje')?.value) || 0),
             acc_calidad:
-              acc.acc_calidad + (Number(counterMap.get('Minutos Calidad')?.value) || 0),
+              acc.acc_calidad +
+              (Number(counterMap.get('Minutos Calidad')?.value) || 0),
             acc_material:
-              acc.acc_material + (Number(counterMap.get('Minutos Por Material')?.value) || 0),
+              acc.acc_material +
+              (Number(counterMap.get('Minutos Por Material')?.value) || 0),
             acc_abandono:
-              acc.acc_abandono + (Number(counterMap.get('Minutos Sin Operario')?.value) || 0),
+              acc.acc_abandono +
+              (Number(counterMap.get('Minutos Sin Operario')?.value) || 0),
             acc_molde:
-              acc.acc_molde + (Number(counterMap.get('Minutos Mantto Molde')?.value) || 0),
+              acc.acc_molde +
+              (Number(counterMap.get('Minutos Mantto Molde')?.value) || 0),
             acc_maquina:
-              acc.acc_maquina + (Number(counterMap.get('Minutos Mantto Maquina')?.value) || 0),
-            acc_noprog:
-              acc.acc_noprog + (Number(counterMap.get('Minutos No Programada')?.value) || 0),
+              acc.acc_maquina +
+              (Number(counterMap.get('Minutos Mantto Maquina')?.value) || 0),
+            acc_noProg:
+              acc.acc_noProg +
+              (Number(counterMap.get('Minutos No Programada')?.value) || 0),
             acc_motor:
               acc.acc_motor + (Number(counterMap.get('KW Motor')?.value) || 0),
             moldes: {
@@ -452,7 +508,7 @@ export default function Page(): React.JSX.Element {
           acc_abandono: 0,
           acc_molde: 0,
           acc_maquina: 0,
-          acc_noprog: 0,
+          acc_noProg: 0,
           acc_motor: 0,
           moldes: {},
         }
@@ -461,7 +517,7 @@ export default function Page(): React.JSX.Element {
       grouped.overall = inyecciones;
     });
 
-    return acc;
+    return accGlobal;
   };
 
   // Ejem
@@ -483,7 +539,6 @@ export default function Page(): React.JSX.Element {
       };
     }
 
-    const accProducidas = groupedFEPIMM?.overall.acc_producidas ?? 0;
     const accInyecciones = groupedFEPIMM?.overall.acc_Inyecciones ?? 0;
     const accIneficiencias = groupedFEPIMM?.overall.acc_Ineficiencias ?? 0;
     const accBuenas = groupedFEPIMM?.overall.acc_buenas ?? 0;
@@ -501,10 +556,10 @@ export default function Page(): React.JSX.Element {
       Math.round(
         (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
           filteredPIMMs[0]?.timestamp) /
-          MS_CONVERSION[parameters.step]
+        MS_CONVERSION[parameters.step]
       ) * groupedFEPIMM?.items.length || 0;
-    let totalOperationalTime = timeTotal - accNoProg;
-    let totalLosses =
+    const totalOperationalTime = timeTotal - accNoProg;
+    const totalLosses =
       accMaquina +
       accMolde +
       accAbandono +
@@ -663,7 +718,8 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.name === 'Unidades No Conformes'
+                                (counter) =>
+                                  counter.name === 'Unidades No Conformes'
                               )?.value
                             ) || 0, // Ensure valid ID
                         })),
@@ -675,7 +731,9 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.name === 'Unidades Defecto Inicio Turno'
+                                (counter) =>
+                                  counter.name ===
+                                  'Unidades Defecto Inicio Turno'
                               )?.value
                             ) || 0, // Ensure valid ID
                         })),
@@ -745,7 +803,8 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.name === 'Minutos Mantto Maquina'
+                                (counter) =>
+                                  counter.name === 'Minutos Mantto Maquina'
                               )?.value
                             ) || 0,
                         })),
@@ -757,7 +816,8 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.name === 'Minutos Sin Operario'
+                                (counter) =>
+                                  counter.name === 'Minutos Sin Operario'
                               )?.value
                             ) || 0,
                         })),
@@ -793,7 +853,8 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.name === 'Minutos Mantto Molde'
+                                (counter) =>
+                                  counter.name === 'Minutos Mantto Molde'
                               )?.value
                             ) || 0,
                         })),
@@ -805,7 +866,8 @@ export default function Page(): React.JSX.Element {
                           value:
                             Number(
                               FEPIMM.counters.find(
-                                (counter) => counter.name === 'Minutos Por Material'
+                                (counter) =>
+                                  counter.name === 'Minutos Por Material'
                               )?.value
                             ) || 0,
                         })),
@@ -932,13 +994,15 @@ export default function Page(): React.JSX.Element {
                 category: 'PIMM ' + FEPIMM.PLCNumber,
                 motor:
                   Number(
-                    FEPIMM.counters.find((counter) => counter.name === 'KW Motor')
-                      ?.value
+                    FEPIMM.counters.find(
+                      (counter) => counter.name === 'KW Motor'
+                    )?.value
                   ) || 0,
                 maquina:
                   Number(
-                    FEPIMM.counters.find((counter) => counter.name === 'KW Total Maquina')
-                      ?.value
+                    FEPIMM.counters.find(
+                      (counter) => counter.name === 'KW Total Maquina'
+                    )?.value
                   ) || 0,
               }))}
               keys={['motor', 'maquina']}
@@ -1036,15 +1100,15 @@ export default function Page(): React.JSX.Element {
               series={Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   Object.entries(groupedFEPIMM.overall.moldes).forEach(
-                    ([molde, cavidades]) => {
-                      const cavidadesTyped = cavidades as ValueOf<Molde>;
+                    ([molde, WeighMetrics]) => {
+                      const cavidades = WeighMetrics as WeighMetric;
                       if (!acc[molde]) {
                         acc[molde] = [];
                       }
 
                       acc[molde].push({
                         timestamp: groupedFEPIMM.timestamp,
-                        value: cavidadesTyped.acc_gramosgeneral ?? 0,
+                        value: cavidades.acc_gramosgeneral ?? 0,
                       });
                     }
                   );
@@ -1067,8 +1131,10 @@ export default function Page(): React.JSX.Element {
                 children: lastGroupPLC?.items.map((FEPIMM) => {
                   const puerta =
                     Number(
-                      FEPIMM.counters.find((counter) => counter.name === 'Segundos Ultimo Ciclo Puerta')
-                        ?.value
+                      FEPIMM.counters.find(
+                        (counter) =>
+                          counter.name === 'Segundos Ultimo Ciclo Puerta'
+                      )?.value
                     ) || 0;
 
                   return {
@@ -1076,10 +1142,14 @@ export default function Page(): React.JSX.Element {
                     children: FEPIMM.counters
                       .filter(
                         (counter) =>
-                          counter.name === 'Segundos Ultimo Ciclo Total' || counter.name === 'Segundos Ultimo Ciclo Puerta'
+                          counter.name === 'Segundos Ultimo Ciclo Total' ||
+                          counter.name === 'Segundos Ultimo Ciclo Puerta'
                       )
                       .map((counter) => ({
-                        name: counter.name === 'Segundos Ultimo Ciclo Total' ? 'Maquina' : 'Puerta',
+                        name:
+                          counter.name === 'Segundos Ultimo Ciclo Total'
+                            ? 'Maquina'
+                            : 'Puerta',
                         value:
                           counter.name === 'Segundos Ultimo Ciclo Total'
                             ? Number(counter.value) - puerta
@@ -1104,8 +1174,12 @@ export default function Page(): React.JSX.Element {
                       );
                       return (
                         acc +
-                        Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
-                        Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value)
+                        Number(
+                          counterMap.get('Segundos Ultimo Ciclo Total')?.value
+                        ) -
+                        Number(
+                          counterMap.get('Segundos Ultimo Ciclo Puerta')?.value
+                        )
                       );
                     }, 0);
 
@@ -1135,7 +1209,12 @@ export default function Page(): React.JSX.Element {
                       const counterMap = new Map(
                         item.counters.map((c) => [c.name, c])
                       );
-                      return acc + Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value);
+                      return (
+                        acc +
+                        Number(
+                          counterMap.get('Segundos Ultimo Ciclo Puerta')?.value
+                        )
+                      );
                     }, 0);
 
                     acc[FEPIMM.PLCNumber].push({

@@ -2,11 +2,9 @@
 
 import { useEffect, Suspense } from "react";
 import { redirect, useSearchParams } from "next/navigation";
-import { useAuth } from "react-oidc-context";
 
 const RedirectPage = () => {
-  const auth = useAuth();
-  const searchParams = useSearchParams(); // ✅ Next.js way
+  const searchParams = useSearchParams(); 
 
   useEffect(() => {
     const code = searchParams.get("code");

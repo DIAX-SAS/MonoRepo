@@ -3,7 +3,7 @@ import RouterLink from 'next/link';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { DynamicLogo } from '@/components/core/logo';
+import { DynamicLogo } from '../../components/core/logo';
 
 export interface LayoutProps {
   children: React.ReactNode;

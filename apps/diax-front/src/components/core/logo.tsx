@@ -20,9 +20,8 @@ export function Logo({
   height = HEIGHT,
   width = WIDTH,
 }: LogoProps): React.JSX.Element {
-  let url: string;
 
-  url =
+  const url =
     color === 'light' ? '/assets/logo-company.svg' : '/assets/logo-company.svg';
 
   return (

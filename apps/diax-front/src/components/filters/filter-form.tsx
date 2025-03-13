@@ -1,4 +1,4 @@
-import { type Filters, type Parameters } from '@/app/dashboard/dashboard.types';
+import { type Filters, type Parameters } from '../../app/dashboard/dashboard.types';
 import React from 'react';
 import {
   Checkbox,

@@ -1,8 +1,8 @@
 'use client';
 import * as React from 'react';
-import '@/styles/global.css';
+import '../styles/global.css';
 import { AuthProvider } from 'react-oidc-context';
-import { config } from '@/config';
+import { config } from '../config';
 
 interface LayoutProps {
   children: React.ReactNode;

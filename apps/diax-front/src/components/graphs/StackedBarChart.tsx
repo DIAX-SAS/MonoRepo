@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as d3 from 'd3';
 import React, { useEffect, useRef } from 'react';
 
@@ -70,7 +69,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       .data(stackedData)
       .enter()
       .append('g')
-      .attr('fill', (d) => color(d.key)!)
+      .attr('fill', (d) => color(d.key))
       .selectAll('rect')
       .data((d) => d)
       .enter()
@@ -134,7 +133,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         .append('rect')
         .attr('width', 15)
         .attr('height', 15)
-        .attr('fill', color(key)!);
+        .attr('fill', color(key));
 
       legendRow
         .append('text')
@@ -143,7 +142,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         .style('font-size', '12px')
         .text(key);
     });
-  }, [width, height, keys, data]);
+  }, [width, height, keys, data, labelY]);
 
   return <svg ref={ref}></svg>;
 };

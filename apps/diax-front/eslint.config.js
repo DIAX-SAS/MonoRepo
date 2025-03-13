@@ -11,12 +11,17 @@ const compat = new FlatCompat({
 
 module.exports = [
   ...fixupConfigRules(compat.extends('next')),
-
   ...fixupConfigRules(compat.extends('next/core-web-vitals')),
-
   ...baseConfig,
   ...nx.configs['flat/react-typescript'],
   {
     ignores: ['.next/**/*'],
   },
+  ...fixupConfigRules([
+    {
+      "rules": {
+        "@next/next/no-html-link-for-pages": ["off"]
+      }
+    }
+  ]),
 ];

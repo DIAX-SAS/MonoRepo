@@ -1,17 +1,14 @@
-import { config } from '@/config';
+import { config } from '../../config';
 import { InfoSettings, ResponsePIMM } from '@repo-hub/internal';
 
 const URL = config.backendURL;
 
-export async function fetchData(
-  infoSettings: InfoSettings,
-  accessToken: string | undefined
-) {
+export async function fetchData(auth: { accessToken: string | undefined }, infoSettings: InfoSettings) {
   const response = await fetch(URL.concat('/pimms'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${auth.accessToken}`,
     },
     body: JSON.stringify(infoSettings),
   });
@@ -23,19 +20,19 @@ export async function fetchData(
   return responseContent;
 }
 
-export async function fetchCredentialsCore(accessToken: string | undefined) { 
-    const response = await fetch(URL.concat('/pimms/credentials'), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+export async function fetchCredentialsCore(auth: { accessToken: string | undefined }) {
+  const response = await fetch(URL.concat('/pimms/credentials'), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth.accessToken}`,
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = response.json();
-    return data;
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 
+  const data = await response.json();
+  return data;
 }
