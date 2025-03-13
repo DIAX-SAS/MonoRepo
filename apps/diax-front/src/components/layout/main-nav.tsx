@@ -31,11 +31,9 @@ interface NavItemConfig {
   title?: string;
   disabled?: boolean;
   external?: boolean;
-  label?: string;
   icon?: string;
   href?: string;
   items?: NavItemConfig[];
-  matcher?: { type: 'startsWith' | 'equals'; href: string };
 }
 
 const navItems = [
@@ -47,13 +45,12 @@ function isNavItemActive({
   external,
   href,
   pathname,
-}: Pick<NavItemConfig, 'disabled' | 'external' | 'href' | 'matcher'> & {
+}: Pick<NavItemConfig, 'disabled' | 'external' | 'href'> & {
   pathname: string;
 }): boolean {
   if (disabled || !href || external) {
     return false;
   }
-
   return pathname === href;
 }
 
@@ -104,7 +101,7 @@ export function Navigation(): React.JSX.Element {
             px: 2,
           }}
         >
-          <IconButton onClick={() => dispatch({ type: 'TOGGLE_NAV' })}>
+          <IconButton title='Start Navigation' aria-label='Start Navigation' onClick={() => dispatch({ type: 'TOGGLE_NAV' })}>
             <ListIcon />
           </IconButton>
           <Avatar
@@ -169,14 +166,7 @@ function NavContent() {
           sx={{ listStyle: 'none', m: 0, p: 0 }}
         >
           {navItems.map(({ key, ...item }) => (
-            <NavItem
-              disabled={undefined}
-              external={undefined}
-              matcher={undefined}
-              key={key}
-              pathname={pathname}
-              {...item}
-            />
+            <NavItem key={key} pathname={pathname} {...item} />
           ))}
         </Stack>
       </Box>
@@ -191,7 +181,6 @@ interface NavItemProps {
   external?: boolean;
   href?: string;
   icon?: string;
-  matcher?: string;
   pathname: string;
   title: string;
 }
@@ -201,7 +190,6 @@ function NavItem({
   external,
   href,
   icon,
-  matcher,
   pathname,
   title,
 }: NavItemProps) {
@@ -212,14 +200,19 @@ function NavItem({
     pathname,
   });
   const Icon = icon ? navIcons[icon] : null;
-
   return (
     <li>
       <Box
+        id='nav-item'
+        aria-label="Navigation Item"
         component={href ? (external ? 'a' : RouterLink) : 'button'}
         href={href}
+        title='Navigation Item'
         target={external ? '_blank' : undefined}
         rel={external ? 'noreferrer' : undefined}
+        role={href ? 'link' : 'button'} 
+        aria-disabled={disabled ? 'true' : 'false'} 
+        tabIndex={disabled ? -1 : 0} 
         sx={{
           alignItems: 'center',
           borderRadius: 1,
@@ -234,6 +227,7 @@ function NavItem({
           p: '6px 16px',
           textDecoration: 'none',
           bgcolor: active ? 'primary.main' : 'transparent',
+          '&:focus': { outline: '2px solid #1976d2' }, // 👈 Adds visible focus styles
         }}
       >
         {Icon && <Icon fontSize="24px" weight={active ? 'fill' : undefined} />}

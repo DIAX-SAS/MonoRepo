@@ -35,8 +35,7 @@ const MountingTable: React.FC<MountingTableProps> = ({  data }) => {
       component={Paper}
       sx={{ maxWidth: 600, mx: "auto", my: 3, p: 2 }}
     >
-      <Typography
-        variant="h6"
+      <Typography       
         align="center"
         sx={{ fontWeight: "bold", mb: 2 }}
       >

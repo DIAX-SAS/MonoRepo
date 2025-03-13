@@ -36,7 +36,7 @@ export default function CardFactor({
               >
                 {title}
               </Typography>
-              <Typography variant="h4">{value}%</Typography>
+              <Typography >{value}%</Typography>
             </Stack>
             <Avatar
               sx={{
@@ -49,7 +49,16 @@ export default function CardFactor({
             </Avatar>
           </Stack>
           <div>
-            <LinearProgress value={value} variant="determinate" />
+            <LinearProgress
+              value={value}
+              variant="determinate"
+              role="progressbar" 
+              aria-valuenow={value}
+              aria-valuemin={0} 
+              aria-valuemax={100} 
+              aria-label="Loading progress" 
+            />
+
           </div>
         </Stack>
       </CardContent>
