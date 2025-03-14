@@ -1,15 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Avatar,
-  Box,
-  IconButton,
-  Stack,
-  Divider,
-  Drawer,
-  Typography,
-} from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import Typography from '@mui/material/Typography';
 import { List as ListIcon } from '@phosphor-icons/react';
 import RouterLink from 'next/link';
 import { usePathname } from 'next/navigation';

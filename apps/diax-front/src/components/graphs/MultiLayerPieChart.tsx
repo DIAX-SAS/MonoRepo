@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as d3 from "d3";
 import React, { useEffect, useRef } from "react";
 
@@ -28,13 +27,13 @@ const colors = {
 
 const colorKeys = Object.keys(colors);
 
-const getColor = (d: any) => {
+const getColor = (d: d3.HierarchyRectangularNode<ChartNode>) => {
   if (d.depth === 0) return "white"; // Root node is white
   let parentIndex = 0;
   if (d.parent && d.parent.parent) {
-    parentIndex = d.parent.parent.children.indexOf(d.parent);
+    parentIndex = d.parent.parent?.children?.indexOf(d.parent) ?? 0;
   } else if (d.parent) {
-    parentIndex = d.parent.children.indexOf(d);
+    parentIndex = d.parent?.children?.indexOf(d) ?? 0;
   }
   const colorKey = colorKeys[parentIndex % colorKeys.length] as keyof typeof colors;
   return colors[colorKey][Math.min(d.depth - 1, colors[colorKey].length - 1)];
@@ -117,13 +116,13 @@ const MultiLayerPieChart: React.FC<PieChartProps> = ({
       .enter()
       .append("path")
       .attr("d", arc as any)
-      .style("fill", getColor)
+      .style("fill", (d) => getColor(d as d3.HierarchyRectangularNode<ChartNode>))
       .style("stroke", "#fff")
       .style("cursor", "pointer")
       .on("mouseover", function (event, d) {
         d3.select(this).style("opacity", 0.7);
         tooltip.style("opacity", 1);
-        tooltip.style("background", getColor(d));
+        tooltip.style("background", getColor(d as d3.HierarchyRectangularNode<ChartNode>));
         tooltip
           .html(
             `${d.data.name}: ${d.value || 0} (${(

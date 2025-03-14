@@ -13,9 +13,11 @@ import {
   fetchData,
 } from '../../data-access/diax-back/diax-back';
 import { type FEPIMM, type Filters, type Parameters } from './dashboard.types';
-import { Card, CardContent, CardHeader } from '@mui/material';
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
 import Grid from '@mui/material/Grid2';
-import { Box } from '@mui/system';
+import  Box  from "@mui/material/Box";
 import { InfoSettings, PIMM } from '@repo-hub/internal';
 import mqtt from 'mqtt';
 import * as React from 'react';
@@ -91,6 +93,15 @@ export default function Page(): React.JSX.Element {
   React.useEffect(() => {
     accessTokenRef.current = auth.user?.access_token;
   }, [auth.user]);
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") {
+      console.log("🚀 Next.js en PRODUCCIÓN");
+    } else {
+      console.log("🔧 Next.js en DESARROLLO");
+    }
+    console.log(process.env.NODE_ENV)
+  }, []);
 
   React.useEffect(() => {
     const applyFilters: (filters: Filters, PIMMs: PIMM[]) => FEPIMM[] = (
