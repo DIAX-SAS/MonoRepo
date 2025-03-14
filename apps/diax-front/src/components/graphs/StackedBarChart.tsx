@@ -5,11 +5,11 @@ interface StackedBarChartProps {
   width?: number;
   height?: number;
   keys: string[];
-  data: Category[];
+  data: Category[] | undefined;
   labelY: string;
 }
 
-type Category = {
+export type Category = {
   category: string;
   motor: number;
   maquina: number;
@@ -26,6 +26,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
 
   useEffect(() => {
     if (!ref.current) return;
+    if (!data) return;
 
     const svg = d3.select(ref.current);
     svg.selectAll('*').remove(); // Clear previous SVG content

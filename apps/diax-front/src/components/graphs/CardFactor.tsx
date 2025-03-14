@@ -10,7 +10,7 @@ import { ListBullets as ListBulletsIcon } from "@phosphor-icons/react/dist/ssr/L
 
 export interface TasksProgressProps {
   sx?: SxProps;
-  value: number;
+  value: number | undefined;
   title: string;
 }
 
@@ -50,7 +50,7 @@ export default function CardFactor({
           </Stack>
           <div>
             <LinearProgress
-              value={value}
+              value={value ?? 0}
               variant="determinate"
               role="progressbar" 
               aria-valuenow={value}

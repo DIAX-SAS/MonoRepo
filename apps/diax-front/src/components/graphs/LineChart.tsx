@@ -6,7 +6,7 @@ interface DataPoint {
   value: number;
 }
 
-interface LineSeries {
+export interface LineSeries {
   name: string;
   data: DataPoint[];
 }
@@ -14,7 +14,7 @@ interface LineSeries {
 interface TimeSeriesLineChartProps {
   width?: number;
   height?: number;
-  series: LineSeries[];
+  series: LineSeries[] | undefined;
   labelY: string;
 }
 
@@ -29,19 +29,24 @@ const colors = {
 const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, height = 400, series, labelY }) => {
   const ref = useRef<SVGSVGElement | null>(null);
 
-  const margin = { top: 30, right: 100, bottom: 60, left: 70 };
-  const chartWidth = width - margin.left - margin.right;
-  const chartHeight = height - margin.top - margin.bottom;
 
-  const allData = useMemo(() => series.flatMap((s) => s.data), [series]);
-  const xExtent = d3.extent(allData, (d) => new Date(d.timestamp * 1000)) as [Date, Date];
-  const yMax = d3.max(allData, (d) => d.value) || 0;
-
-  const xScale = useMemo(() => d3.scaleTime().domain(xExtent).range([0, chartWidth]), [xExtent, chartWidth]);
-  const yScale = useMemo(() => d3.scaleLinear().domain([0, yMax]).nice().range([chartHeight, 0]), [yMax, chartHeight]);
 
   useEffect(() => {
-    if (!ref.current || series.length === 0) return;
+
+    if (!ref.current) return;
+
+    if (!series) return;
+
+    const margin = { top: 30, right: 100, bottom: 60, left: 70 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
+    const allData = series.flatMap((s) => s.data);
+    const xExtent = d3.extent(allData, (d) => new Date(d.timestamp * 1000)) as [Date, Date];
+    const yMax = d3.max(allData, (d) => d.value) || 0;
+
+    const xScale = d3.scaleTime().domain(xExtent).range([0, chartWidth]);
+    const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([chartHeight, 0]);
 
     const svg = d3.select(ref.current);
     svg.selectAll("*").remove();
@@ -154,7 +159,7 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, 
     svg.on("dblclick", () => {
       svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
     });
-  }, [width, height, series, xScale, yScale, margin.left, margin.top, chartHeight, labelY, chartWidth]);
+  }, [width, height, series, labelY]);
 
   return <svg ref={ref}></svg>;
 };

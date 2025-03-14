@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import { FEPIMM } from "../../app/dashboard/dashboard.types";
 
 interface MountingTableProps {  
-  data: FEPIMM[];
+  data: FEPIMM[] | undefined;
 }
 
 const MountingTable: React.FC<MountingTableProps> = ({  data }) => {

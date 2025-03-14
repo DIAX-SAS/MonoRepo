@@ -4,10 +4,10 @@ import React, { useEffect, useRef } from "react";
 interface PieChartProps {
   width?: number;
   height?: number;
-  data: ChartNode;
+  data: ChartNode | undefined;
 }
 
-interface ChartNode {
+export interface ChartNode {
   name: string;
   value?: number;
   children?: ChartNode[];
@@ -77,6 +77,7 @@ const MultiLayerPieChart: React.FC<PieChartProps> = ({
 
   useEffect(() => {
     if (!ref.current) return;
+    if(!data) return;
     const svg = d3.select(ref.current);
     svg.selectAll("*").remove();
 

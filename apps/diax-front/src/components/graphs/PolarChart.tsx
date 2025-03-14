@@ -4,10 +4,10 @@ import React, { useEffect, useRef } from 'react';
 interface PolarChartProps {
   width?: number;
   height?: number;
-  data: Category[];
+  data: CategoryPolar[] | undefined;
 }
 
-type Category = {
+export type CategoryPolar= {
   category: string;
   value: number;
 };
@@ -21,6 +21,7 @@ const PolarChart: React.FC<PolarChartProps> = ({
 
   useEffect(() => {
     if (!ref.current) return;
+    if(!data) return;
     const svg = d3.select(ref.current);
     svg.selectAll('*').remove(); // Clear previous chart
 
