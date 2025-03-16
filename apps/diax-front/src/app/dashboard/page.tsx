@@ -1162,12 +1162,12 @@ export default function Page(): React.JSX.Element {
         });
         setFilters((prevFilters) => {
           const updatedFilters = {
-            operarios: new Map(prevFilters.operarios),
+            equipos: new Map(prevFilters.equipos),
+            operarios: new Map(prevFilters.operarios),          
+            ordenes: new Map(prevFilters.ordenes),
+            lotes: new Map(prevFilters.lotes),                       
             moldes: new Map(prevFilters.moldes),
             materiales: new Map(prevFilters.materiales),
-            lotes: new Map(prevFilters.lotes),
-            equipos: new Map(prevFilters.equipos),
-            ordenes: new Map(prevFilters.ordenes),
           };
 
           for (const pimm of data.pimms) {
@@ -1231,7 +1231,26 @@ export default function Page(): React.JSX.Element {
     readonly Table?: { data: FEPIMM[] };
   };
 
-
+  const theme = {
+    scheme: 'monokai',
+    author: 'wimer hazenberg (http://www.monokai.nl)',
+    base00: '#272822',
+    base01: '#383830',
+    base02: '#49483e',
+    base03: '#75715e',
+    base04: '#a59f85',
+    base05: '#f8f8f2',
+    base06: '#f5f4f1',
+    base07: '#f9f8f5',
+    base08: '#f92672',
+    base09: '#fd971f',
+    base0A: '#f4bf75',
+    base0B: '#a6e22e',
+    base0C: '#a1efe4',
+    base0D: '#66d9ef',
+    base0E: '#ae81ff',
+    base0F: '#cc6633',
+  };
 
   return (
     <Grid container spacing={3}>
@@ -1254,7 +1273,7 @@ export default function Page(): React.JSX.Element {
         <Card>
           <CardHeader title="Information" />
           <CardContent>
-            <JSONTree data={filteredPIMMs} theme="monokai" />
+            <JSONTree data={filteredPIMMs} theme={theme} invertTheme={true} />
 
             {
               //Indicadores

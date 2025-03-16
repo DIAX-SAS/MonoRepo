@@ -1,10 +1,14 @@
-import { type Filters, type Parameters } from '../../app/dashboard/dashboard.types';
+import {
+  type Filters,
+  type Parameters,
+} from '../../app/dashboard/dashboard.types';
 import React from 'react';
 import {
   Checkbox,
   CheckboxGroup,
   DateRangePicker,
   Panel,
+  PanelGroup,
   SelectPicker,
 } from 'rsuite';
 
@@ -39,7 +43,7 @@ const FilterForm: React.FC<PropsFilter> = ({
     selectedValues: string[]
   ) => {
     setFilters((prevFilters) => {
-      const newMap = new Map(prevFilters[filterKey]);     
+      const newMap = new Map(prevFilters[filterKey]);
       newMap.forEach((_, key) => {
         newMap.set(key, selectedValues.includes(key));
       });
@@ -50,7 +54,7 @@ const FilterForm: React.FC<PropsFilter> = ({
   return (
     <>
       <DateRangePicker
-        format="MM/dd/yyyy hh:mm aa"
+        format="dd MMM yyyy hh:mm:ss aa"
         showMeridiem
         onChange={(value) => {
           const [initTime, endTime] = value ?? [];
@@ -91,27 +95,33 @@ const FilterForm: React.FC<PropsFilter> = ({
         style={{ minWidth: '150px' }}
       />
 
-      {Object.entries(filters).map(([filterKey, filterMap]) => (
-        <Panel key={filterKey} bordered header={filterKey.toUpperCase()}>
-          <CheckboxGroup
-            value={Array.from(filterMap.entries())
-              .filter(([_, value]) => value)
-              .map(([key]) => key)}
-            onChange={(selectedValues) =>
-              handleCheckboxChange(
-                filterKey as keyof Filters,
-                selectedValues as string[]
-              )
-            }
+      <PanelGroup accordion>
+        {Object.entries(filters).map(([filterKey, filterMap]) => (
+          <Panel
+            key={filterKey}
+            bordered
+            header={<h6>{filterKey.toUpperCase()}</h6>}
           >
-            {Array.from(filterMap.keys()).map((key) => (
-              <Checkbox key={filterKey + key} value={key}>
-                {key}
-              </Checkbox>
-            ))}
-          </CheckboxGroup>
-        </Panel>
-      ))}
+            <CheckboxGroup
+              value={Array.from(filterMap.entries())
+                .filter(([_, value]) => value)
+                .map(([key]) => key)}
+              onChange={(selectedValues) =>
+                handleCheckboxChange(
+                  filterKey as keyof Filters,
+                  selectedValues as string[]
+                )
+              }
+            >
+              {Array.from(filterMap.keys()).map((key) => (
+                <Checkbox key={filterKey + key} value={key}>
+                  {key}
+                </Checkbox>
+              ))}
+            </CheckboxGroup>
+          </Panel>
+        ))}
+      </PanelGroup>
     </>
   );
 };

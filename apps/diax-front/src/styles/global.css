@@ -1,5 +1,10 @@
-/* Remove if fonts are not used */
-@import "rsuite/dist/rsuite.css";
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import 'rsuite/DateRangePicker/styles/index.css';
+@import 'rsuite/Checkbox/styles/index.css';
+@import 'rsuite/CheckboxGroup/styles/index.css';
+@import 'rsuite/SelectPicker/styles/index.css';
+@import 'rsuite/Panel/styles/index.css';
+@import 'rsuite/PanelGroup/styles/index.css';
 
 #root{ padding: 10px; }
 /* Variables */
@@ -15,6 +20,7 @@
 
 html {
   height: 100%;
+  
 }
 
 body {
