@@ -2,21 +2,10 @@
 
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import { useEffect } from "react";
-import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
-export function SignInForm(): React.JSX.Element | null {
-  const router = useRouter();
-  const { status } = useSession(); // ✅ Get session status & errors
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/dashboard");
-    }
-  }, [status, router]);
-
-  if (status === "loading") return null; // ✅ Prevent flickering
+export function SignInForm(): React.JSX.Element | null { 
 
   return (
     <Stack spacing={4}>

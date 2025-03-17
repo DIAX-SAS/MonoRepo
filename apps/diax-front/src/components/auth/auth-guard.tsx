@@ -22,13 +22,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
       return;
     }
 
-    if (status === "authenticated" && pathname === "/") {
+    if (status === "authenticated" && (pathname === "/" || pathname === "/sign-in")) {
       console.log("[AuthGuard]: User is authenticated, redirecting to /dashboard");
       router.replace("/dashboard");
     }
   }, [status, pathname, router]);
 
-  if (status === "loading") return null; // ✅ Prevent flickering
+  if (status === "loading") return <div>Loading...</div>; // ✅ Prevent flickering
 
   return <>{children}</>;
 }

@@ -23,14 +23,12 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Grid2 from '@mui/material/Grid2';
-
 import Box from '@mui/material/Box';
 import { InfoSettings, PIMM } from '@repo-hub/internal';
 import mqtt from 'mqtt';
 import * as React from 'react';
 import { JSONTree } from 'react-json-tree';
-import { useSession } from 'next-auth/react';
-import { Session } from 'next-auth';
+ import { useAuthSession } from '../../hooks/useAuthSession';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -49,9 +47,8 @@ export default function Page(): React.JSX.Element {
     step: 'second',
   });
 
-  const { data: session } = useSession() as {
-    data: Session & { accessToken?: string };
-  };
+  const { session } = useAuthSession();
+
 
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);

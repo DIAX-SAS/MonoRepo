@@ -41,7 +41,7 @@ export const config: Config = {
     cognitoDomain: 'https://crud-diax.auth.us-east-1.amazoncognito.com',
     authority:
       'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_bHo9GIUJg',
-    redirectUri: 'http://localhost:4000/'.concat('redirect'),
+    redirectUri: 'http://localhost:4000/api/auth/callback/cognito',
     response_type: 'code',
     scope: 'email openid phone',
   },

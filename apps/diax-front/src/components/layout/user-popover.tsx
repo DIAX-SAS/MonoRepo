@@ -8,18 +8,34 @@ import Typography from '@mui/material/Typography';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import * as React from 'react';
 import { useSession, signOut } from "next-auth/react"
+import { config } from '../../config';
 export interface UserPopoverProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   open: boolean;
 }
 
+export const handleSignOut = async (): Promise<void> => {
+  const cognitoLogoutUrl = `${config.auth.cognitoDomain}/logout?` +
+    new URLSearchParams({
+      client_id: config.auth.clientId,    
+      logout_uri : config.auth.logoutUri,
+      redirect_uri: config.auth.redirectUri,
+      response_type: config.auth.response_type
+    }).toString();
+
+    
+  // Sign out from NextAuth first
+  await signOut({ redirect: false });
+
+  // Redirect to Cognito's logout URL to fully sign out
+  window.location.href = cognitoLogoutUrl;
+};
+
 export function UserPopover({
   setOpen,
   open,
 }: UserPopoverProps): React.JSX.Element {
-  const handleSignOut = React.useCallback(async (): Promise<void> => {
-    await signOut();
-  }, []);
+ 
 
   const {data: session} = useSession();
 
