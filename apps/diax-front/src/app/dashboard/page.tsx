@@ -28,7 +28,8 @@ import { InfoSettings, PIMM } from '@repo-hub/internal';
 import mqtt from 'mqtt';
 import * as React from 'react';
 import { JSONTree } from 'react-json-tree';
-import { useAuth } from 'react-oidc-context';
+import { useSession } from "next-auth/react"
+import { Session } from "next-auth"
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -47,14 +48,14 @@ export default function Page(): React.JSX.Element {
     step: 'second',
   });
 
-  const auth = useAuth();
+  const { data: session } = useSession() as { data: Session & { user: { accessToken?: string } } }
 
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
   const MQTTRef = React.useRef<mqtt.MqttClient | undefined>(undefined);
   const accessTokenRef = React.useRef<string | undefined>(
-    auth.user?.access_token
+    session?.user?.accessToken
   );
   const stepRef = React.useRef<Parameters["step"]>(parameters.step);
 
@@ -93,8 +94,8 @@ export default function Page(): React.JSX.Element {
   }
 
   React.useEffect(() => {
-    accessTokenRef.current = auth.user?.access_token;
-  }, [auth.user]);
+    accessTokenRef.current = session?.user?.accessToken;
+  }, [session?.user?.accessToken]);
 
   React.useEffect(() => {
     const MS_CONVERSION: { [key in Parameters['step']]: number } = {

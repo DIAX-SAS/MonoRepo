@@ -2,31 +2,26 @@
 
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import * as React from "react";
-import { useAuth } from "react-oidc-context";
+import { useEffect } from "react";
+import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
-export function SignInForm(): React.JSX.Element {
-  const auth = useAuth();
-  if (auth.isLoading) {
-    return <div>Loading...</div>;
-  }
+export function SignInForm(): React.JSX.Element | null {
+  const router = useRouter();
+  const { status } = useSession(); // ✅ Get session status & errors
 
-  if (auth.error) {
-    return <div>Encountering error... {auth.error.message}</div>;
-  }
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
+
+  if (status === "loading") return null; // ✅ Prevent flickering
 
   return (
     <Stack spacing={4}>
-      <Stack spacing={1}>
-        <Typography variant="h4">Sign in</Typography>
-      </Stack>
-      <Button
-        onClick={() => auth.signinRedirect()}
-        type="button"
-        variant="contained"
-      >
-        Sign in with COGNITO
+      <Button onClick={() => signIn()} type="button" variant="contained">
+        Sign in
       </Button>
     </Stack>
   );

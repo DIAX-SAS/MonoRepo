@@ -116,7 +116,7 @@ const MultiLayerPieChart: React.FC<PieChartProps> = ({
       .data(root.descendants())
       .enter()
       .append("path")
-      .attr("d", arc as any)
+      .attr("d", (d) => arc(d as d3.HierarchyRectangularNode<ChartNode>) || "")
       .style("fill", (d) => getColor(d as d3.HierarchyRectangularNode<ChartNode>))
       .style("stroke", "#fff")
       .style("cursor", "pointer")

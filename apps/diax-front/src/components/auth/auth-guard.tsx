@@ -1,45 +1,34 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import Alert from '@mui/material/Alert';
-import { useAuth } from 'react-oidc-context';
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | null {
+export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
-  const auth = useAuth(); 
-  const [isChecking, setIsChecking] = React.useState<boolean>(true);
+  const pathname = usePathname(); // ✅ Get current route
+  const { status } = useSession();
 
-  React.useEffect(() => {
-    if (auth.isLoading) {
-      return;
-    }
+  useEffect(() => {
+    if ( !status || status === "loading" ) return; // ✅ Avoid unnecessary execution
 
-    if (auth.error) {
-      setIsChecking(false);
-      return;
-    }
-
-    if (!auth.isAuthenticated) {
-      console.log('[AuthGuard]: User is not logged in, redirecting to sign in');
+    if (status === "unauthenticated") {
+      console.log("[AuthGuard]: User is not logged in, redirecting to /sign-in");
       router.replace("/sign-in");
       return;
     }
 
-    setIsChecking(false);
-  }, [router, auth.isLoading, auth.error, auth.isAuthenticated]);
+    if (status === "authenticated" && pathname === "/") {
+      console.log("[AuthGuard]: User is authenticated, redirecting to /dashboard");
+      router.replace("/dashboard");
+    }
+  }, [status, pathname, router]);
 
-  if (isChecking) {
-    return null;
-  }
+  if (status === "loading") return null; // ✅ Prevent flickering
 
-  if (auth.error) {
-    return <Alert color="error">{auth.error.message}</Alert>;
-  }
-
-  return <React.Fragment>{children}</React.Fragment>;
+  return <>{children}</>;
 }

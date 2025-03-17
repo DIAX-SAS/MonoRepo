@@ -1,4 +1,3 @@
-import { config } from '../../config';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -8,8 +7,7 @@ import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import * as React from 'react';
-import { useAuth } from 'react-oidc-context';
-
+import { useSession, signOut } from "next-auth/react"
 export interface UserPopoverProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   open: boolean;
@@ -19,17 +17,11 @@ export function UserPopover({
   setOpen,
   open,
 }: UserPopoverProps): React.JSX.Element {
-  const auth = useAuth();
   const handleSignOut = React.useCallback(async (): Promise<void> => {
-    await auth.signoutRedirect({
-      post_logout_redirect_uri: config.auth.cognitoDomain,
-      extraQueryParams: {
-        client_id: config.auth.clientId,
-        logout_uri: config.auth.logoutUri,
-        redirect_uri: config.auth.redirectUri
-      },
-    });
-  }, [auth]);
+    await signOut();
+  }, []);
+
+  const {data: session} = useSession();
 
   return (
     <Popover
@@ -40,10 +32,10 @@ export function UserPopover({
     >
       <Box sx={{ p: '16px 20px ' }}>
         <Typography variant="subtitle1">
-          {auth.user?.profile["cognito:username"] as string | undefined}
+          { session?.user?.name as string | undefined}
         </Typography>
         <Typography color="text.secondary" variant="body2">
-          {auth.user?.profile.email}
+          {session?.user?.email as string | undefined}
         </Typography>
       </Box>
       <Divider />
