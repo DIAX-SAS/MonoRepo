@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DynamooseModule } from 'nestjs-dynamoose';
 import { AppController } from '../app.controller';
 import { CognitoAuthModule } from '@nestjs-cognito/auth';
+import { PimmsModule } from '../../services/pimms/pimms.module';
 
 describe('AppModule', () => {
   let moduleRef: TestingModule;
@@ -19,9 +20,9 @@ describe('AppModule', () => {
           inject: [],
           useFactory: () => ({
             aws: {
-              region: "us-east-1",
-              accessKeyId: "accessKeyId",
-              secretAccessKey: "secretAccessKey",
+              region: 'us-east-1',
+              accessKeyId: 'accessKeyId',
+              secretAccessKey: 'secretAccessKey',
             },
             model: {
               create: false, // Set to true if you want Dynamoose to create tables automatically
@@ -42,6 +43,7 @@ describe('AppModule', () => {
           ],
           exports: ['COGNITO_JWT_VERIFIER_INSTANCE_TOKEN'],
         },
+        PimmsModule,
       ],
       controllers: [AppController],
     }).compile();
@@ -55,7 +57,7 @@ describe('AppModule', () => {
     const controller = moduleRef.get<AppController>(AppController);
     expect(controller).toBeDefined();
   });
-  
+
   it('should import required modules', () => {
     expect(moduleRef.get(ConfigModule)).toBeDefined();
     expect(moduleRef.get(DynamooseModule)).toBeDefined();

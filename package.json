@@ -63,6 +63,7 @@
     "eslint": "^9.22.0",
     "eslint-config-next": "^15.2.2",
     "jest": "^latest",
+    "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^latest",
     "typescript": "^latest",
     "typescript-eslint": "^8.26.1",

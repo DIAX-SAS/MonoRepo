@@ -1,7 +1,8 @@
+import "reflect-metadata"
 import { Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 
-enum AccUnit {
+export enum AccUnit {
   SECOND = 'second',
   MINUTE = 'minute',
   HOUR = 'hour',
