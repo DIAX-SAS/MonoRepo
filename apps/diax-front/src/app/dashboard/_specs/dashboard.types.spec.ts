@@ -1,4 +1,4 @@
-import { Parameters, Filters, FEPIMM } from '../../../app/dashboard/dashboard.types';
+import { Parameters, Filters, FEPIMM } from '../dashboard.types';
 
 describe('Type Definitions and FEPIMM Interface', () => {
   it('should correctly define Parameters type', () => {

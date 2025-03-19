@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render, screen } from '@testing-library/react';
-import NotFound from '../../../app/404/page'; // Adjust the import path as necessary
+import NotFound from '../page'; // Adjust the import path as necessary
 import '@testing-library/jest-dom'; // Import jest-dom matchers
 import { MemoryRouterProvider } from 'next-router-mock/MemoryRouterProvider'; // Mock Next.js router
 

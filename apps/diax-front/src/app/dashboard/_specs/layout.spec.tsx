@@ -2,7 +2,7 @@ import * as React from 'react';
 import '@testing-library/jest-dom'; // Import jest-dom matchers
 import { render, screen } from '@testing-library/react';
 import { SessionProvider } from 'next-auth/react'; // Import SessionProvider
-import Layout from '../../../app/dashboard/layout'; // Adjust the import path
+import Layout from '../layout'; // Adjust the import path
 
 // Mock next-auth
 jest.mock('next-auth/react', () => ({

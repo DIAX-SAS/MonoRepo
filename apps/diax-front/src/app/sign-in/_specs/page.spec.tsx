@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'; 
 import * as React from 'react';
 import { render, screen } from '@testing-library/react';
-import SignIn from "../../../app/sign-in/page";
+import SignIn from "../page";
 
 describe("Sign in component", () => {
     it("renders the sign in component", () => {

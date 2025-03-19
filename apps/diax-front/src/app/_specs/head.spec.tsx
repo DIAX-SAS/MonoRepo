@@ -1,7 +1,7 @@
 import * as React from 'react';
 import '@testing-library/jest-dom'; 
 import { render } from "@testing-library/react";
-import Head from "../../app/head";
+import Head from "../head";
 
 describe("Head Component", () => {
   it("renders the correct metadata", async () => {

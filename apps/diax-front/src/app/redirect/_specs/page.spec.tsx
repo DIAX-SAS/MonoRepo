@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { render, screen } from '@testing-library/react';
 import { useSearchParams, redirect } from 'next/navigation';
-import WrappedRedirectPage from '../../../app/redirect/page'; // Adjust the import path
+import WrappedRedirectPage from '../page'; // Adjust the import path
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
