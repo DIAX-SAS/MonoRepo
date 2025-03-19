@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PIMMService } from '../../../services/pimms/pimms.service';
+import { PIMMService } from '../pimms.service';
 import { ResponsePIMM } from '@repo-hub/internal';
-import { InfoSettingsDto } from '../../../services/pimms/pimms.dto';
-import { PimmsModule } from '../../../services/pimms/pimms.module';
-import { PIMMController } from '../../../services/pimms/pimms.controller';
+import { InfoSettingsDto } from '../pimms.dto';
+import { PimmsModule } from '../pimms.module';
+import { PIMMController } from '../pimms.controller';
 import { ConfigModule } from '@nestjs/config';
 import { DynamooseModule } from 'nestjs-dynamoose';
 import { CognitoAuthModule } from '@nestjs-cognito/auth';

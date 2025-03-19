@@ -1,4 +1,4 @@
-import { schemaDefinition, schemaSettings } from '../../../services/pimms/pimm.schema';
+import { schemaDefinition, schemaSettings } from '../pimm.schema';
 
 describe('schemaDefinition', () => {
   it('should define PLCNumber as a Number type and hashKey (partition key)', () => {

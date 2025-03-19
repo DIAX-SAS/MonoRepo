@@ -1,18 +1,26 @@
-FROM node:alpine AS builder
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN apk add --update python3 make g++ && rm -rf /var/cache/apk/*
-RUN npm ci --verbose
+# Use latest Node.js image
+FROM node:latest
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package and yarn files from the Nx root
+COPY package.json yarn.lock ./
+
+# Install dependencies globally
+RUN yarn global add nx && yarn install --frozen-lockfile
+
+# Copy the backend project files
 COPY . .
-RUN npx nx build backend
-#RUN node ./apps/backend/node_modules.js ./package.json ./dist/apps/backend/main.js
 
+# Explicitly copy the .env.template file
+COPY apps/diax-back/.env.template .env.template
 
-FROM node:alpine
-ENV PORT=80
-WORKDIR /usr/src/app
-RUN npm install -g pm2@latest
-COPY --from=builder /usr/src/app/dist/apps/backend .
-RUN npm install --production
-EXPOSE $PORT
-ENTRYPOINT ["pm2-runtime","main.js"]
+# Rename the .env.template to .env
+RUN mv .env.template .env
+
+# Expose the application port
+EXPOSE 3000
+
+# Set the command to run your application
+CMD ["yarn", "nx", "run", "diax-back:serve","--configuration=production"]

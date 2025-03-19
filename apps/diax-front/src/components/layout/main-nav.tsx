@@ -80,6 +80,7 @@ export function Navigation(): React.JSX.Element {
       {/* Header */}
       <Box
         component="header"
+        data-testid='mock-navigation'
         sx={{
           borderBottom: 1,
           borderColor: 'divider',

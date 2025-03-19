@@ -10,7 +10,7 @@
         "--runTestsByPath",
         "${relativeFile}",
         "--config",
-        "apps/diax-back/jest.config.ts"
+        "apps/diax-front/jest.config.ts"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",

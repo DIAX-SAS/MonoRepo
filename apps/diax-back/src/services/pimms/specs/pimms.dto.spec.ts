@@ -1,6 +1,6 @@
 import { validate, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { FiltersDto, InfoSettingsDto, AccUnit } from '../../../services/pimms/pimms.dto';
+import { FiltersDto, InfoSettingsDto, AccUnit } from '../pimms.dto';
 
 describe('FiltersDto', () => {
   it('should validate a valid FiltersDto object', async () => {

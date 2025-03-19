@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PIMMController } from '../../../services/pimms/pimms.controller';
-import { PIMMService } from '../../../services/pimms/pimms.service';
-import { InfoSettingsDto } from '../../../services/pimms/pimms.dto';
+import { PIMMController } from '../pimms.controller';
+import { PIMMService } from '../pimms.service';
+import { InfoSettingsDto } from '../pimms.dto';
 
 // Mock the PIMMService
 const mockPIMMService = {

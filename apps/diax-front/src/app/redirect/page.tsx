@@ -20,7 +20,7 @@ const RedirectPage = () => {
   return null;
 };
 
-// ✅ Wrap in Suspense boundary
+
 export default function WrappedRedirectPage() {
   return (
     <Suspense fallback={null}>

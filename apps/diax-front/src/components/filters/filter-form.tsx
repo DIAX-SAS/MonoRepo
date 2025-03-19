@@ -54,6 +54,7 @@ const FilterForm: React.FC<PropsFilter> = ({
   return (
     <>
       <DateRangePicker
+        data-testid="dateRangePicker"
         format="dd MMM yyyy hh:mm:ss aa"
         showMeridiem
         onChange={(value) => {
@@ -76,6 +77,7 @@ const FilterForm: React.FC<PropsFilter> = ({
       />
 
       <Checkbox
+        data-testid="liveCheckbox"
         checked={parameters.live}
         onChange={(value, checked) => handleChangeParameters('live', checked)}
         aria-label="Live"
@@ -84,6 +86,7 @@ const FilterForm: React.FC<PropsFilter> = ({
       </Checkbox>
 
       <SelectPicker
+        data-testid="accUnitPicker"
         data={accUnitOptions}
         value={parameters.step}
         onChange={(value) =>
