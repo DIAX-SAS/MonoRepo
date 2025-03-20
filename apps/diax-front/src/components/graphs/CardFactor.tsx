@@ -15,7 +15,7 @@ export interface TasksProgressProps {
 }
 
 export default function CardFactor({
-  value,
+  value = 0,
   sx,
   title,
 }: TasksProgressProps): React.JSX.Element {
@@ -50,7 +50,7 @@ export default function CardFactor({
           </Stack>
           <div>
             <LinearProgress
-              value={value ?? 0}
+              value={value}
               variant="determinate"
               role="progressbar" 
               aria-valuenow={value}

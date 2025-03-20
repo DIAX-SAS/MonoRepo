@@ -19,6 +19,6 @@ export type Filters = {
 export interface FEPIMM extends PIMM {
   buenas: number;
   ineficiencias: number;
-  producidas?: number;
+  producidas: number;
   maquina: number;
 }
