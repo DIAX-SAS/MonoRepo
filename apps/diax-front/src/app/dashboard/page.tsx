@@ -62,12 +62,22 @@ export default function Page(): React.JSX.Element {
   });
   const stepRef = React.useRef<Parameters['step']>(parameters.step);
 
-  type AccumulatedData = {
+  interface ReduceMolde {
+    acc_cav1: number;
+    acc_cav2: number;
+    acc_cav3: number;
+    acc_cav4: number;
+    acc_cav5: number;
+    acc_cav6: number;
+    acc_gramosgeneral: number;
+  }
+
+  interface ReduceGroupedPIMMs {
     acc_buenas: number;
     acc_noConformes: number;
     acc_defectoInicioTurno: number;
-    acc_Inyecciones: number;
-    acc_Ineficiencias: number;
+    acc_inyecciones: number;
+    acc_ineficiencias: number;
     acc_producidas: number;
     acc_montaje: number;
     acc_calidad: number;
@@ -77,20 +87,13 @@ export default function Page(): React.JSX.Element {
     acc_maquina: number;
     acc_noProg: number;
     acc_motor: number;
-    moldes: Record<string, WeighMetric>;
-  };
+  }
 
-  type WeighMetric = {
-    acc_cav1: number;
-    acc_cav2: number;
-    acc_cav3: number;
-    acc_cav4: number;
-    acc_cav5: number;
-    acc_cav6: number;
-    acc_gramosgeneral: number;
+  interface AccumulatedData extends ReduceGroupedPIMMs {
+    moldes: Record<string, ReduceMolde>;
   };
   interface GroupedFEPIMM {
-    items: FEPIMM[];
+    FEPIMMs: FEPIMM[];
     timestamp: number;
     overall: AccumulatedData;
   }
@@ -111,26 +114,26 @@ export default function Page(): React.JSX.Element {
               accGlobal: {
                 [key: number]: {
                   timestamp: number;
-                  items: FEPIMM[];
+                  FEPIMMs: FEPIMM[];
                   overall: AccumulatedData;
                 };
               },
-              item
+              FEPIMM
             ) => {
               // Convert timestamp to grouping unit
-              const timestampKey = Math.floor(item.timestamp / ms_agrupation);
+              const timestampKey = Math.floor(FEPIMM.timestamp / ms_agrupation);
 
               // Initialize group if not present
               if (!accGlobal[timestampKey]) {
                 accGlobal[timestampKey] = {
                   timestamp: timestampKey,
-                  items: [],
+                  FEPIMMs: [],
                   overall: {
                     acc_buenas: 0,
                     acc_noConformes: 0,
                     acc_defectoInicioTurno: 0,
-                    acc_Inyecciones: 0,
-                    acc_Ineficiencias: 0,
+                    acc_inyecciones: 0,
+                    acc_ineficiencias: 0,
                     acc_producidas: 0,
                     acc_montaje: 0,
                     acc_calidad: 0,
@@ -145,8 +148,8 @@ export default function Page(): React.JSX.Element {
                 };
               }
 
-              // Add item to the corresponding group
-              accGlobal[timestampKey].items.push(item);
+              // Add FEPIMM to the corresponding group
+              accGlobal[timestampKey].FEPIMMs.push(FEPIMM);
 
               return accGlobal;
             },
@@ -154,122 +157,130 @@ export default function Page(): React.JSX.Element {
           )
         );
 
-        accGlobal.forEach((grouped) => {
-          // Reduce function to accumulate data
-          const inyecciones = grouped.items.reduce(
-            (acc, item: FEPIMM): AccumulatedData => {
-              const stateMap = new Map(item.states.map((s) => [s.name, s]));
-              const counterMap = new Map(item.counters.map((c) => [c.name, c]));
-              const moldes: Record<string, WeighMetric> = {};
-
-              if (!moldes[String(stateMap.get('Molde')?.value)]) {
-                moldes[String(stateMap.get('Molde')?.value)] = {
-                  acc_cav1: 0,
-                  acc_cav2: 0,
-                  acc_cav3: 0,
-                  acc_cav4: 0,
-                  acc_cav5: 0,
-                  acc_cav6: 0,
-                  acc_gramosgeneral: 0,
-                };
-              }
-              moldes[String(stateMap.get('Molde')?.value)].acc_cav1 +=
-                Number(counterMap.get('Gramos Cavidad 1')?.value) || 0;
-              moldes[String(stateMap.get('Molde')?.value)].acc_cav2 +=
-                Number(counterMap.get('Gramos Cavidad 2')?.value) || 0;
-              moldes[String(stateMap.get('Molde')?.value)].acc_cav3 +=
-                Number(counterMap.get('Gramos Cavidad 3')?.value) || 0;
-              moldes[String(stateMap.get('Molde')?.value)].acc_cav4 +=
-                Number(counterMap.get('Gramos Cavidad 4')?.value) || 0;
-              moldes[String(stateMap.get('Molde')?.value)].acc_cav5 +=
-                Number(counterMap.get('Gramos Cavidad 5')?.value) || 0;
-              moldes[String(stateMap.get('Molde')?.value)].acc_cav6 +=
-                Number(counterMap.get('Gramos Cavidad 6')?.value) || 0;
-              moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral +=
-                Number(counterMap.get('Gramos Inyeccion')?.value) || 0;          
-
-              return {
-                acc_buenas: acc.acc_buenas + (item.buenas || 0),
-                acc_noConformes:
-                  acc.acc_noConformes +
-                  (Number(counterMap.get('Unidades No Conformes')?.value) || 0),
-                acc_defectoInicioTurno:
-                  acc.acc_defectoInicioTurno +
-                  (Number(
-                    counterMap.get('Unidades Defecto Inicio Turno')?.value
-                  ) || 0),
-                acc_Inyecciones:
-                  acc.acc_Inyecciones +
-                  (Number(counterMap.get('Contador Inyecciones')?.value) || 0),
-                acc_Ineficiencias:
-                  acc.acc_Ineficiencias + (Number(item.ineficiencias) || 0),
-                acc_producidas: acc.acc_producidas + (item.producidas || 0),
-                acc_montaje:
-                  acc.acc_montaje +
-                  (Number(counterMap.get('Minutos Montaje')?.value) || 0),
-                acc_calidad:
-                  acc.acc_calidad +
-                  (Number(counterMap.get('Minutos Calidad')?.value) || 0),
-                acc_material:
-                  acc.acc_material +
-                  (Number(counterMap.get('Minutos Por Material')?.value) || 0),
-                acc_abandono:
-                  acc.acc_abandono +
-                  (Number(counterMap.get('Minutos Sin Operario')?.value) || 0),
-                acc_molde:
-                  acc.acc_molde +
-                  (Number(counterMap.get('Minutos Mantto Molde')?.value) || 0),
-                acc_maquina:
-                  acc.acc_maquina +
-                  (Number(counterMap.get('Minutos Mantto Maquina')?.value) ||
-                    0),
-                acc_noProg:
-                  acc.acc_noProg +
-                  (Number(counterMap.get('Minutos No Programada')?.value) || 0),
-                acc_motor:
-                  acc.acc_motor +
-                  (Number(counterMap.get('KW Motor')?.value) || 0),
-                moldes: {
-                  ...acc.moldes,
-                  ...(moldes || {}),
-                },
-              };
-            },
-            {
-              acc_buenas: 0,
-              acc_noConformes: 0,
-              acc_defectoInicioTurno: 0,
-              acc_Inyecciones: 0,
-              acc_Ineficiencias: 0,
-              acc_producidas: 0,
-              acc_montaje: 0,
-              acc_calidad: 0,
-              acc_material: 0,
-              acc_abandono: 0,
-              acc_molde: 0,
-              acc_maquina: 0,
-              acc_noProg: 0,
-              acc_motor: 0,
-              moldes: {},
-            }
-          );
-
-          grouped.overall = inyecciones;
-        });
-
         return accGlobal;
       };
 
-      const groupedFEPIMMs = groupByUnitTime(
-        filteredPIMMs,
-        MS_CONVERSION[stepRef.current]
-      );
+      const reduceGroupedFEPIMMs = (accGlobal: GroupedFEPIMM[]) => {
+        accGlobal.forEach((grouped) => {
 
-      const lastGroupPLC = groupedFEPIMMs[groupedFEPIMMs.length - 1];
+          const reduceGroupedPIMMs = (grouped: GroupedFEPIMM): ReduceGroupedPIMMs => {
+            const reduceGroupedPIMMs = grouped.FEPIMMs.reduce(
+              (acc, FEPIMM: FEPIMM): ReduceGroupedPIMMs => {               
+                const counterMap = new Map(FEPIMM.counters.map((c) => [c.name, c]));              
+                return {
+                  acc_buenas: acc.acc_buenas + (FEPIMM.buenas || 0),
+                  acc_noConformes:
+                    acc.acc_noConformes +
+                    (Number(counterMap.get('Unidades No Conformes')?.value) || 0),
+                  acc_defectoInicioTurno:
+                    acc.acc_defectoInicioTurno +
+                    (Number(
+                      counterMap.get('Unidades Defecto Inicio Turno')?.value
+                    ) || 0),
+                  acc_inyecciones:
+                    acc.acc_inyecciones +
+                    (Number(counterMap.get('Contador Inyecciones')?.value) || 0),
+                  acc_ineficiencias:
+                    acc.acc_ineficiencias + (Number(FEPIMM.ineficiencias) || 0),
+                  acc_producidas: acc.acc_producidas + (FEPIMM.producidas || 0),
+                  acc_montaje:
+                    acc.acc_montaje +
+                    (Number(counterMap.get('Minutos Montaje')?.value) || 0),
+                  acc_calidad:
+                    acc.acc_calidad +
+                    (Number(counterMap.get('Minutos Calidad')?.value) || 0),
+                  acc_material:
+                    acc.acc_material +
+                    (Number(counterMap.get('Minutos Por Material')?.value) || 0),
+                  acc_abandono:
+                    acc.acc_abandono +
+                    (Number(counterMap.get('Minutos Sin Operario')?.value) || 0),
+                  acc_molde:
+                    acc.acc_molde +
+                    (Number(counterMap.get('Minutos Mantto Molde')?.value) || 0),
+                  acc_maquina:
+                    acc.acc_maquina +
+                    (Number(counterMap.get('Minutos Mantto Maquina')?.value) ||
+                      0),
+                  acc_noProg:
+                    acc.acc_noProg +
+                    (Number(counterMap.get('Minutos No Programada')?.value) || 0),
+                  acc_motor:
+                    acc.acc_motor +
+                    (Number(counterMap.get('KW Motor')?.value) || 0),                 
+                };
+              },
+              {
+                acc_buenas: 0,
+                acc_noConformes: 0,
+                acc_defectoInicioTurno: 0,
+                acc_inyecciones: 0,
+                acc_ineficiencias: 0,
+                acc_producidas: 0,
+                acc_montaje: 0,
+                acc_calidad: 0,
+                acc_material: 0,
+                acc_abandono: 0,
+                acc_molde: 0,
+                acc_maquina: 0,
+                acc_noProg: 0,
+                acc_motor: 0,             
+              }
+            );
+
+            return reduceGroupedPIMMs;
+          }
+          const reduceByMoldes = (grouped: GroupedFEPIMM): Record<string, ReduceMolde> => {
+            const reduceByMoldes = grouped.FEPIMMs.reduce(
+              (acc, FEPIMM: FEPIMM): Record<string, ReduceMolde> => {
+                const stateMap = new Map(FEPIMM.states.map((s) => [s.name, s]));
+                const counterMap = new Map(FEPIMM.counters.map((c) => [c.name, c]));
+                const moldes: Record<string, ReduceMolde> = {};
+
+                if (!moldes[String(stateMap.get('Molde')?.value)]) {
+                  moldes[String(stateMap.get('Molde')?.value)] = {
+                    acc_cav1: 0,
+                    acc_cav2: 0,
+                    acc_cav3: 0,
+                    acc_cav4: 0,
+                    acc_cav5: 0,
+                    acc_cav6: 0,
+                    acc_gramosgeneral: 0,
+                  };
+                }
+                moldes[String(stateMap.get('Molde')?.value)].acc_cav1 +=
+                  Number(counterMap.get('Gramos Cavidad 1')?.value) || 0;
+                moldes[String(stateMap.get('Molde')?.value)].acc_cav2 +=
+                  Number(counterMap.get('Gramos Cavidad 2')?.value) || 0;
+                moldes[String(stateMap.get('Molde')?.value)].acc_cav3 +=
+                  Number(counterMap.get('Gramos Cavidad 3')?.value) || 0;
+                moldes[String(stateMap.get('Molde')?.value)].acc_cav4 +=
+                  Number(counterMap.get('Gramos Cavidad 4')?.value) || 0;
+                moldes[String(stateMap.get('Molde')?.value)].acc_cav5 +=
+                  Number(counterMap.get('Gramos Cavidad 5')?.value) || 0;
+                moldes[String(stateMap.get('Molde')?.value)].acc_cav6 +=
+                  Number(counterMap.get('Gramos Cavidad 6')?.value) || 0;
+                moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral +=
+                  Number(counterMap.get('Gramos Inyeccion')?.value) || 0;
+
+                return { ...acc, ...moldes };
+              },
+              {
+
+              }
+            );
+
+            return reduceByMoldes;
+          }
+
+          grouped.overall = { ...reduceGroupedPIMMs(grouped), moldes: reduceByMoldes(grouped) };
+        });
+        return accGlobal;
+      }
 
       const calculateOEE = (groupedFEPIMM: GroupedFEPIMM) => {
         let [performance, availability, quality, efficiency] = [0, 0, 0, 0];
-        if (groupedFEPIMM && groupedFEPIMM.items.length === 0) {
+        if (groupedFEPIMM && groupedFEPIMM.FEPIMMs.length === 0) {
           return {
             performance: performance,
             availability: availability,
@@ -278,8 +289,8 @@ export default function Page(): React.JSX.Element {
           };
         }
 
-        const accInyecciones = groupedFEPIMM?.overall.acc_Inyecciones ?? 0;
-        const accIneficiencias = groupedFEPIMM?.overall.acc_Ineficiencias ?? 0;
+        const accInyecciones = groupedFEPIMM?.overall.acc_inyecciones ?? 0;
+        const accIneficiencias = groupedFEPIMM?.overall.acc_ineficiencias ?? 0;
         const accBuenas = groupedFEPIMM?.overall.acc_buenas ?? 0;
         const accDefectoInicioTurno =
           groupedFEPIMM?.overall.acc_defectoInicioTurno ?? 0;
@@ -295,8 +306,8 @@ export default function Page(): React.JSX.Element {
           Math.round(
             (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
               filteredPIMMs[0]?.timestamp) /
-              MS_CONVERSION[stepRef.current]
-          ) * groupedFEPIMM?.items.length || 0;
+            MS_CONVERSION[stepRef.current]
+          ) * groupedFEPIMM?.FEPIMMs.length || 0;
         const totalOperationalTime = timeTotal - accNoProg;
         const totalLosses =
           accMaquina +
@@ -327,6 +338,15 @@ export default function Page(): React.JSX.Element {
           efficiency: efficiency,
         };
       };
+
+      const groupedFEPIMMs = reduceGroupedFEPIMMs(groupByUnitTime(
+        filteredPIMMs,
+        MS_CONVERSION[stepRef.current]
+      ));
+
+      const lastGroupPLC = groupedFEPIMMs[groupedFEPIMMs.length - 1];
+
+    
 
       const { performance, availability, quality, efficiency } =
         calculateOEE(lastGroupPLC);
@@ -410,7 +430,7 @@ export default function Page(): React.JSX.Element {
                 children: [
                   {
                     name: 'Buenas',
-                    children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                    children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                       name: 'PIMM ' + String(FEPIMM.PLCNumber),
                       value: FEPIMM.buenas,
                     })),
@@ -420,7 +440,7 @@ export default function Page(): React.JSX.Element {
                     children: [
                       {
                         name: 'Arranque',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -433,7 +453,7 @@ export default function Page(): React.JSX.Element {
                       },
                       {
                         name: 'Rechazo',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -494,7 +514,7 @@ export default function Page(): React.JSX.Element {
                 children: [
                   {
                     name: 'Productivo',
-                    children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                    children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                       name: 'PIMM ' + String(FEPIMM.PLCNumber),
                       value: FEPIMM.producidas,
                     })),
@@ -504,7 +524,7 @@ export default function Page(): React.JSX.Element {
                     children: [
                       {
                         name: 'Maquina',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -517,7 +537,7 @@ export default function Page(): React.JSX.Element {
                       },
                       {
                         name: 'SinOperario',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -530,7 +550,7 @@ export default function Page(): React.JSX.Element {
                       },
                       {
                         name: 'Calidad',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -542,7 +562,7 @@ export default function Page(): React.JSX.Element {
                       },
                       {
                         name: 'Montaje',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -554,7 +574,7 @@ export default function Page(): React.JSX.Element {
                       },
                       {
                         name: 'Molde',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -567,7 +587,7 @@ export default function Page(): React.JSX.Element {
                       },
                       {
                         name: 'Material',
-                        children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                           name: 'PIMM ' + String(FEPIMM.PLCNumber),
                           value:
                             Number(
@@ -646,7 +666,7 @@ export default function Page(): React.JSX.Element {
                 children: [
                   {
                     name: 'Producido',
-                    children: lastGroupPLC?.items.map((FEPIMM: FEPIMM) => ({
+                    children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                       name: 'PIMM ' + String(FEPIMM.PLCNumber),
                       value:
                         Number(
@@ -658,7 +678,7 @@ export default function Page(): React.JSX.Element {
                   },
                   {
                     name: 'Ineficiencias',
-                    children: lastGroupPLC?.items.map((FEPIMM) => ({
+                    children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
                       name: 'PIMM ' + String(FEPIMM.PLCNumber),
                       value: Number(FEPIMM.ineficiencias) || 0, // Ensure valid ID
                     })),
@@ -672,14 +692,14 @@ export default function Page(): React.JSX.Element {
                   name: 'Producido',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
-                    value: FEPIMM.overall.acc_Inyecciones,
+                    value: FEPIMM.overall.acc_inyecciones,
                   })),
                 },
                 {
                   name: 'Ineficiencias',
                   data: groupedFEPIMMs.map((FEPIMM) => ({
                     timestamp: FEPIMM.timestamp,
-                    value: FEPIMM.overall.acc_Ineficiencias,
+                    value: FEPIMM.overall.acc_ineficiencias,
                   })),
                 },
               ],
@@ -688,13 +708,13 @@ export default function Page(): React.JSX.Element {
         },
         montaje: {
           charts: {
-            Table: { data: lastGroupPLC?.items },
+            Table: { data: lastGroupPLC?.FEPIMMs },
           },
         },
         energia: {
           charts: {
             StackedBarChart: {
-              data: lastGroupPLC?.items.map((FEPIMM, index) => ({
+              data: lastGroupPLC?.FEPIMMs.map((FEPIMM, index) => ({
                 category: 'PIMM ' + FEPIMM.PLCNumber,
                 motor:
                   Number(
@@ -735,7 +755,7 @@ export default function Page(): React.JSX.Element {
             MultiLayerPieChart: {
               data: {
                 name: 'Total',
-                children: lastGroupPLC?.items.map((FEPIMM) => ({
+                children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
                   name: `PIMM ${FEPIMM.PLCNumber}`,
                   children: FEPIMM.counters
                     .filter((counter) =>
@@ -751,7 +771,7 @@ export default function Page(): React.JSX.Element {
             SeriesLineChart: {
               data: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                  groupedFEPIMM.items.forEach((FEPIMM) => {
+                  groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
                     if (!acc[FEPIMM.PLCNumber]) {
                       acc[FEPIMM.PLCNumber] = [];
                     }
@@ -799,8 +819,8 @@ export default function Page(): React.JSX.Element {
               data: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   Object.entries(groupedFEPIMM.overall.moldes).forEach(
-                    ([molde, WeighMetrics]) => {
-                      const cavidades = WeighMetrics as WeighMetric;
+                    ([molde, ReduceMoldes]) => {
+                      const cavidades = ReduceMoldes as ReduceMolde;
                       if (!acc[molde]) {
                         acc[molde] = [];
                       }
@@ -827,7 +847,7 @@ export default function Page(): React.JSX.Element {
             MultiLayerPieChart: {
               data: {
                 name: 'Ciclos',
-                children: lastGroupPLC?.items.map((FEPIMM) => {
+                children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => {
                   const puerta =
                     Number(
                       FEPIMM.counters.find(
@@ -861,14 +881,14 @@ export default function Page(): React.JSX.Element {
             SeriesLineChart: {
               data: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                  groupedFEPIMM.items.forEach((FEPIMM) => {
+                  groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
                     if (!acc[FEPIMM.PLCNumber]) {
                       acc[FEPIMM.PLCNumber] = [];
                     }
 
-                    const value = groupedFEPIMM.items.reduce((acc, item) => {
+                    const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
                       const counterMap = new Map(
-                        item.counters.map((c) => [c.name, c])
+                        FEPIMM.counters.map((c) => [c.name, c])
                       );
                       return (
                         acc +
@@ -896,13 +916,13 @@ export default function Page(): React.JSX.Element {
               })),
               data2: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                  groupedFEPIMM.items.forEach((FEPIMM) => {
+                  groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
                     if (!acc[FEPIMM.PLCNumber]) {
                       acc[FEPIMM.PLCNumber] = [];
                     }
-                    const value = groupedFEPIMM.items.reduce((acc, item) => {
+                    const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
                       const counterMap = new Map(
-                        item.counters.map((c) => [c.name, c])
+                        FEPIMM.counters.map((c) => [c.name, c])
                       );
                       return (
                         acc +
@@ -977,7 +997,7 @@ export default function Page(): React.JSX.Element {
         const isOffset =
           PIMMs?.length > 1 &&
           new Date(PIMMs.at(0)?.timestamp ?? 0).getSeconds() ===
-            new Date(PIMMs.at(-1)?.timestamp ?? 0).getSeconds();
+          new Date(PIMMs.at(-1)?.timestamp ?? 0).getSeconds();
 
         if (!isOffset) return PIMMs;
 
@@ -1049,7 +1069,7 @@ export default function Page(): React.JSX.Element {
               Number(counterMap.get('Unidades No Conformes')?.value),
             ineficiencias:
               (Number(counterMap.get('Minutos Motor Encendido')?.value) * 60) /
-                Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
+              Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
               Number(counterMap.get('Contador Inyecciones')?.value),
             maquina:
               Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
