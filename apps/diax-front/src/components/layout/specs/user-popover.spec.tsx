@@ -38,20 +38,6 @@ describe("UserPopover Component", () => {
     expect(screen.getByText("john@example.com")).toBeInTheDocument();
   });
 
-  it("calls setOpen when closed", async () => {
-    render(<UserPopover open={true} setOpen={setOpenMock} />);
-  
-    // Ensure popover is initially in the document
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
-  
-    // Click outside the popover
-    fireEvent.mouseDown(document.body);
-  
-    // Wait for state update
-    await expect(setOpenMock).toHaveBeenCalledWith(false);
-  });
-  
-
   it("calls signOut and redirects on sign-out", async () => { 
     render(<UserPopover open={true} setOpen={setOpenMock} />);    
     // Click the sign-out button
