@@ -17,13 +17,13 @@ export interface UserPopoverProps {
 export const handleSignOut = async (): Promise<void> => {
   const cognitoLogoutUrl = `${config.auth.cognitoDomain}/logout?` +
     new URLSearchParams({
-      client_id: config.auth.clientId,    
-      logout_uri : config.auth.logoutUri,
+      client_id: config.auth.clientId,
+      logout_uri: config.auth.logoutUri,
       redirect_uri: config.auth.redirectUri,
       response_type: config.auth.response_type
     }).toString();
 
-    
+
   // Sign out from NextAuth first
   await signOut({ redirect: false });
 
@@ -35,12 +35,13 @@ export function UserPopover({
   setOpen,
   open,
 }: UserPopoverProps): React.JSX.Element {
- 
 
-  const {data: session} = useSession();
+
+  const { data: session } = useSession();
 
   return (
     <Popover
+      role='pop-over-user'
       anchorOrigin={{ horizontal: 'right', vertical: 'top' }}
       onClose={() => setOpen(false)}
       open={open}
@@ -48,7 +49,7 @@ export function UserPopover({
     >
       <Box sx={{ p: '16px 20px ' }}>
         <Typography variant="subtitle1">
-          { session?.user?.name as string | undefined}
+          {session?.user?.name as string | undefined}
         </Typography>
         <Typography color="text.secondary" variant="body2">
           {session?.user?.email as string | undefined}

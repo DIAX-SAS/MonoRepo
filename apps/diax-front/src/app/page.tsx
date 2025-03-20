@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
-export default function Page(): void {
+export default function Page(): null {
   redirect('/dashboard');
+  return null;
 }

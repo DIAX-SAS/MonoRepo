@@ -3,7 +3,7 @@ import RouterLink from 'next/link';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { DynamicLogo } from '../../components/core/logo';
+import { Logo } from '../../components/core/logo';
 
 export interface LayoutProps {
   children: React.ReactNode;
@@ -22,7 +22,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
         <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column' }}>
           <Box sx={{ p: 3 }}>
             <Box component={RouterLink} href={"/redirect"} sx={{ display: 'inline-block', fontSize: 0 }}>
-              <DynamicLogo colorDark="light" colorLight="dark" height={32} width={122} />
+              <Logo height={32} width={122} />
             </Box>
           </Box>
           <Box sx={{ alignItems: 'center', display: 'flex', flex: '1 1 auto', justifyContent: 'center', p: 3 }}>

@@ -100,10 +100,11 @@ export function Navigation(): React.JSX.Element {
             px: 2,
           }}
         >
-          <IconButton title='Start Navigation' aria-label='Start Navigation' onClick={() => dispatch({ type: 'TOGGLE_NAV' })}>
+          <IconButton role="start-navigation" title='Start Navigation' aria-label='Start Navigation' onClick={() => dispatch({ type: 'TOGGLE_NAV' })}>
             <ListIcon />
           </IconButton>
           <Avatar
+            role="avatar"
             onClick={() => dispatch({ type: 'TOGGLE_USER' })}
             sx={{ cursor: 'pointer' }}
           />
@@ -154,7 +155,7 @@ function NavContent() {
           href="/redirect"
           sx={{ display: 'inline-flex' }}
         >
-          <Logo color="light" height={32} width={122} />
+          <Logo height={32} width={122} />
         </Box>
       </Stack>
       <Divider sx={{ borderColor: 'neutral.700' }} />
