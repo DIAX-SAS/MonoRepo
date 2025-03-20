@@ -28,7 +28,7 @@ import { InfoSettings, PIMM } from '@repo-hub/internal';
 import mqtt from 'mqtt';
 import * as React from 'react';
 import { JSONTree } from 'react-json-tree';
- import { useAuthSession } from '../../hooks/useAuthSession';
+import { useAuthSession } from '../../hooks/useAuthSession';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -48,11 +48,10 @@ export default function Page(): React.JSX.Element {
   });
 
   const { session } = useAuthSession();
-
-
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
+
   const MQTTRef = React.useRef<mqtt.MqttClient | undefined>(undefined);
   const accessTokenRef = React.useRef<{ accessToken: string | undefined }>({
     accessToken: session?.accessToken,
@@ -91,18 +90,17 @@ export default function Page(): React.JSX.Element {
     timestamp: number;
     overall: AccumulatedData;
   }
+  const MS_CONVERSION: { [key in Parameters['step']]: number } = {
+    second: 1000,
+    minute: 1000 * 60,
+    hour: 1000 * 60 * 60,
+  };
 
   React.useEffect(() => {
     accessTokenRef.current = { accessToken: session?.accessToken };
   }, [session]);
 
   React.useEffect(() => {
-    const MS_CONVERSION: { [key in Parameters['step']]: number } = {
-      second: 1000,
-      minute: 1000 * 60,
-      hour: 1000 * 60 * 60,
-    };
-
     const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
       const groupByUnitTime = (
         data: FEPIMM[],
@@ -189,21 +187,7 @@ export default function Page(): React.JSX.Element {
               moldes[String(stateMap.get('Molde')?.value)].acc_cav6 +=
                 Number(counterMap.get('Gramos Cavidad 6')?.value) || 0;
               moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral +=
-                Number(counterMap.get('Gramos Inyeccion')?.value) || 0;
-
-              const diffDate =(filteredPIMMs.at(-1)?.timestamp ?? 0) -
-                  (filteredPIMMs.at(0)?.timestamp ?? 0);
-            
-
-              item.producidas =
-                diffDate / MS_CONVERSION[stepRef.current] -
-                Number(counterMap.get('Minutos No Programada')?.value) -
-                (Number(counterMap.get('Minutos Mantto Maquina')?.value) +
-                  Number(counterMap.get('Minutos Mantto Molde')?.value) +
-                  Number(counterMap.get('Minutos Sin Operario')?.value) +
-                  Number(counterMap.get('Minutos Por Material')?.value) +
-                  Number(counterMap.get('Minutos Calidad')?.value) +
-                  Number(counterMap.get('Minutos Montaje')?.value));
+                Number(counterMap.get('Gramos Inyeccion')?.value) || 0;          
 
               return {
                 acc_buenas: acc.acc_buenas + (item.buenas || 0),
@@ -312,7 +296,7 @@ export default function Page(): React.JSX.Element {
           Math.round(
             (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
               filteredPIMMs[0]?.timestamp) /
-            MS_CONVERSION[stepRef.current]
+              MS_CONVERSION[stepRef.current]
           ) * groupedFEPIMM?.items.length || 0;
         const totalOperationalTime = timeTotal - accNoProg;
         const totalLosses =
@@ -948,6 +932,7 @@ export default function Page(): React.JSX.Element {
       };
       return calculatedGraphData;
     };
+
     (async () => setGraphData(await calculateGraphData(filteredPIMMs)))();
   }, [filteredPIMMs]);
 
@@ -956,86 +941,106 @@ export default function Page(): React.JSX.Element {
       filters: Filters,
       PIMMs: PIMM[]
     ): Promise<FEPIMM[]> => {
-      //Offset
-
       if (PIMMs.length == 0) return [];
-      const FEPIMMs: FEPIMM[] = [];
-      const offsets: Record<
-        string,
-        Record<
-          string,
-          { start: number; end: number; value: number; previousValue: number }
-        >
-      > = {};
 
-      const allFiltersFalse = Object.values(filters).every((filterMap) =>
-        Array.from(filterMap.values()).every((value) => value === false)
-      );
-      const isOffset =
-        PIMMs?.length > 1 &&
-        new Date(PIMMs.at(0)?.timestamp ?? 0).getSeconds() ===
-        new Date(PIMMs.at(-1)?.timestamp ?? 0).getSeconds();
+      const filterPIMMsByState = (PIMMs: PIMM[], filters: Filters): PIMM[] => {
+        const filteredPIMMsByState: PIMM[] = [];
+        const allFiltersFalse = Object.values(filters).every((filterMap) =>
+          Array.from(filterMap.values()).every((value) => value === false)
+        );
+        PIMMs.forEach((PIMM: PIMM, i: number) => {
+          const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
 
-      PIMMs.forEach((PIMM: PIMM, i: number) => {
-        //CHANGE TO  for const pim in pimms, foreach
+          let shouldContinue = allFiltersFalse;
+          if (
+            filters.equipos.get(String(stateMap.get('Numero Inyectora')?.value))
+          )
+            shouldContinue = true;
+          if (filters.lotes.get(String(stateMap.get('Lote')?.value)))
+            shouldContinue = true;
+          if (filters.materiales.get(String(stateMap.get('Material')?.value)))
+            shouldContinue = true;
+          if (filters.moldes.get(String(stateMap.get('Molde')?.value)))
+            shouldContinue = true;
+          if (filters.operarios.get(String(stateMap.get('Operario')?.value)))
+            shouldContinue = true;
+          if (filters.ordenes.get(String(stateMap.get('Orden')?.value)))
+            shouldContinue = true;
 
-        const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
-        const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
-        let shouldContinue = allFiltersFalse;
-        if (
-          filters.equipos.get(String(stateMap.get('Numero Inyectora')?.value))
-        )
-          shouldContinue = true;
-        if (filters.lotes.get(String(stateMap.get('Lote')?.value)))
-          shouldContinue = true;
-        if (filters.materiales.get(String(stateMap.get('Material')?.value)))
-          shouldContinue = true;
-        if (filters.moldes.get(String(stateMap.get('Molde')?.value)))
-          shouldContinue = true;
-        if (filters.operarios.get(String(stateMap.get('Operario')?.value)))
-          shouldContinue = true;
-        if (filters.ordenes.get(String(stateMap.get('Orden')?.value)))
-          shouldContinue = true;
-
-        if (shouldContinue) {
-          if (isOffset) {
-            const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
-            if (!statePIMMNumber) return;
-
-            if (!offsets[statePIMMNumber]) {
-              offsets[statePIMMNumber] = {};
-            }
-
-            for (const offsetKey of config.offsetKeys) {
-              const counter = counterMap.get(offsetKey);
-              const counterValue = counter ? Number(counter.value) : 0;
-
-              if (!offsets[statePIMMNumber][offsetKey]) {
-                offsets[statePIMMNumber][offsetKey] = {
-                  start: 0,
-                  end: 0,
-                  value: 0,
-                  previousValue: 0,
-                };
-              }
-
-              const offsetEntry = offsets[statePIMMNumber][offsetKey];
-
-              if (i === 0 && offsetEntry.start > 0) {
-                offsetEntry.start = counterValue;
-                if (counter) counter.value = '0';
-              }
-
-              if (counterValue < offsetEntry.previousValue) {
-                offsetEntry.end = offsetEntry.previousValue;
-                offsetEntry.value += offsetEntry.end - offsetEntry.start;
-                offsetEntry.start = 0;
-                if (counter) counter.value = String(offsetEntry.value);
-              }
-
-              offsetEntry.previousValue = counterValue;
-            }
+          if (shouldContinue) {
+            filteredPIMMsByState.push(PIMM);
           }
+        });
+        return filteredPIMMsByState;
+      };
+
+      const offsetPIMMCounters = (PIMMs: PIMM[]): PIMM[] => {
+        const isOffset =
+          PIMMs?.length > 1 &&
+          new Date(PIMMs.at(0)?.timestamp ?? 0).getSeconds() ===
+            new Date(PIMMs.at(-1)?.timestamp ?? 0).getSeconds();
+
+        if (!isOffset) return PIMMs;
+
+        const offsets: Record<
+          string,
+          Record<
+            string,
+            { start: number; end: number; value: number; previousValue: number }
+          >
+        > = {};
+
+        PIMMs.forEach((PIMM: PIMM, i: number) => {
+          const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
+          const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
+          const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
+
+          if (!statePIMMNumber) return;
+
+          if (!offsets[statePIMMNumber]) {
+            offsets[statePIMMNumber] = {};
+          }
+
+          for (const offsetKey of config.offsetKeys) {
+            const counter = counterMap.get(offsetKey);
+            const counterValue = counter ? Number(counter.value) : 0;
+
+            if (!offsets[statePIMMNumber][offsetKey]) {
+              offsets[statePIMMNumber][offsetKey] = {
+                start: 0,
+                end: 0,
+                value: 0,
+                previousValue: 0,
+              };
+            }
+
+            const offsetEntry = offsets[statePIMMNumber][offsetKey];
+
+            if (i === 0 && offsetEntry.start > 0) {
+              offsetEntry.start = counterValue;
+              if (counter) counter.value = '0';
+            }
+
+            if (counterValue < offsetEntry.previousValue) {
+              offsetEntry.end = offsetEntry.previousValue;
+              offsetEntry.value += offsetEntry.end - offsetEntry.start;
+              offsetEntry.start = 0;
+              if (counter) counter.value = String(offsetEntry.value);
+            }
+
+            offsetEntry.previousValue = counterValue;
+          }
+        });
+        return PIMMs;
+      };
+
+      const computeDerivedCounterValues = (PIMMs: PIMM[]): FEPIMM[] => {
+        const FEPIMMs: FEPIMM[] = [];
+        PIMMs.forEach((PIMM: PIMM, i: number) => {
+          const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
+          const diffDate =
+            (PIMMs.at(-1)?.timestamp ?? 0) -
+            (PIMMs.at(0)?.timestamp ?? 0);
 
           FEPIMMs.push({
             ...PIMM,
@@ -1045,17 +1050,30 @@ export default function Page(): React.JSX.Element {
               Number(counterMap.get('Unidades No Conformes')?.value),
             ineficiencias:
               (Number(counterMap.get('Minutos Motor Encendido')?.value) * 60) /
-              Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
+                Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
               Number(counterMap.get('Contador Inyecciones')?.value),
             maquina:
               Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
               Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value),
+            producidas:
+              diffDate / MS_CONVERSION[stepRef.current] -
+              Number(counterMap.get('Minutos No Programada')?.value) -
+              (Number(counterMap.get('Minutos Mantto Maquina')?.value) +
+                Number(counterMap.get('Minutos Mantto Molde')?.value) +
+                Number(counterMap.get('Minutos Sin Operario')?.value) +
+                Number(counterMap.get('Minutos Por Material')?.value) +
+                Number(counterMap.get('Minutos Calidad')?.value) +
+                Number(counterMap.get('Minutos Montaje')?.value)),
           });
-        }
-      });
+        });
+        return FEPIMMs;
+      };
 
-      return FEPIMMs;
+      return computeDerivedCounterValues(
+        offsetPIMMCounters(filterPIMMsByState(PIMMs, filters))
+      );
     };
+
     (async () => {
       setFilteredPIMMs(await applyFilters(filters, PIMMs));
     })();
@@ -1083,20 +1101,15 @@ export default function Page(): React.JSX.Element {
         keepalive: 30,
       });
 
-      const client = MQTTRef.current;
-
-      client.on('connect', () => {
-        console.log('Conectado a AWS IoT!');
-        client.subscribe('PIMMStateTopic', (err) => {
+      MQTTRef.current.on('connect', () => {
+        MQTTRef.current?.subscribe('PIMMStateTopic', (err) => {
           if (err) {
-            console.error('Error al suscribirse:', err);
-          } else {
-            console.log('Suscrito a PIMMStateTopic');
+            throw new Error(err.message);
           }
         });
       });
 
-      client.on('message', (topic, message) => {
+      MQTTRef.current.on('message', (topic, message) => {
         const data = JSON.parse(message.toString());
         setPIMMs((prev) => {
           const newData = [...prev, data];
@@ -1105,12 +1118,8 @@ export default function Page(): React.JSX.Element {
         });
       });
 
-      client.on('error', (err) => {
-        console.error('Error en la conexión MQTTRef:', err);
-      });
-
-      client.on('close', () => {
-        console.log('Conexión MQTTRef cerrada');
+      MQTTRef.current.on('error', (err) => {
+        throw new Error(err.message);
       });
     };
 
@@ -1157,7 +1166,10 @@ export default function Page(): React.JSX.Element {
           },
         };
         beforePartition = partition;
-        const data = await fetchData(accessTokenRef.current, partitionParameters);
+        const data = await fetchData(
+          accessTokenRef.current,
+          partitionParameters
+        );
 
         setPIMMs((prevState) => {
           const newPIMMS = [...prevState, ...data.pimms];
@@ -1310,7 +1322,7 @@ export default function Page(): React.JSX.Element {
                     title="Eficiencia"
                   />
                 </Box>
-                <PolarChart                  
+                <PolarChart
                   data={graphData?.indicadores.charts?.PolarChart?.data}
                 />
                 <TimeSeriesLineChart
