@@ -1,7 +1,6 @@
 import { authOptions } from '../route';
-import NextAuth, { Session } from 'next-auth';
+import { Session } from 'next-auth';
 import { ProviderType } from 'next-auth/providers/index';
-import { NextRequest } from 'next/server';
 
 jest.mock('next-auth', () => ({
   __esModule: true,

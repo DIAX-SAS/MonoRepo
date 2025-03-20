@@ -1,5 +1,4 @@
 import { fetchData, fetchCredentialsCore } from "../diax-back"; // Adjust path as needed
-import { config } from "../../../config";
 
 jest.mock("../../../config", () => ({
   config: { backendURL: "https://mock-api.com" },
