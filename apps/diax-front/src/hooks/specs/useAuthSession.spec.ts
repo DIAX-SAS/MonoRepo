@@ -21,7 +21,7 @@ describe("useAuthSession Hook", () => {
     (useSession as jest.Mock).mockReturnValue({
       data: {
         accessToken: "mock-token",
-        expires_at: Date.now() + 61000, // Expires in 61 seconds
+        expiresTokenAt: Date.now() + 61000, // Expires in 61 seconds
       },
       status: "authenticated",
       update: mockUpdate,

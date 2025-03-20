@@ -7,9 +7,9 @@ export function useAuthSession() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    if (!session?.accessToken || !session.expires_at) return;
+    if (!session?.accessToken || !session.expiresTokenAt) return;
 
-    const refreshTime = session.expires_at - Date.now() - 60000; // Refresh 1 min before expiry
+    const refreshTime = session.expiresTokenAt - Date.now() - 60000; // Refresh 1 min before expiry
 
     if (refreshTime > 0) {
       const timeout = setTimeout(async () => {
