@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions, Session, Account } from "next-auth";
 import CognitoProvider from "next-auth/providers/cognito";
 import { JWT } from "next-auth/jwt";
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CognitoProvider({
       clientId: process.env.COGNITO_CLIENT_ID || "",

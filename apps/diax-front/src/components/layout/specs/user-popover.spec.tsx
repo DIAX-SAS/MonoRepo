@@ -28,6 +28,10 @@ describe("UserPopover Component", () => {
 
   beforeEach(() => {
     setOpenMock = jest.fn();
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: { href: "" },
+    }); // Mock window.location.href
   });
 
   it("renders user information", () => {
