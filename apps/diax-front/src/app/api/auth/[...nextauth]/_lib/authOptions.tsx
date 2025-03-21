@@ -29,7 +29,7 @@ async function refreshAccessToken(token: JWT) {
       ...token,
       accessToken: refreshedTokens.access_token,
       idToken: refreshedTokens.id_token,
-      expiresAt: Date.now() + (Number(refreshedTokens.expires_in) * 1000) || Date.now() + 3600 * 1000, // Fallback to 1 hour if expires_in is missing
+      expiresAt: Date.now() + (Number(refreshedTokens.expires_in ?? 0) * 1000), 
     };
   } catch (error) {
     console.error("Error refreshing access token", error);
@@ -59,7 +59,8 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, account, user }) {
+    async jwt({ token, account, user, trigger }) {
+     
       if (account) {
         return {
           accessToken: account.access_token,
@@ -69,10 +70,9 @@ export const authOptions: NextAuthOptions = {
           ...user
         };
       }
-
-      if (!token.expiresAt || Date.now() > token.expiresAt) {
+      if (!token.expiresAt || Date.now() > token.expiresAt || trigger == "update") {
         return await refreshAccessToken(token);
-      }
+      }   
 
       return token;
     },
@@ -80,7 +80,7 @@ export const authOptions: NextAuthOptions = {
       session.accessToken = token.accessToken;
       session.idToken = token.idToken;
       session.error = token.error;
-     
+      session.expiresTokenAt = token.expiresAt;     
       return session;
     }
   }

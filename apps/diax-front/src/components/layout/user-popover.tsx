@@ -17,10 +17,8 @@ export interface UserPopoverProps {
 export const handleSignOut = async (): Promise<void> => {
   const cognitoLogoutUrl = `${config.auth.cognitoDomain}/logout?` +
     new URLSearchParams({
-      client_id: config.auth.clientId,
-      logout_uri: config.auth.logoutUri,
-      redirect_uri: config.auth.redirectUri,
-      response_type: config.auth.response_type
+      client_id:config.auth.clientId,
+      logout_uri:config.auth.logoutUri,
     }).toString();
 
 
