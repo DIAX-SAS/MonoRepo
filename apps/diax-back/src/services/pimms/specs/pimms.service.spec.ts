@@ -5,13 +5,13 @@ import { InfoSettingsDto } from '../pimms.dto';
 import { PimmsModule } from '../pimms.module';
 import { PIMMController } from '../pimms.controller';
 import { ConfigModule } from '@nestjs/config';
-import { DynamooseModule } from 'nestjs-dynamoose';
-import { CognitoAuthModule } from '@nestjs-cognito/auth';
 
 jest.mock('@repo-hub/internal');
 jest.mock('jsonwebtoken');
 jest.mock('dynamoose');
-
+jest.mock('@nestjs-cognito/auth', () => ({
+  Authentication: () => jest.fn(),
+}));
 describe('PIMMService', () => {
   let service: PIMMService;
   let module: TestingModule;
@@ -20,36 +20,7 @@ describe('PIMMService', () => {
     module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({
         isGlobal: true,
-      }),
-
-      DynamooseModule.forRootAsync({
-        imports: [ConfigModule],
-        inject: [],
-        useFactory: () => ({
-          aws: {
-            region: 'us-east-1',
-            accessKeyId: 'accessKeyId',
-            secretAccessKey: 'secretAccessKey',
-          },
-          model: {
-            create: false, // Set to true if you want Dynamoose to create tables automatically
-            update: true, // Set to true if you want to update existing table schema
-          },
-        }),
-      }),
-
-      {
-        module: CognitoAuthModule,
-        providers: [
-          {
-            provide: 'COGNITO_JWT_VERIFIER_INSTANCE_TOKEN',
-            useValue: {
-              verify: jest.fn().mockResolvedValue({}),
-            },
-          },
-        ],
-        exports: ['COGNITO_JWT_VERIFIER_INSTANCE_TOKEN'],
-      }, PimmsModule],
+      }), PimmsModule],
       controllers: [PIMMController],
       providers: [PIMMService]
     }).compile();
