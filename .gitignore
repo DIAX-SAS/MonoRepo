@@ -52,3 +52,9 @@ jest.config.js
 .env.production.local
 # build output
 build
+
+# Test results
+test-results/
+test-results/**/*.xml
+test-results/**/*.json
+test-results/**/*.log

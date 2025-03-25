@@ -16,6 +16,20 @@
         "tsConfig": "apps/diax-back/tsconfig.app.json",
         "assets": [ "apps/diax-back/src/assets" ],
         "webpackConfig": "apps/diax-back/webpack.config.js"
+      },
+      "configurations": {
+        "production": {
+          "sourceMap": false,
+          "optimization": true,
+          "extractLicenses": true,
+          "outputPath": "dist/apps/diax-back",
+          "fileReplacements": [
+            {
+              "replace": "apps/diax-back/src/environments/environment.ts",
+              "with": "apps/diax-back/src/environments/environment.prod.ts"
+            }
+          ]
+        }
       }
     },
     "serve": {
