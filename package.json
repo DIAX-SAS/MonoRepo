@@ -48,6 +48,7 @@
     "rsuite": "^latest"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.39.0",
     "@eslint/compat": "^latest",
     "@eslint/eslintrc": "^latest",
     "@eslint/js": "^latest",
