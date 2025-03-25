@@ -1,36 +1,33 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PIMMController } from '../pimms.controller';
-import { PIMMService } from '../pimms.service';
-import { InfoSettingsDto } from '../pimms.dto';
+import { PIMMSController } from '../pimms.controller';
+import { PimmsService } from '../pimms.service';
 
-// Mock the PIMMService
 const mockPIMMService = {
   getPIMMS: jest.fn(),
   getPIMMSCredentials: jest.fn(),
 };
 
-// Mock the Authentication decorator
 jest.mock('@nestjs-cognito/auth', () => ({
   Authentication: () => jest.fn(),
 }));
 
 describe('PIMMController', () => {
-  let controller: PIMMController;
-  let service: PIMMService;
+  let controller: PIMMSController;
+  let service: PimmsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [PIMMController],
+      controllers: [PIMMSController],
       providers: [
         {
-          provide: PIMMService,
+          provide: PimmsService,
           useValue: mockPIMMService,
         },
       ],
     }).compile();
 
-    controller = module.get<PIMMController>(PIMMController);
-    service = module.get<PIMMService>(PIMMService);
+    controller = module.get<PIMMSController>(PIMMSController);
+    service = module.get<PimmsService>(PimmsService);
   });
 
   afterEach(() => {
@@ -39,7 +36,7 @@ describe('PIMMController', () => {
 
   describe('getPIMMS', () => {
     it('should call PIMMService.getPIMMS with the correct parameters', async () => {
-      const infoSettings: InfoSettingsDto = {
+      const infoSettings: GetPimmsDTO = {
         filters: {
           initTime: 70000000,
           endTime: 70000001,
@@ -74,8 +71,8 @@ describe('PIMMController', () => {
           '7192164a1615db76fbb014fdd766b339607e9bd3cde5d85dd7be97a9cdaf99aa',
       };
       mockPIMMService.getPIMMSCredentials.mockResolvedValue(expectedResult);
-      const result = await controller.getPIMMSCredentials();
-      expect(service.getPIMMSCredentials).toHaveBeenCalled();
+      const result = await controller.getPimmsIotCredentials();
+      expect(service.getPimmsIotCredentials).toHaveBeenCalled();
       expect(result).toEqual(expectedResult);
     });
   });

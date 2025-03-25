@@ -4,24 +4,22 @@ import {
   Body,
   Get
 } from '@nestjs/common';
-import { PIMMService } from './pimms.service';
-import { InfoSettingsDto } from './pimms.dto';
+import { PimmsService } from './pimms.service';
 import { Authentication } from '@nestjs-cognito/auth';
+import { PimmsFilterDto } from './pimms.dto';
 
 @Controller('pimms')
-
 @Authentication()
-export class PIMMController {
-  constructor(private readonly PIMMService: PIMMService) { }
+export class PIMMSController {
+  constructor(private readonly PimmsService: PimmsService) { }
 
   @Post('')
-  getPIMMS(@Body() infoSettings: InfoSettingsDto) {
-    return this.PIMMService.getPIMMS(infoSettings);
+  getPIMMS(@Body() pimmsFilterDto: PimmsFilterDto) {
+    return this.PimmsService.getPIMMS(pimmsFilterDto);
   }
 
-  @Get('/credentials')
-  getPIMMSCredentials() {
-    return this.PIMMService.getPIMMSCredentials();   
+  @Get('iot/credentials')
+  getPimmsIotCredentials() {
+    return this.PimmsService.getPimmsIotCredentials();   
   }
 }
-

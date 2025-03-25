@@ -1,17 +1,17 @@
 import { validate, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { FiltersDto, InfoSettingsDto, AccUnit } from '../pimms.dto';
+import { PimmsFilterDto, GetPimmsDTO, PimmsStepUnit } from '../pimms.dto';
 
 describe('FiltersDto', () => {
   it('should validate a valid FiltersDto object', async () => {
     const filtersData = {
       initTime: 1633072800,
       endTime: 1633076400,
-      accUnit: AccUnit.SECOND,
+      accUnit: PimmsStepUnit.SECOND,
       lastID: 123,
     };
 
-    const filtersDto = plainToInstance(FiltersDto, filtersData);
+    const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
     expect(errors.length).toBe(0);
   });
@@ -20,10 +20,10 @@ describe('FiltersDto', () => {
     const filtersData = {
       initTime: 'not a number',
       endTime: 1633076400,
-      accUnit: AccUnit.SECOND,
+      accUnit: PimmsStepUnit.SECOND,
     };
 
-    const filtersDto = plainToInstance(FiltersDto, filtersData);
+    const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].constraints.isNumber).toBeDefined();
@@ -36,7 +36,7 @@ describe('FiltersDto', () => {
       accUnit: 'invalid',
     };
 
-    const filtersDto = plainToInstance(FiltersDto, filtersData);
+    const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].constraints.isEnum).toBeDefined();
@@ -46,10 +46,10 @@ describe('FiltersDto', () => {
     const filtersData = {
       initTime: 1633072800,
       endTime: 1633076400,
-      accUnit: AccUnit.SECOND,
+      accUnit: PimmsStepUnit.SECOND,
     };
 
-    const filtersDto = plainToInstance(FiltersDto, filtersData);
+    const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
     expect(errors.length).toBe(0);
   });
@@ -61,11 +61,11 @@ describe('InfoSettingsDto', () => {
       filters: {
         initTime: 1633072800,
         endTime: 1633076400,
-        accUnit: AccUnit.SECOND,
+        accUnit: PimmsStepUnit.SECOND,
       },
     };
 
-    const infoSettingsDto = plainToInstance(InfoSettingsDto, infoSettingsData);
+    const infoSettingsDto = plainToInstance(GetPimmsDTO, infoSettingsData);
     const errors = await validate(infoSettingsDto);
     expect(errors.length).toBe(0);
   });
@@ -75,11 +75,11 @@ describe('InfoSettingsDto', () => {
       filters: {
         initTime: 'not a number',
         endTime: 1633076400,
-        accUnit: AccUnit.SECOND,
+        accUnit: PimmsStepUnit.SECOND,
       },
     };
 
-    const infoSettingsDto = plainToInstance(InfoSettingsDto, infoSettingsData);
+    const infoSettingsDto = plainToInstance(GetPimmsDTO, infoSettingsData);
     await expect(validateOrReject(infoSettingsDto)).rejects.toBeDefined();
   });
 });

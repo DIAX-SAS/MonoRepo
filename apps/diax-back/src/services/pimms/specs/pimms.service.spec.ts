@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PIMMService } from '../pimms.service';
+import { PimmsService } from '../pimms.service';
 import { ResponsePIMM } from '@repo-hub/internal';
-import { InfoSettingsDto } from '../pimms.dto';
+import { GetPimmsDTO } from '../pimms.dto';
 import { PimmsModule } from '../pimms.module';
-import { PIMMController } from '../pimms.controller';
+import { PIMMSController } from '../pimms.controller';
 import { ConfigModule } from '@nestjs/config';
 
 jest.mock('@repo-hub/internal');
@@ -13,7 +13,7 @@ jest.mock('@nestjs-cognito/auth', () => ({
   Authentication: () => jest.fn(),
 }));
 describe('PIMMService', () => {
-  let service: PIMMService;
+  let service: PimmsService;
   let module: TestingModule;
 
   beforeEach(async () => {
@@ -21,10 +21,10 @@ describe('PIMMService', () => {
       imports: [ConfigModule.forRoot({
         isGlobal: true,
       }), PimmsModule],
-      controllers: [PIMMController],
-      providers: [PIMMService]
+      controllers: [PIMMSController],
+      providers: [PimmsService]
     }).compile();
-    service = module.get<PIMMService>(PIMMService);
+    service = module.get<PimmsService>(PimmsService);
   });
 
   it('should be defined', () => {
@@ -46,7 +46,7 @@ describe('PIMMService', () => {
         };
       });
 
-      const result = await service.getPIMMSCredentials();
+      const result = await service.getPimmsIotCredentials();
 
       expect(result).toEqual({
         token: {
@@ -59,7 +59,7 @@ describe('PIMMService', () => {
 
   describe('getPIMMS', () => {
     it('should return PIMMS data', async () => {
-      const mockSettings: InfoSettingsDto = {
+      const mockSettings: GetPimmsDTO = {
         filters: {
           initTime: 700000000,
           endTime: 700000001,

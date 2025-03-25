@@ -1,13 +1,14 @@
 import "reflect-metadata"
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 
-export enum AccUnit {
+export enum PimmsStepUnit {
   SECOND = 'second',
   MINUTE = 'minute',
   HOUR = 'hour',
 }
-export class FiltersDto {
+
+export class PimmsFilterDto {
   @IsNumber()
   @Type(() => Number)
   initTime: number;
@@ -16,20 +17,19 @@ export class FiltersDto {
   @Type(() => Number)
   endTime: number;
 
-  @IsEnum(AccUnit, {
-    message: `accUnit must be one of the following values: ${Object.values(
-      AccUnit
-    ).join(', ')}`,
-  })
-  accUnit: 'second' | 'minute' | 'hour';
+  @IsEnum(PimmsStepUnit)
+  stepUnit: 'second' | 'minute' | 'hour';
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   lastID?: number | null;
 }
-export class InfoSettingsDto {
-  @ValidateNested()
-  @Type(() => FiltersDto)
-  filters: FiltersDto;
-}
+
+// TODO: change to class and add type checks
+export type GetPimmsResponseDTO = {
+  lastID: number | null;
+  pimms: PimmDTO[];
+  totalProcessed: number;
+};
+

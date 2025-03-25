@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PimmsModule } from '../pimms.module';
-import { PIMMController } from '../pimms.controller';
-import { PIMMService } from '../pimms.service';
+import { PIMMSController } from '../pimms.controller';
+import { PimmsService } from '../pimms.service';
 import { ConfigModule } from '@nestjs/config';
 import { DynamooseModule } from 'nestjs-dynamoose';
 import { CognitoAuthModule } from '@nestjs-cognito/auth';
@@ -45,8 +45,8 @@ describe('PimmsModule', () => {
                 ],
                 exports: ['COGNITO_JWT_VERIFIER_INSTANCE_TOKEN'],
             }, PimmsModule],
-            controllers: [PIMMController],
-            providers: [PIMMService]
+            controllers: [PIMMSController],
+            providers: [PimmsService]
         }).compile();
     });
 
@@ -55,18 +55,18 @@ describe('PimmsModule', () => {
     });
 
     it('should have PIMMController', () => {
-        const controller = module.get<PIMMController>(PIMMController);
+        const controller = module.get<PIMMSController>(PIMMSController);
         expect(controller).toBeDefined();
-        expect(controller).toBeInstanceOf(PIMMController);
+        expect(controller).toBeInstanceOf(PIMMSController);
     });
 
     it('should have PIMMService', () => {
-        const service = module.get<PIMMService>(PIMMService);
+        const service = module.get<PimmsService>(PimmsService);
         expect(service).toBeDefined();
-        expect(service).toBeInstanceOf(PIMMService);
+        expect(service).toBeInstanceOf(PimmsService);
     });
 
     it('should export PIMMService', () => {
-        expect(module.get(PIMMService)).toBeDefined();
+        expect(module.get(PimmsService)).toBeDefined();
     });
 });
