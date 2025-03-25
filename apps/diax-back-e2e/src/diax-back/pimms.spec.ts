@@ -62,7 +62,6 @@ describe('POST /pimms', () => {
 
   it('should return an empty response with second as accUnit', async () => {
     const res = await axios.post(`/api/pimms`, infoSettings, {...authHeaders,...axiosOptions});
-    console.log(authHeaders);
     expect(res.data).toEqual({ lastID: null, pimms: [], totalProcessed: 0 });
     expect(res.status).toBe(201);
   });
