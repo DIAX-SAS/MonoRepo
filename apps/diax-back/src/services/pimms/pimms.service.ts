@@ -59,7 +59,7 @@ export class PimmsService {
     const tableModel = dynamoose.model(this.buckets[stepUnit], PIMMSchema);
   
     const query = tableModel
-      .query('timestamp')
+      .query('timestamp') // TODO: Check if this is the correct key
       .between(lastID || initTime, endTime)
       .attributes(['PLCNumber', 'timestamp', 'payload']);
   
