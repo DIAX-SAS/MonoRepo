@@ -14,7 +14,6 @@ async function getFromCognito(): Promise<string> {
     },
   };
 
-  console.log(params)
   try {
     const command = new InitiateAuthCommand(params);
     const response = await client.send(command);
