@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PimmsService } from '../pimms.service';
-import { ResponsePIMM } from '@repo-hub/internal';
-import { GetPimmsDTO } from '../pimms.dto';
 import { PimmsModule } from '../pimms.module';
 import { PIMMSController } from '../pimms.controller';
 import { ConfigModule } from '@nestjs/config';
+import { GetPimmsResponseDTO, PimmsFilterDto } from '../pimms.dto';
 
-jest.mock('@repo-hub/internal');
 jest.mock('jsonwebtoken');
 jest.mock('dynamoose');
 jest.mock('@nestjs-cognito/auth', () => ({
@@ -32,12 +30,12 @@ describe('PIMMService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getPIMMSCredentials', () => {
+  describe('getPimmsIotCredentials', () => {
     it('should return temporal token and expiration date', async () => {
       const mockToken = 'mock-token';
       const mockExpirationDate = new Date();
 
-      jest.spyOn(service, 'getPIMMSCredentials').mockImplementation(async () => {
+      jest.spyOn(service, 'getPimmsIotCredentials').mockImplementation(async () => {
         return {
           token: {
             sessionToken: mockToken,
@@ -59,16 +57,14 @@ describe('PIMMService', () => {
 
   describe('getPIMMS', () => {
     it('should return PIMMS data', async () => {
-      const mockSettings: GetPimmsDTO = {
-        filters: {
+      const mockSettings: PimmsFilterDto = {        
           initTime: 700000000,
           endTime: 700000001,
           lastID: null,
-          accUnit: 'second',
-        },
+          stepUnit: 'second',        
       };
 
-      const mockResponse: ResponsePIMM = {
+      const mockResponse: GetPimmsResponseDTO = {
         pimms: [{ timestamp: 700000000, counters: [], states: [], PLCNumber: 3 }],
         lastID: 700000001,
         totalProcessed: 1,

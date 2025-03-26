@@ -1,6 +1,6 @@
 import "reflect-metadata"
-import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import { GetPimmsDTO } from "./pimms.schema";
 
 export enum PimmsStepUnit {
   SECOND = 'second',
@@ -9,12 +9,10 @@ export enum PimmsStepUnit {
 }
 
 export class PimmsFilterDto {
-  @IsNumber()
-  @Type(() => Number)
+  @IsNumber()  
   initTime: number;
 
   @IsNumber()
-  @Type(() => Number)
   endTime: number;
 
   @IsEnum(PimmsStepUnit)
@@ -22,14 +20,19 @@ export class PimmsFilterDto {
 
   @IsOptional()
   @IsNumber()
-  @Type(() => Number)
   lastID?: number | null;
 }
 
-// TODO: change to class and add type checks
-export type GetPimmsResponseDTO = {
+export class GetPimmsResponseDTO {
+  @IsOptional()
+  @IsNumber()
   lastID: number | null;
-  pimms: PimmDTO[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  pimms: GetPimmsDTO[];
+
+  @IsNumber()
   totalProcessed: number;
-};
+}
 

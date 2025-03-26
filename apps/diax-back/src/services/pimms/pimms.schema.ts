@@ -1,19 +1,25 @@
 import { Schema } from 'dynamoose';
 import { Item } from 'dynamoose/dist/Item';
 
-export type PimmVariableDTO = {
+type PimmVariableDTO = {
   id: string;
   name: string;
   value: string;
   valueType: string;
 };
 
+export class GetPimmsDTO {
+  timestamp: number;
+  counters: PimmVariableDTO[];
+  states: PimmVariableDTO[];
+  PLCNumber: number;
+}
+
 export interface PIMMDocument extends Item {
   plcId: number;
   timestamp: number;
   counters: PimmVariableDTO[];
   states: PimmVariableDTO[];
-  payload: Record<string, any>; // TODO: create a correct type
 }
 
 export const PIMMSchema = new Schema(
@@ -23,8 +29,8 @@ export const PIMMSchema = new Schema(
       hashKey: true,
     },
     timestamp: {
-      type: Number,
-      rangeKey: true, // TODO: Try to index
+      type: Number,      
+      rangeKey: true,
     },
     counters: {
       type: Array,
@@ -33,9 +39,6 @@ export const PIMMSchema = new Schema(
     states: {
       type: Array,
       schema: [Object],
-    },
-    payload: {
-      type: Object,
     },
   },
   {

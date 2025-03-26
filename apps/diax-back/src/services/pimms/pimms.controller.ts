@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PimmsService } from './pimms.service';
 import { Authentication } from '@nestjs-cognito/auth';
-import { PimmsFilterDto } from './pimms.dto';
+import { GetPimmsResponseDTO, PimmsFilterDto } from './pimms.dto';
 
 @Controller('pimms')
 @Authentication()
@@ -14,7 +14,7 @@ export class PIMMSController {
   constructor(private readonly PimmsService: PimmsService) { }
 
   @Post('')
-  getPIMMS(@Body() pimmsFilterDto: PimmsFilterDto) {
+  getPIMMS(@Body() pimmsFilterDto: PimmsFilterDto): Promise<GetPimmsResponseDTO> {
     return this.PimmsService.getPIMMS(pimmsFilterDto);
   }
 

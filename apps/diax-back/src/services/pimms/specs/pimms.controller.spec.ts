@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PIMMSController } from '../pimms.controller';
 import { PimmsService } from '../pimms.service';
+import { PimmsFilterDto } from '../pimms.dto';
 
 const mockPIMMService = {
   getPIMMS: jest.fn(),
-  getPIMMSCredentials: jest.fn(),
+  getPimmsIotCredentials: jest.fn(),
 };
 
 jest.mock('@nestjs-cognito/auth', () => ({
@@ -36,12 +37,10 @@ describe('PIMMController', () => {
 
   describe('getPIMMS', () => {
     it('should call PIMMService.getPIMMS with the correct parameters', async () => {
-      const infoSettings: GetPimmsDTO = {
-        filters: {
+      const infoSettings: PimmsFilterDto = {      
           initTime: 70000000,
           endTime: 70000001,
-          accUnit: 'second',
-        },
+          stepUnit: 'second',
       };
 
       const expectedResult = {
@@ -65,12 +64,12 @@ describe('PIMMController', () => {
   });
 
   describe('getPIMMSCredentials', () => {
-    it('should call PIMMService.getPIMMSCredentials', async () => {
+    it('should call PIMMService.getPimmsIotCredentials', async () => {
       const expectedResult = {
         token:
           '7192164a1615db76fbb014fdd766b339607e9bd3cde5d85dd7be97a9cdaf99aa',
       };
-      mockPIMMService.getPIMMSCredentials.mockResolvedValue(expectedResult);
+      mockPIMMService.getPimmsIotCredentials.mockResolvedValue(expectedResult);
       const result = await controller.getPimmsIotCredentials();
       expect(service.getPimmsIotCredentials).toHaveBeenCalled();
       expect(result).toEqual(expectedResult);
