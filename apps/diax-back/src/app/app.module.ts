@@ -44,6 +44,7 @@ import { CognitoAuthModule } from '@nestjs-cognito/auth';
               ''
             ),
           },
+          endpoint: configService.get<string>('DYNAMODB_ENDPOINT', 'https://dynamodb.us-east-1.amazonaws.com'),
         }),
       }),
     }),
