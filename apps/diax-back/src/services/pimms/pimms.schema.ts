@@ -24,13 +24,21 @@ export interface PIMMDocument extends Item {
 
 export const PIMMSchema = new Schema(
   {
-    plcId: {
-      type: Number,
-      hashKey: true,
-    },
+    epochDay:{
+      type:Number,
+      hashKey:true
+    },  
     timestamp: {
       type: Number,      
       rangeKey: true,
+    },
+    plcId: {
+      type: Number,
+      index:{
+        name:"LSIplcId",
+        type:"local",       
+        project:true
+      }
     },
     counters: {
       type: Array,

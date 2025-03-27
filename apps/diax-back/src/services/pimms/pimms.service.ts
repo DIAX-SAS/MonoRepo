@@ -59,13 +59,16 @@ export class PimmsService {
     const { initTime, endTime, lastID, stepUnit } = settings;
 
     const tableModel = dynamoose.model(this.tableName[stepUnit], PIMMSchema);
+   
+    // Returns an array of epoch timestamps (in seconds) for each day between initTime and endTime (inclusive)
+    const partitions =  Array.from({ length: Math.ceil((endTime - initTime) / 86400000) + 1 }, 
+    (_, i) => Math.floor((initTime + i * 86400000) / 1000));
 
-    const partitions = Array.from({ length: 100 + 1 }, (_, i) => i);
     const rawItems = await Promise.all(
       partitions.map(async (partition) => {
         return (
           await tableModel
-            .query('plcId')
+            .query('epochDay')
             .eq(partition)
             .where('timestamp')
             .between(lastID || initTime, endTime)
