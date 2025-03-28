@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from '../app.controller';
+
 describe('AppController', () => {
   let appController: AppController;
 
@@ -21,6 +22,12 @@ describe('AppController', () => {
     it('should return "Hello DIAX!"', () => {
       expect(appController.getObjects()).toEqual( 'Hello DIAX!' );
     });
+  });
 
+  describe('getVersion', () => {
+    it('should return a version string in the format x.y.z', () => {
+      const version = appController.getVersion().version;
+      expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+    });
   });
 });
