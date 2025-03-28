@@ -1,26 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
-import * as dynamoose from 'dynamoose';
-import { GetPimmsDTO, PIMMSchema } from './pimms.schema';
+import { GetPimmsDTO, PIMMDocument, PIMMDocumentKey } from './pimms.schema';
 import { GetPimmsResponseDTO, PimmsFilterDto } from './pimms.dto';
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from '@aws-sdk/client-secrets-manager';
+import { InjectModel, Model } from 'nestjs-dynamoose';
 
 @Injectable()
 export class PimmsService {
-  tableName: Record<string, string>;
   iotSecretId: string;
   accessKeyId: string;
   secretAccessKey: string;
-  constructor(private readonly config: ConfigService) {
-    this.tableName = {
-      second: this.config.get('BASE_TABLE_NAME'),
-      minute: this.config.get('MINUTE_TABLE_NAME'),
-      hour: this.config.get('HOUR_TABLE_NAME'),
-    };
+  constructor(
+    private readonly config: ConfigService,
+    @InjectModel("PIMM") private PIMMModel: Model<PIMMDocument, PIMMDocumentKey>,
+    @InjectModel("PIMMMinute") private PIMMMinuteModel: Model<PIMMDocument, PIMMDocumentKey>,
+    @InjectModel("PIMMHour") private PIMMHourModel: Model<PIMMDocument, PIMMDocumentKey>
+  ) {
     this.iotSecretId = this.config.get('IOT_AUTH_SECRET_PATH');
     this.accessKeyId = this.config.get('AWS_ACCESS_KEY_ID');
     this.secretAccessKey = this.config.get('AWS_SECRET_ACCESS_KEY');
@@ -58,11 +57,24 @@ export class PimmsService {
   async getPIMMS(settings: PimmsFilterDto): Promise<GetPimmsResponseDTO> {
     const { initTime, endTime, lastID, stepUnit } = settings;
 
-    const tableModel = dynamoose.model(this.tableName[stepUnit], PIMMSchema);
-   
+    let tableModel;
+    switch (stepUnit) {
+      case "second":
+      default:
+        tableModel = this.PIMMModel;
+        break;
+      case "minute":
+        tableModel = this.PIMMMinuteModel;
+        break;
+      case "hour":
+        tableModel = this.PIMMHourModel;
+        break;
+
+    }
+
     // Returns an array of epoch timestamps (in seconds) for each day between initTime and endTime (inclusive)
-    const partitions =  Array.from({ length: Math.ceil((endTime - initTime) / 86400000) + 1 }, 
-    (_, i) => Math.floor((initTime + i * 86400000) / 1000));
+    const partitions = Array.from({ length: Math.ceil((endTime - initTime) / 86400000) + 1 },
+      (_, i) => Math.floor((initTime + i * 86400000) / 1000));
 
     const rawItems = await Promise.all(
       partitions.map(async (partition) => {

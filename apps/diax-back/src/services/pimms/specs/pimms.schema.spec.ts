@@ -11,11 +11,11 @@ describe('GetPimmsDTO', () => {
       states: [
         { id: '2', name: 'State1', value: 'on', valueType: 'string' },
       ],
-      PLCNumber: 123,
+      plcId: 123,
     };
 
     expect(testPimms).toHaveProperty('timestamp', 1700000000);
     expect(testPimms.counters[0].id).toBe('1');
-    expect(testPimms.PLCNumber).toBe(123);
+    expect(testPimms.plcId).toBe(123);
   });
 });

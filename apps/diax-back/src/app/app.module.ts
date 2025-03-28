@@ -25,16 +25,7 @@ import { CognitoAuthModule } from '@nestjs-cognito/auth';
     DynamooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        aws: {
-          region: configService.get<string>('AWS_REGION'),
-          accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID'),
-          secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY'),
-        },
-        model: {
-          create: false, // Set to true to create tables automatically
-          update: true, // Set to true to update table schema
-        },
+      useFactory: async (configService: ConfigService) => ({       
         ddb: new DynamoDB({
           region: configService.get<string>('AWS_REGION'),
           credentials: {

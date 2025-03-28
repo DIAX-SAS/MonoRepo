@@ -2,8 +2,8 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { PimmsFilterDto, PimmsStepUnit } from '../pimms.dto';
 
-describe('FiltersDto', () => {
-  it('should validate a valid FiltersDto object', async () => {
+describe('PimmsFilterDto', () => {
+  it('should validate a valid PimmsFilterDto object', async () => {
     const filtersData = {
       initTime: 1633072800,
       endTime: 1633076400,
@@ -25,9 +25,23 @@ describe('FiltersDto', () => {
 
     const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBe(1);
     expect(errors[0].constraints.isNumber).toBeDefined();
   });
+
+  it('should fail validation if enTime is not a number', async () => {
+    const filtersData = {
+      initTime: 1633076400,
+      endTime: "not a number",
+      stepUnit: PimmsStepUnit.SECOND,
+    };
+
+    const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
+    const errors = await validate(filtersDto);
+    expect(errors.length).toBe(1);
+    expect(errors[0].constraints.isNumber).toBeDefined();
+  });
+
 
   it('should fail validation if stepUnit is not a valid enum value', async () => {
     const filtersData = {
@@ -38,7 +52,7 @@ describe('FiltersDto', () => {
 
     const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBe(1);
     expect(errors[0].constraints.isEnum).toBeDefined();
   });
 
@@ -52,31 +66,5 @@ describe('FiltersDto', () => {
     const filtersDto = plainToInstance(PimmsFilterDto, filtersData);
     const errors = await validate(filtersDto);
     expect(errors.length).toBe(0);
-  });
-});
-
-describe('InfoSettingsDto', () => {
-  it('should validate a valid InfoSettingsDto object', async () => {
-    const infoSettingsData: PimmsFilterDto = {     
-        initTime: 1633072800,
-        endTime: 1633076400,
-        stepUnit: PimmsStepUnit.SECOND,     
-    };
-
-    const infoSettingsDto = plainToInstance(PimmsFilterDto, infoSettingsData);
-    const errors = await validate(infoSettingsDto);
-    expect(errors.length).toBe(0);
-  });
-
-  it('should fail validation if filters is not a valid FiltersDto object', async () => {
-    const infoSettingsData = {      
-        initTime: 'not a number',
-        endTime: 1633076400,
-        stepUnit: PimmsStepUnit.SECOND,     
-    };
-
-    const infoSettingsDto = plainToInstance(PimmsFilterDto, infoSettingsData);
-    const errors = await validate(infoSettingsDto);
-    expect(errors.length).toBe(1);
   });
 });

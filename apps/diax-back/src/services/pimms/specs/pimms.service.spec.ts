@@ -1,27 +1,41 @@
+import "reflect-metadata";
 import { Test, TestingModule } from '@nestjs/testing';
 import { PimmsService } from '../pimms.service';
-import { PimmsModule } from '../pimms.module';
-import { PIMMSController } from '../pimms.controller';
-import { ConfigModule } from '@nestjs/config';
-import { GetPimmsResponseDTO, PimmsFilterDto } from '../pimms.dto';
+import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 
-jest.mock('jsonwebtoken');
-jest.mock('dynamoose');
-jest.mock('@nestjs-cognito/auth', () => ({
-  Authentication: () => jest.fn(),
-}));
+const moduleMocker = new ModuleMocker(global);
+import { GetPimmsResponseDTO, PimmsFilterDto } from '../pimms.dto';
+import { ConfigService } from "@nestjs/config";
+
 describe('PIMMService', () => {
   let service: PimmsService;
   let module: TestingModule;
 
   beforeEach(async () => {
-    module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot({
-        isGlobal: true,
-      }), PimmsModule],
-      controllers: [PIMMSController],
-      providers: [PimmsService]
-    }).compile();
+    module = await Test.createTestingModule({   
+      providers: [{
+        provide: "PIMMModel",
+        useValue: jest.fn()
+      },{
+        provide: "PIMMMinuteModel",
+        useValue: jest.fn()
+      },{
+        provide: "PIMMHourModel",
+        useValue: jest.fn()
+      },
+      PimmsService]
+    })
+    .useMocker((token) => {   
+      if (typeof token === 'function') {
+        const mockMetadata = moduleMocker.getMetadata(
+          token,
+        ) as MockFunctionMetadata<typeof ConfigService,"function">;       
+
+        const Mock = moduleMocker.generateFromMetadata(mockMetadata);
+        return new Mock();
+      }
+    })
+    .compile();
     service = module.get<PimmsService>(PimmsService);
   });
 
@@ -65,7 +79,7 @@ describe('PIMMService', () => {
       };
 
       const mockResponse: GetPimmsResponseDTO = {
-        pimms: [{ timestamp: 700000000, counters: [], states: [], PLCNumber: 3 }],
+        pimms: [{ timestamp: 700000000, counters: [], states: [], plcId: 3 }],
         lastID: 700000001,
         totalProcessed: 1,
       };

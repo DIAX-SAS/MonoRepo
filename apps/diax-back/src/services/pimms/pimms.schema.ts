@@ -1,5 +1,4 @@
 import { Schema } from 'dynamoose';
-import { Item } from 'dynamoose/dist/Item';
 
 type PimmVariableDTO = {
   id: string;
@@ -12,10 +11,13 @@ export class GetPimmsDTO {
   timestamp: number;
   counters: PimmVariableDTO[];
   states: PimmVariableDTO[];
-  PLCNumber: number;
+  plcId: number;
 }
 
-export interface PIMMDocument extends Item {
+export interface PIMMDocumentKey {
+  epochDay: number;
+}
+export interface PIMMDocument extends PIMMDocumentKey {
   plcId: number;
   timestamp: number;
   counters: PimmVariableDTO[];

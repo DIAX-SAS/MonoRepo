@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PIMMSController } from '../pimms.controller';
 import { PimmsService } from '../pimms.service';
 import { PimmsFilterDto } from '../pimms.dto';
+import { GetPimmsDTO } from '../pimms.schema';
 
 const mockPIMMService = {
   getPIMMS: jest.fn(),
@@ -43,15 +44,11 @@ describe('PIMMController', () => {
           stepUnit: 'second',
       };
 
-      const expectedResult = {
-        timestamp: 70000000,
-        PLCNumber: 3,
-        payload: {
-          PLCNumber: 3,
+      const expectedResult: GetPimmsDTO = {       
+          plcId: 3,
           timestamp: 70000000,
           counters: [],
           states: [],
-        },
       };
 
       mockPIMMService.getPIMMS.mockResolvedValue(expectedResult);
@@ -68,6 +65,7 @@ describe('PIMMController', () => {
       const expectedResult = {
         token:
           '7192164a1615db76fbb014fdd766b339607e9bd3cde5d85dd7be97a9cdaf99aa',
+          expiration:"mock-date"
       };
       mockPIMMService.getPimmsIotCredentials.mockResolvedValue(expectedResult);
       const result = await controller.getPimmsIotCredentials();
