@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PIMMSController } from '../pimms.controller';
 import { PimmsService } from '../pimms.service';
-import { PimmsFilterDto } from '../pimms.dto';
-import { GetPimmsDTO } from '../pimms.schema';
+import { PimmsFilterDto, GetPimmsDTO } from '../pimms.interface';
 
 const mockPIMMService = {
   getPIMMS: jest.fn(),

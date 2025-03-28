@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { PimmsFilterDto, PimmsStepUnit } from '../pimms.dto';
+import { PimmsStepUnit, PimmsFilterDto } from '../pimms.interface';
 
 describe('PimmsFilterDto', () => {
   it('should validate a valid PimmsFilterDto object', async () => {

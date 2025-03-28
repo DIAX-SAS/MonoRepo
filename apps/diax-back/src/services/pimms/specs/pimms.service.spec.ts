@@ -4,8 +4,8 @@ import { PimmsService } from '../pimms.service';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 
 const moduleMocker = new ModuleMocker(global);
-import { GetPimmsResponseDTO, PimmsFilterDto } from '../pimms.dto';
 import { ConfigService } from "@nestjs/config";
+import { PimmsFilterDto, GetPimmsResponseDTO } from "../pimms.interface";
 
 describe('PIMMService', () => {
   let service: PimmsService;

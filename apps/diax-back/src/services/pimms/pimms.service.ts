@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
-import { GetPimmsDTO, PIMMDocument, PIMMDocumentKey } from './pimms.schema';
-import { GetPimmsResponseDTO, PimmsFilterDto } from './pimms.dto';
+import { GetPimmsDTO, GetPimmsResponseDTO, PIMMDocumentKey, PimmsFilterDto } from './pimms.interface';
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -16,9 +15,9 @@ export class PimmsService {
   secretAccessKey: string;
   constructor(
     private readonly config: ConfigService,
-    @InjectModel("PIMM") private PIMMModel: Model<PIMMDocument, PIMMDocumentKey>,
-    @InjectModel("PIMMMinute") private PIMMMinuteModel: Model<PIMMDocument, PIMMDocumentKey>,
-    @InjectModel("PIMMHour") private PIMMHourModel: Model<PIMMDocument, PIMMDocumentKey>
+    @InjectModel("PIMM") private PIMMModel: Model<GetPimmsDTO, PIMMDocumentKey>,
+    @InjectModel("PIMMMinute") private PIMMMinuteModel: Model<GetPimmsDTO, PIMMDocumentKey>,
+    @InjectModel("PIMMHour") private PIMMHourModel: Model<GetPimmsDTO, PIMMDocumentKey>
   ) {
     this.iotSecretId = this.config.get('IOT_AUTH_SECRET_PATH');
     this.accessKeyId = this.config.get('AWS_ACCESS_KEY_ID');
@@ -72,6 +71,7 @@ export class PimmsService {
 
     }
 
+    // TODO: make more legible
     // Returns an array of epoch timestamps (in seconds) for each day between initTime and endTime (inclusive)
     const partitions = Array.from({ length: Math.ceil((endTime - initTime) / 86400000) + 1 },
       (_, i) => Math.floor((initTime + i * 86400000) / 1000));

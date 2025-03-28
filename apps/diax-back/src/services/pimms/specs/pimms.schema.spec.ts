@@ -1,5 +1,4 @@
-import { GetPimmsDTO } from "../pimms.schema";
-
+import { GetPimmsDTO } from "../pimms.interface";
 
 describe('GetPimmsDTO', () => {
   it('should create a valid GetPimmsDTO instance', () => {

@@ -1,28 +1,17 @@
 import { Schema } from 'dynamoose';
 
-type PimmVariableDTO = {
-  id: string;
-  name: string;
-  value: string;
-  valueType: string;
-};
-
-export class GetPimmsDTO {
-  timestamp: number;
-  counters: PimmVariableDTO[];
-  states: PimmVariableDTO[];
-  plcId: number;
-}
-
-export interface PIMMDocumentKey {
-  epochDay: number;
-}
-export interface PIMMDocument extends PIMMDocumentKey {
-  plcId: number;
-  timestamp: number;
-  counters: PimmVariableDTO[];
-  states: PimmVariableDTO[];
-}
+export const PimmVariableDTOSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    value: { type: String, required: true },
+    valueType: { type: String, required: true },
+  },
+  {
+    saveUnknown: true,
+    timestamps: false,
+  }
+);
 
 export const PIMMSchema = new Schema(
   {
@@ -44,11 +33,11 @@ export const PIMMSchema = new Schema(
     },
     counters: {
       type: Array,
-      schema: [Object],
+      schema: [PimmVariableDTOSchema],
     },
     states: {
       type: Array,
-      schema: [Object],
+      schema: [PimmVariableDTOSchema],
     },
   },
   {
