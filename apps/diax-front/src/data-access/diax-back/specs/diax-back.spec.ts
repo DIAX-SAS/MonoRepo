@@ -1,3 +1,4 @@
+import { PimmsStepUnit } from "../../../app/dashboard/dashboard.types";
 import { fetchData, fetchCredentialsCore } from "../diax-back"; // Adjust path as needed
 
 jest.mock("../../../config", () => ({
@@ -8,7 +9,7 @@ global.fetch = jest.fn();
 
 describe("API Service Tests", () => {
   const mockAuth = { accessToken: "mock-token" };
-  const mockInfoSettings = { key: "value" };
+  const mockInfoSettings = { initTime: 0, endTime:0, stepUnit: PimmsStepUnit.SECOND};
 
   afterEach(() => {
     jest.clearAllMocks();

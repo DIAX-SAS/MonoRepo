@@ -18,13 +18,13 @@ import {
   fetchCredentialsCore,
   fetchData,
 } from '../../data-access/diax-back/diax-back';
-import { type FEPIMM, type Filters, type Parameters } from './dashboard.types';
+import { PimmsStepUnit, type FEPIMM, type Filters, type Parameters } from './dashboard.types';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Grid2 from '@mui/material/Grid2';
 import Box from '@mui/material/Box';
-import { InfoSettings, PIMM } from '@repo-hub/internal';
+import { PIMM } from './dashboard.types';
 import mqtt from 'mqtt';
 import * as React from 'react';
 import { JSONTree } from 'react-json-tree';
@@ -48,7 +48,7 @@ export default function Page(): React.JSX.Element {
     live: false,
     startDate: new Date().getTime(),
     endDate: new Date().getTime(),
-    step: 'second',
+    step: PimmsStepUnit.SECOND,
   });
 
   const { session } = useAuthSession();
@@ -431,7 +431,7 @@ export default function Page(): React.JSX.Element {
                   {
                     name: 'Buenas',
                     children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                      name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                      name: 'PIMM ' + String(FEPIMM.plcId),
                       value: FEPIMM.buenas,
                     })),
                   },
@@ -441,7 +441,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Arranque',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -454,7 +454,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Rechazo',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -515,7 +515,7 @@ export default function Page(): React.JSX.Element {
                   {
                     name: 'Productivo',
                     children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                      name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                      name: 'PIMM ' + String(FEPIMM.plcId),
                       value: FEPIMM.producidas,
                     })),
                   },
@@ -525,7 +525,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Maquina',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -538,7 +538,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'SinOperario',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -551,7 +551,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Calidad',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -563,7 +563,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Montaje',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -575,7 +575,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Molde',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -588,7 +588,7 @@ export default function Page(): React.JSX.Element {
                       {
                         name: 'Material',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                          name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                          name: 'PIMM ' + String(FEPIMM.plcId),
                           value:
                             Number(
                               FEPIMM.counters.find(
@@ -667,7 +667,7 @@ export default function Page(): React.JSX.Element {
                   {
                     name: 'Producido',
                     children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                      name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                      name: 'PIMM ' + String(FEPIMM.plcId),
                       value:
                         Number(
                           FEPIMM.counters.find(
@@ -679,7 +679,7 @@ export default function Page(): React.JSX.Element {
                   {
                     name: 'Ineficiencias',
                     children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
-                      name: 'PIMM ' + String(FEPIMM.PLCNumber),
+                      name: 'PIMM ' + String(FEPIMM.plcId),
                       value: Number(FEPIMM.ineficiencias) || 0, // Ensure valid ID
                     })),
                   },
@@ -715,7 +715,7 @@ export default function Page(): React.JSX.Element {
           charts: {
             StackedBarChart: {
               data: lastGroupPLC?.FEPIMMs.map((FEPIMM, index) => ({
-                category: 'PIMM ' + FEPIMM.PLCNumber,
+                category: 'PIMM ' + FEPIMM.plcId,
                 motor:
                   Number(
                     FEPIMM.counters.find(
@@ -756,7 +756,7 @@ export default function Page(): React.JSX.Element {
               data: {
                 name: 'Total',
                 children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
-                  name: `PIMM ${FEPIMM.PLCNumber}`,
+                  name: `PIMM ${FEPIMM.plcId}`,
                   children: FEPIMM.counters
                     .filter((counter) =>
                       counter.name?.toLowerCase().includes('cavidad')
@@ -772,8 +772,8 @@ export default function Page(): React.JSX.Element {
               data: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
-                    if (!acc[FEPIMM.PLCNumber]) {
-                      acc[FEPIMM.PLCNumber] = [];
+                    if (!acc[FEPIMM.plcId]) {
+                      acc[FEPIMM.plcId] = [];
                     }
 
                     const counter = FEPIMM.counters.find(
@@ -781,7 +781,7 @@ export default function Page(): React.JSX.Element {
                     );
                     const value = counter ? Number(counter.value) : 0;
 
-                    acc[FEPIMM.PLCNumber].push({
+                    acc[FEPIMM.plcId].push({
                       timestamp: FEPIMM.timestamp,
                       value: value,
                     });
@@ -789,8 +789,8 @@ export default function Page(): React.JSX.Element {
 
                   return acc;
                 }, {} as { [key: number]: { timestamp: number; value: number }[] })
-              ).map(([PLCNumber, data]) => ({
-                name: `PIMM ${PLCNumber}`,
+              ).map(([plcId, data]) => ({
+                name: `PIMM ${plcId}`,
                 color: 'red',
                 data: data.sort((a, b) => a.timestamp - b.timestamp), // Ordenar por timestamp
               })),
@@ -857,7 +857,7 @@ export default function Page(): React.JSX.Element {
                     ) || 0;
 
                   return {
-                    name: `PIMM ${FEPIMM.PLCNumber}`,
+                    name: `PIMM ${FEPIMM.plcId}`,
                     children: FEPIMM.counters
                       .filter(
                         (counter) =>
@@ -882,8 +882,8 @@ export default function Page(): React.JSX.Element {
               data: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
-                    if (!acc[FEPIMM.PLCNumber]) {
-                      acc[FEPIMM.PLCNumber] = [];
+                    if (!acc[FEPIMM.plcId]) {
+                      acc[FEPIMM.plcId] = [];
                     }
 
                     const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
@@ -901,7 +901,7 @@ export default function Page(): React.JSX.Element {
                       );
                     }, 0);
 
-                    acc[FEPIMM.PLCNumber].push({
+                    acc[FEPIMM.plcId].push({
                       timestamp: FEPIMM.timestamp,
                       value: value,
                     });
@@ -909,16 +909,16 @@ export default function Page(): React.JSX.Element {
 
                   return acc;
                 }, {} as { [key: number]: { timestamp: number; value: number }[] })
-              ).map(([PLCNumber, data]) => ({
-                name: `PIMM ${PLCNumber}`,
+              ).map(([plcId, data]) => ({
+                name: `PIMM ${plcId}`,
                 color: 'red',
                 data: data.sort((a, b) => a.timestamp - b.timestamp), // Ordenar por timestamp
               })),
               data2: Object.entries(
                 groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
                   groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
-                    if (!acc[FEPIMM.PLCNumber]) {
-                      acc[FEPIMM.PLCNumber] = [];
+                    if (!acc[FEPIMM.plcId]) {
+                      acc[FEPIMM.plcId] = [];
                     }
                     const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
                       const counterMap = new Map(
@@ -932,7 +932,7 @@ export default function Page(): React.JSX.Element {
                       );
                     }, 0);
 
-                    acc[FEPIMM.PLCNumber].push({
+                    acc[FEPIMM.plcId].push({
                       timestamp: FEPIMM.timestamp,
                       value: value,
                     });
@@ -940,8 +940,8 @@ export default function Page(): React.JSX.Element {
 
                   return acc;
                 }, {} as { [key: number]: { timestamp: number; value: number }[] })
-              ).map(([PLCNumber, data]) => ({
-                name: `PIMM ${PLCNumber}`,
+              ).map(([plcId, data]) => ({
+                name: `PIMM ${plcId}`,
                 color: 'red',
                 data: data.sort((a, b) => a.timestamp - b.timestamp), // Ordenar por timestamp
               })),
@@ -1176,13 +1176,11 @@ export default function Page(): React.JSX.Element {
       );
       let beforePartition = parameters.startDate;
       partitions.map(async (partition) => {
-        const partitionParameters: InfoSettings = {
-          filters: {
+        const partitionParameters = {          
             initTime: beforePartition,
             endTime: partition,
-            accUnit: parameters.step,
-            lastID: null,
-          },
+            stepUnit: parameters.step,
+            lastID: null,          
         };
         beforePartition = partition;
         const data = await fetchData(
