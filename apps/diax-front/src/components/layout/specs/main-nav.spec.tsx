@@ -11,11 +11,11 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/redirect',
 }));
 
-jest.mock('@/components/core/logo', () => ({
+jest.mock('../../core/logo', () => ({
   Logo: () => <div data-testid="logo">Mocked Logo</div>,
 }));
 
-jest.mock('@/components/layout/user-popover', () => ({
+jest.mock('../user-popover', () => ({
   UserPopover: ({ open }: { open: boolean }) =>
     open ? <div data-testid="user-popover">User Popover</div> : null,
 }));

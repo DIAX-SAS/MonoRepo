@@ -11,7 +11,7 @@ jest.mock("next-auth/react", () => ({
   signOut: jest.fn(),
 }));
 
-jest.mock("@/config", () => ({
+jest.mock("../../../config", () => ({
   config: {
     auth: {
       cognitoDomain: "https://example-cognito.com",
