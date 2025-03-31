@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
+import * as dotenv from 'dotenv';
+
+dotenv.config({
+  path: "apps/diax-front-e2e/.env"
+});
 
 const FRONTEND_URL = process.env.BASE_URL || 'http://localhost:4000';
 
