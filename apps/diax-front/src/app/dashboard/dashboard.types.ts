@@ -16,7 +16,7 @@ export type Filters = {
   materiales: Map<string, boolean>;
 };
 
-export interface FEPIMM extends PIMM {
+export interface FEPIMM extends GetPimmsDTO {
   buenas: number;
   ineficiencias: number;
   producidas: number;

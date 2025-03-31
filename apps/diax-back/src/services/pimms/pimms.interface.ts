@@ -15,7 +15,7 @@ export class PimmsFilterDto {
   endTime: number;
 
   @IsEnum(PimmsStepUnit)
-  stepUnit: 'second' | 'minute' | 'hour';
+  stepUnit: PimmsStepUnit;
 
   @IsOptional()
   @IsNumber()

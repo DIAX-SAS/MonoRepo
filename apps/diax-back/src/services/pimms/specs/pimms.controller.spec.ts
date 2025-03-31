@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PIMMSController } from '../pimms.controller';
 import { PimmsService } from '../pimms.service';
-import { PimmsFilterDto, GetPimmsDTO } from '../pimms.interface';
+import { PimmsFilterDto, GetPimmsDTO, PimmsStepUnit } from '../pimms.interface';
 
 const mockPIMMService = {
   getPIMMS: jest.fn(),
@@ -40,7 +40,7 @@ describe('PIMMController', () => {
       const infoSettings: PimmsFilterDto = {      
           initTime: 70000000,
           endTime: 70000001,
-          stepUnit: 'second',
+          stepUnit: PimmsStepUnit.SECOND,
       };
 
       const expectedResult: GetPimmsDTO = {       

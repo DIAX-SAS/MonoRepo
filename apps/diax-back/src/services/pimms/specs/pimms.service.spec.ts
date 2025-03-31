@@ -5,7 +5,7 @@ import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 
 const moduleMocker = new ModuleMocker(global);
 import { ConfigService } from "@nestjs/config";
-import { PimmsFilterDto, GetPimmsResponseDTO } from "../pimms.interface";
+import { PimmsFilterDto, GetPimmsResponseDTO, PimmsStepUnit } from "../pimms.interface";
 
 describe('PIMMService', () => {
   let service: PimmsService;
@@ -75,7 +75,7 @@ describe('PIMMService', () => {
           initTime: 700000000,
           endTime: 700000001,
           lastID: null,
-          stepUnit: 'second',        
+          stepUnit: PimmsStepUnit.SECOND,        
       };
 
       const mockResponse: GetPimmsResponseDTO = {
