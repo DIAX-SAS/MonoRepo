@@ -56,7 +56,7 @@ export class PimmsService {
   async getPIMMS(settings: PimmsFilterDto): Promise<GetPimmsResponseDTO> {
     const { initTime, endTime, lastID, stepUnit } = settings;
 
-    let tableModel;
+    let tableModel: Model<GetPimmsDTO, PIMMDocumentKey>;
     switch (stepUnit) {
       case "second":
       default:
@@ -69,12 +69,33 @@ export class PimmsService {
         tableModel = this.PIMMHourModel;
         break;
 
+    }  
+
+    /**
+  * Generates an array of epoch timestamps (in seconds) for each day 
+  * between `initTime` and `endTime` (inclusive), normalized to 00:00:00 UTC.
+  *
+  * @param {number} initTime - The start timestamp (in milliseconds).
+  * @param {number} endTime - The end timestamp (in milliseconds).
+  * @returns {number[]} An array of timestamps (in seconds) representing each day.
+  */
+    function getPartitions(initTime: number, endTime: number): number[] {
+      const ONE_DAY_MS = 86400000; 
+   
+      const start = new Date(initTime);
+      start.setUTCHours(0, 0, 0, 0);
+    
+      const end = new Date(endTime);
+      end.setUTCHours(0, 0, 0, 0);
+     
+      const totalDays = Math.ceil((end.getTime() - start.getTime()) / ONE_DAY_MS) + 1;
+    
+      return Array.from({ length: totalDays }, (_, i) =>
+        (start.getTime() + i * ONE_DAY_MS) 
+      );
     }
 
-    // TODO: make more legible
-    // Returns an array of epoch timestamps (in seconds) for each day between initTime and endTime (inclusive)
-    const partitions = Array.from({ length: Math.ceil((endTime - initTime) / 86400000) + 1 },
-      (_, i) => Math.floor((initTime + i * 86400000) / 1000));
+    const partitions = getPartitions(initTime, endTime);
 
     const rawItems = await Promise.all(
       partitions.map(async (partition) => {
@@ -86,7 +107,7 @@ export class PimmsService {
             .between(lastID || initTime, endTime)
             .attributes(['plcId', 'timestamp', 'counters', 'states'])
             .exec()
-        ).toJSON();
+        );
       })
     );
     const pimms = rawItems.flat() as GetPimmsDTO[];

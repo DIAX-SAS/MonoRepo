@@ -26,7 +26,7 @@ export const PIMMSchema = new Schema(
     plcId: {
       type: Number,
       index:{
-        name:"LSIplcId",
+        name:"LSI_plcId",
         type:"local",       
         project:true
       }
