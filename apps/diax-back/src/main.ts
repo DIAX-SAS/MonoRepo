@@ -30,7 +30,7 @@ async function bootstrap() {
       transform: true, // Auto-transforms payloads to DTO classes
     })
   );
-  const port = process.env.PORT || 3000;
+  const port = process.env.BACK_PORT || 3000;
   await app.listen(port);
   Logger.log(
     `Diax is running on: http://localhost:${port}/${globalPrefix}`

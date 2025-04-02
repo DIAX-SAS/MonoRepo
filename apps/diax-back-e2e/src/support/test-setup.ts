@@ -2,7 +2,7 @@ import { AuthFlowType, CognitoIdentityProviderClient, InitiateAuthCommand } from
 import axios from 'axios';
 import dotenv from 'dotenv';
 dotenv.config({
-  path: "apps/diax-back-e2e/.env"
+  path: "../../.env"
 });
 module.exports = async function () {
   async function getFromCognito(): Promise<string> {
@@ -32,7 +32,7 @@ module.exports = async function () {
     }
   }
   const host = process.env.HOST ?? 'localhost';
-  const port = process.env.PORT ?? '3000';
+  const port = process.env.BACK_PORT ?? '3000';
   axios.defaults.headers.common['Authorization'] = `Bearer ${await getFromCognito()}`;
   axios.defaults.baseURL = `http://${host}:${port}`;
 };
