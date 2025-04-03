@@ -14,10 +14,11 @@ import { CognitoAuthModule } from '@nestjs-cognito/auth';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {        
         return {
+          endpoint: configService.get<string>("COGNITO_URI"),
           jwtVerifier: {
             userPoolId: configService.get<string>('COGNITO_USER_POOL_ID'),
             clientId: configService.get<string>('COGNITO_CLIENT_ID'),
-            tokenUse: null,
+            tokenUse: null
           },
         };
       },

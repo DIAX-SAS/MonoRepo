@@ -13,6 +13,7 @@ export class PimmsService {
   iotSecretId: string;
   accessKeyId: string;
   secretAccessKey: string;
+  endPointSecrets: string;
   constructor(
     private readonly config: ConfigService,
     @InjectModel("PIMM") private PIMMModel: Model<GetPimmsDTO, PIMMDocumentKey>,
@@ -22,11 +23,13 @@ export class PimmsService {
     this.iotSecretId = this.config.get('IOT_AUTH_SECRET_PATH');
     this.accessKeyId = this.config.get('AWS_ACCESS_KEY_ID');
     this.secretAccessKey = this.config.get('AWS_SECRET_ACCESS_KEY');
+    this.endPointSecrets = this.config.get("SECRETS_MANAGER_URI")
   }
 
   async getPimmsIotCredentials() {
     const smClient = new SecretsManagerClient({
       region: 'us-east-1',
+      endpoint: this.endPointSecrets,
       credentials: {
         accessKeyId: this.accessKeyId,
         secretAccessKey: this.secretAccessKey,

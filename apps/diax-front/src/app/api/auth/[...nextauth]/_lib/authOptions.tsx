@@ -5,7 +5,7 @@ import { JWT } from "next-auth/jwt";
 
 async function refreshAccessToken(token: JWT) {
   try {
-    const url = `${process.env.COGNITO_TOKEN_ENDPOINT}`;
+    const url = `${process.env.COGNITO_URI}/oauth2/token`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
     Cognito({
       clientId: process.env.COGNITO_CLIENT_ID || '',
       clientSecret: '',
-      issuer: process.env.COGNITO_ISSUER,
+      issuer: `${process.env.COGNITO_URI}/${process.env.COGNITO_USER_POOL_ID}`,
       client: {
         token_endpoint_auth_method: "none"
       },

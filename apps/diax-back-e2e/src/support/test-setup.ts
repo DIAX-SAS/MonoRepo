@@ -6,7 +6,7 @@ dotenv.config({
 });
 module.exports = async function () {
   async function getFromCognito(): Promise<string> {
-    const client = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
+    const client = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION, endpoint: process.env.COGNITO_URI });
   
     const params = {
       AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
