@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  main:
+  build:
     runs-on: ubuntu-latest
 
     services:
@@ -16,90 +16,67 @@ jobs:
         ports:
           - 27017:27017
 
+      cognito:
+        image: jagregory/cognito-local
+        ports:
+          - 4566:4566
+
+      secrets_manager:
+        image: amazon/aws-secrets-manager-secret-adm-controller
+        ports:
+          - 4567:4567
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Install Yarn
         run: npm install -g yarn
-      - name: Add Yarn to PATH
-        run: echo "$(yarn global bin)" >> $GITHUB_PATH
-      - name: Check Yarn Version
-        run: yarn --version
 
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Check if Yarn is Installed
-        run: |
-          if yarn --version > /dev/null 2>&1; then
-            echo "Yarn is already installed, skipping installation."
-          else
-            echo "Yarn not detected, enabling Corepack..."
-            corepack enable
-          fi
-          yarn --version
+          cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Install Playwright dependencies
-        run: yarn playwright install-deps
-
-      - name: Copy and populate environment variables
         run: |
-          # Backend Environment
+             yarn install --frozen-lockfile 
+             yarn playwright install-deps
+
+      - name: Copy enviromental variables
+        run: |
           cp apps/diax-back/.env.template apps/diax-back/.env
-          sed -i "s|AWS_ACCESS_KEY_ID=.*|AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}|" apps/diax-back/.env
-          sed -i "s|AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}|" apps/diax-back/.env
-          sed -i "s|DYNAMO_URI=.*|DYNAMO_URI=${DYNAMO_URI}|" apps/diax-back/.env
-
-          # Backend E2E Testing Environment
           cp apps/diax-back-e2e/.env.template apps/diax-back-e2e/.env
-          sed -i "s|COGNITO_TEST_PASSWORD=.*|COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}|" apps/diax-back-e2e/.env
-
-          # Frontend Environment
           cp apps/diax-front/.env.local.template apps/diax-front/.env.local
-          sed -i "s|NEXTAUTH_SECRET=.*|NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}|" apps/diax-front/.env.local
-
-          # Frontend E2E Testing Environment
           cp apps/diax-front-e2e/.env.template apps/diax-front-e2e/.env
-          sed -i "s|COGNITO_TEST_PASSWORD=.*|COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}|" apps/diax-front-e2e/.env
 
-          echo "Environment variables successfully copied and set."
-
-      - name: Build diax-back for production
-        run: yarn nx run diax-back:build --configuration=production
-
-      - name: Run diax-back tests
-        run: yarn nx run diax-back:test --maxWorkers=2 --detectOpenHandles --forceExit
-
-      - name: Lint diax-back
-        run: yarn nx run diax-back:lint
-
-      - name: Build diax-front for production
-        run: yarn nx run diax-front:build --configuration=production
-
-      - name: Run diax-front tests
-        run: yarn nx run diax-front:test --maxWorkers=2 --detectOpenHandles --forceExit
-
-      - name: Lint diax-front
+      #FRONTEND
+      - name: Run diax-front lint
         run: yarn nx run diax-front:lint
 
-      - name: Run diax-back-e2e tests
-        run: |
-          yarn nx run diax-back:serve & 
-          SERVER_PID=$!
-          yarn wait-on http://localhost:3000/api
-          yarn nx run diax-back-e2e:e2e
-          kill $SERVER_PID
+      - name: Run diax-front unit tests
+        run: yarn nx run diax-front:test --maxWorkers=2 --detectOpenHandles --forceExit
 
-      - name: Run diax-front-e2e tests
+      - name: Run diax-front e2e tests
         run: |
           yarn nx run diax-front:serve & 
           SERVER_PID=$!
-          yarn wait-on http://localhost:4000/
-          yarn wait-on https://www.google.com
+          yarn wait-on http://localhost:4000/ --timeout 30000
           yarn nx run diax-front-e2e:e2e
+          kill $SERVER_PID
+
+      #BACKEND
+      - name: Run diax-back lint
+        run: yarn nx run diax-back:lint
+
+      - name: Run diax-back unit tests
+        run: yarn nx run diax-back:test --maxWorkers=2 --detectOpenHandles --forceExit
+
+      - name: Run diax-back e2e tests
+        run: |
+          yarn nx run diax-back:serve & 
+          SERVER_PID=$!
+          yarn wait-on http://localhost:3000/api --timeout 30000
+          yarn nx run diax-back-e2e:e2e
           kill $SERVER_PID

@@ -1,0 +1,16 @@
+{
+  "name": "diax-canary",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/diax-canary/src",
+  "tags": [],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "options": {
+        "config": "apps/diax-canary/playwright.config.ts"
+      },
+      "outputs": ["{workspaceRoot}/dist/apps/diax-canary"]
+    }
+  }
+}

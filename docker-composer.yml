@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  dynamo:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "27017:8000"  # DynamoDB local default port is 8000
+    command: -jar DynamoDBLocal.jar -inMemory -sharedDb
+    container_name: dynamo-local
+
+  cognito:
+    image: jagregory/cognito-local
+    ports:
+      - "4566:9229"
+    container_name: cognito-local
+
+  secrets_manager:
+    image: skarpdev/aws-secrets-manager-emulator:0.1.0 ## remember to update the version
+    volumes:
+      - ./secrets-manager-secrets:/secrets ## preload secrets via files
+    ports:
+      - "4567:3000"
+    container_name: secrets-manager-local

@@ -1,0 +1,38 @@
+name: CM
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+             yarn install --frozen-lockfile              
+             yarn playwright install-deps
+
+      #CANARY
+      - name: Run diax-front e2e tests
+        run: |
+          yarn wait-on https://diax.webiste/ --timeout 10000
+          yarn wait-on https://www.google.com/ --timeout 10000
+          yarn nx run diax-canary:e2e
+
+     

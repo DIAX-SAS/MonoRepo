@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from "@testing-library/react";
 import FilterForm from "../../../components/filters/filter-form"; // Adjust path if needed
-import React from "react";
 import { Filters, Parameters, PimmsStepUnit } from "../../../app/dashboard/dashboard.types";
 
 // Mock filters and parameters
