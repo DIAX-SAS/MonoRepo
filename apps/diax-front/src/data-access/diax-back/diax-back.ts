@@ -1,10 +1,10 @@
-import { FilterPimmsDto, ResponsePimms } from '../../app/dashboard/dashboard.types';
+import { AccessToken, FilterPimmsDto, ResponsePimms } from '../../app/dashboard/dashboard.types';
 import { config } from '../../config';
 
 const URL = config.backendURL;
 
 
-export async function fetchData(auth: { accessToken: string | undefined }, parameters:FilterPimmsDto ):Promise<ResponsePimms> {
+export async function fetchData(auth: AccessToken, parameters:FilterPimmsDto ):Promise<ResponsePimms> {
   const response = await fetch(URL.concat('/pimms'), {
     method: 'POST',
     headers: {
@@ -21,7 +21,7 @@ export async function fetchData(auth: { accessToken: string | undefined }, param
   return responseContent;
 }
 
-export async function fetchCredentialsCore(auth: { accessToken: string | undefined }) {
+export async function fetchCredentialsCore(auth: AccessToken) {
   const response = await fetch(URL.concat('/pimms/credentials'), {
     method: 'GET',
     headers: {
