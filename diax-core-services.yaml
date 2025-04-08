@@ -1,0 +1,190 @@
+Resources:
+  Authorizer:
+    Type: AWS::IoT::Authorizer
+    Properties:
+      AuthorizerFunctionArn: arn:aws:iot:us-east-1:009160061988:authorizer/AuthorizerPIMMTopic
+      AuthorizerName: AuthorizerPIMMTopic
+      EnableCachingForHttp: false
+      SigningDisabled: true
+      Status: ACTIVE
+  DomainConfiguration:
+    Type: AWS::IoT::DomainConfiguration
+    Properties:
+      ApplicationProtocol: MQTT_WSS
+      AuthenticationType: CUSTOM_AUTH
+      AuthorizerConfig:
+        AllowAuthorizerOverride: false
+        DefaultAuthorizerName: AuthorizerPIMMTopic
+      DomainConfigurationStatus: ENABLED
+      DomainName: MQTTOverSocket
+      ServiceType: DATA
+      TlsConfig:
+        SecurityPolicy: TLS13_1_3_2022_10
+  Thing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: raspberryPI
+  ThingGroup:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: uploader
+      ThingGroupProperties:
+        ThingGroupDescription: To this group are all uploaders
+  TopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: SendToDynamoDB
+      TopicRulePayload:
+        Actions:
+          - DynamoDBv2:
+              PutItem:
+                TableName: PIMM
+              RoleArn: RoleDynamoDBv2IoTCore
+        AwsIotSqlVersion: '2015-10-08'
+        Description: Allow as soon it receives the message fowards it to DynamoDB
+        RuleDisabled: false
+        Sql: SELECT * FROM "PIMMStateTopic"
+  Policy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: AllActionsToStateDevices
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: iot:*
+            Resource: '*'
+  Certificate:
+    Type: AWS::IoT::Certificate
+    Properties:
+      Status: ACTIVE
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+  UserPoolUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      Username: e2e.test.user
+      UserPoolId: String
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AliasAttributes:
+        - email
+        - preferred_username
+      UserPoolName: !Sub ${AWS::StackName}-UserPool
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AWSDynamoDBForPIMMs
+      Description: Role for AWS IoT Rule to send data to DynamoDB
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: aws-iot-rule-SendToDynamoDB-action-1-role-AWSDynamoDBForPIMMs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:PutItem
+                Resource: arn:aws:dynamodb:us-east-1:009160061988:table/PIMM
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: diax-main
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties: {}
+  TaskDefinition2:
+    Type: AWS::ECS::TaskDefinition
+    Properties: {}
+  Service:
+    Type: AWS::ECS::Service
+    Properties: {}
+  Service2:
+    Type: AWS::ECS::Service
+    Properties: {}
+  PublicRepository:
+    Type: AWS::ECR::PublicRepository
+    Properties: {}
+  PublicRepository2:
+    Type: AWS::ECR::PublicRepository
+    Properties: {}
+  PIMM:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: plcId
+          AttributeType: 'N'
+        - AttributeName: timestamp
+          AttributeType: 'N'
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: plcId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+        - AttributeName: timestamp
+          KeyType: RANGE
+        - AttributeName: timestamp
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  PIMMMinute:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: plcId
+          AttributeType: 'N'
+        - AttributeName: timestamp
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: plcId
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  PIMMHour:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: plcId
+          AttributeType: 'N'
+        - AttributeName: timestamp
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: plcId
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties: {}
+  Certificate2:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: <String>
+  Secret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: IoTAuth/token
+      SecretString: '{ "signinKey": "3q2+7w==" }'
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: {}
+      Role: <String>
+  Function2:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: {}
+      Role: <String>
