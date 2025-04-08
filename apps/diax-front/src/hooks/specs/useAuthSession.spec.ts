@@ -27,10 +27,11 @@ describe("useAuthSession Hook", () => {
       update: mockUpdate,
     });
 
-    renderHook(() => useAuthSession());
-
-    // Simulate time passing until just before expiration
-    act(() => {
+    await act(async () => {
+      renderHook(() => useAuthSession());
+    });
+  
+    await act(async () => {
       jest.advanceTimersByTime(60000); // Move forward by 60 seconds
     });
 
