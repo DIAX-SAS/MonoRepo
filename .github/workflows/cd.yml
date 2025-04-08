@@ -59,7 +59,7 @@ jobs:
         
       - name: Build and push Docker image
         run: |       
-          docker build -f apps/diax-back/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/lnn-back:latest --push .
+          docker build -f apps/diax-back/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/diax-back:latest --push .
         
       - name: Deploy to ECS
         uses: imehedi/actions-awscli-v2@latest
