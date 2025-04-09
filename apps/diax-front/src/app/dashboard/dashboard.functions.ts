@@ -3,11 +3,15 @@ import { AccessToken, AccumulatedData, GraphData, GroupedFEPIMM, PIMM, ReduceGro
 import { config } from '../../config';
 import mqtt from 'mqtt';
 import { fetchCredentialsCore, fetchData } from '../../data-access/diax-back/diax-back';
+
 const MS_CONVERSION: { [key in Parameters['step']]: number } = {
     second: 1000,
     minute: 1000 * 60,
     hour: 1000 * 60 * 60,
 };
+const getCounterValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
+    Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;      
+
 export const theme = {
     scheme: 'monokai',
     author: 'wimer hazenberg (http://www.monokai.nl)',
@@ -28,6 +32,7 @@ export const theme = {
     base0E: '#ae81ff',
     base0F: '#cc6633',
 };
+
 export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefObject<Parameters['step']>) => {
     const groupByUnitTime = (
         data: FEPIMM[],
@@ -90,49 +95,45 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
 
             const reduceGroupedPIMMs = (grouped: GroupedFEPIMM): ReduceGroupedPIMMs => {
                 const reduceGroupedPIMMs = grouped.FEPIMMs.reduce(
-                    (acc, FEPIMM: FEPIMM): ReduceGroupedPIMMs => {
-                        const counterMap = new Map(FEPIMM.counters.map((c) => [c.name, c]));
+                    (acc, FEPIMM: FEPIMM): ReduceGroupedPIMMs => {                        
                         return {
                             acc_buenas: acc.acc_buenas + (FEPIMM.buenas || 0),
                             acc_noConformes:
                                 acc.acc_noConformes +
-                                (Number(counterMap.get('Unidades No Conformes')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Unidades No Conformes'),
                             acc_defectoInicioTurno:
                                 acc.acc_defectoInicioTurno +
-                                (Number(
-                                    counterMap.get('Unidades Defecto Inicio Turno')?.value
-                                ) || 0),
+                                getCounterValue(FEPIMM, 'Unidades Defecto Inicio Turno'),
                             acc_inyecciones:
                                 acc.acc_inyecciones +
-                                (Number(counterMap.get('Contador Inyecciones')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Contador Inyecciones'),
                             acc_ineficiencias:
-                                acc.acc_ineficiencias + (Number(FEPIMM.ineficiencias) || 0),
-                            acc_producidas: acc.acc_producidas + (FEPIMM.producidas || 0),
+                                acc.acc_ineficiencias + FEPIMM.ineficiencias,
+                            acc_producidas: acc.acc_producidas + FEPIMM.producidas,
                             acc_montaje:
                                 acc.acc_montaje +
-                                (Number(counterMap.get('Minutos Montaje')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Minutos Montaje'),
                             acc_calidad:
                                 acc.acc_calidad +
-                                (Number(counterMap.get('Minutos Calidad')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Minutos Calidad'),
                             acc_material:
                                 acc.acc_material +
-                                (Number(counterMap.get('Minutos Por Material')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Minutos Por Material'),
                             acc_abandono:
                                 acc.acc_abandono +
-                                (Number(counterMap.get('Minutos Sin Operario')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Minutos Sin Operario'),
                             acc_molde:
                                 acc.acc_molde +
-                                (Number(counterMap.get('Minutos Mantto Molde')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Minutos Mantto Molde'),
                             acc_maquina:
                                 acc.acc_maquina +
-                                (Number(counterMap.get('Minutos Mantto Maquina')?.value) ||
-                                    0),
+                                getCounterValue(FEPIMM, 'Minutos Mantto Maquina'),
                             acc_noProg:
                                 acc.acc_noProg +
-                                (Number(counterMap.get('Minutos No Programada')?.value) || 0),
+                                getCounterValue(FEPIMM, 'Minutos No Programada'),
                             acc_motor:
                                 acc.acc_motor +
-                                (Number(counterMap.get('KW Motor')?.value) || 0),
+                                getCounterValue(FEPIMM, 'KW Motor'),
                         };
                     },
                     {
@@ -158,8 +159,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
             const reduceByMoldes = (grouped: GroupedFEPIMM): Record<string, ReduceMolde> => {
                 const reduceByMoldes = grouped.FEPIMMs.reduce(
                     (acc, FEPIMM: FEPIMM): Record<string, ReduceMolde> => {
-                        const stateMap = new Map(FEPIMM.states.map((s) => [s.name, s]));
-                        const counterMap = new Map(FEPIMM.counters.map((c) => [c.name, c]));
+                        const stateMap = new Map(FEPIMM.states.map((s) => [s.name, s]));                      
                         const moldes: Record<string, ReduceMolde> = {};
 
                         if (!moldes[String(stateMap.get('Molde')?.value)]) {
@@ -173,21 +173,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 acc_gramosgeneral: 0,
                             };
                         }
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav1 +=
-                            Number(counterMap.get('Gramos Cavidad 1')?.value) || 0;
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav2 +=
-                            Number(counterMap.get('Gramos Cavidad 2')?.value) || 0;
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav3 +=
-                            Number(counterMap.get('Gramos Cavidad 3')?.value) || 0;
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav4 +=
-                            Number(counterMap.get('Gramos Cavidad 4')?.value) || 0;
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav5 +=
-                            Number(counterMap.get('Gramos Cavidad 5')?.value) || 0;
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav6 +=
-                            Number(counterMap.get('Gramos Cavidad 6')?.value) || 0;
-                        moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral +=
-                            Number(counterMap.get('Gramos Inyeccion')?.value) || 0;
-
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav1 += getCounterValue(FEPIMM, 'Gramos Cavidad 1');                         
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav2 += getCounterValue(FEPIMM, 'Gramos Cavidad 2');
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav3 += getCounterValue(FEPIMM, 'Gramos Cavidad 3');
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav4 += getCounterValue(FEPIMM, 'Gramos Cavidad 4');
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav5 += getCounterValue(FEPIMM, 'Gramos Cavidad 5');
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav6 += getCounterValue(FEPIMM, 'Gramos Cavidad 6');
+                        moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral += getCounterValue(FEPIMM, 'Gramos Inyeccion');
+                        
                         return { ...acc, ...moldes };
                     },
                     {
@@ -270,8 +263,6 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
     ));
 
     const lastGroupPLC = groupedFEPIMMs[groupedFEPIMMs.length - 1];
-
-
 
     const { performance, availability, quality, efficiency } =
         calculateOEE(lastGroupPLC);
@@ -367,27 +358,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                         name: 'Arranque',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) =>
-                                                            counter.name === 'Unidades No Conformes'
-                                                    )?.value
-                                                ) || 0, // Ensure valid ID
+                                            value: getCounterValue(FEPIMM, 'Unidades No Conformes'), 
                                         })),
                                     },
                                     {
                                         name: 'Rechazo',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) =>
-                                                            counter.name ===
-                                                            'Unidades Defecto Inicio Turno'
-                                                    )?.value
-                                                ) || 0, // Ensure valid ID
+                                            value: getCounterValue(FEPIMM, 'Unidades Defecto Inicio Turno'),
                                         })),
                                     },
                                 ],
@@ -451,76 +429,42 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                         name: 'Maquina',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) =>
-                                                            counter.name === 'Minutos Mantto Maquina'
-                                                    )?.value
-                                                ) || 0,
+                                            value: getCounterValue(FEPIMM, 'Minutos Mantto Maquina'),
                                         })),
                                     },
                                     {
                                         name: 'SinOperario',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) =>
-                                                            counter.name === 'Minutos Sin Operario'
-                                                    )?.value
-                                                ) || 0,
+                                            value: getCounterValue(FEPIMM, 'Minutos Sin Operario'),
                                         })),
                                     },
                                     {
                                         name: 'Calidad',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) => counter.name === 'Minutos Calidad'
-                                                    )?.value
-                                                ) || 0,
+                                            value: getCounterValue(FEPIMM, 'Minutos Calidad'),
                                         })),
                                     },
                                     {
                                         name: 'Montaje',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) => counter.name === 'Minutos Montaje'
-                                                    )?.value
-                                                ) || 0,
+                                            value: getCounterValue(FEPIMM, 'Minutos Montaje'),
                                         })),
                                     },
                                     {
                                         name: 'Molde',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) =>
-                                                            counter.name === 'Minutos Mantto Molde'
-                                                    )?.value
-                                                ) || 0,
+                                            value: getCounterValue(FEPIMM, 'Minutos Mantto Molde'),
                                         })),
                                     },
                                     {
                                         name: 'Material',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value:
-                                                Number(
-                                                    FEPIMM.counters.find(
-                                                        (counter) =>
-                                                            counter.name === 'Minutos Por Material'
-                                                    )?.value
-                                                ) || 0,
+                                            value: getCounterValue(FEPIMM, 'Minutos Por Material'),
                                         })),
                                     },
                                 ],
@@ -593,19 +537,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 name: 'Producido',
                                 children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                     name: 'PIMM ' + String(FEPIMM.plcId),
-                                    value:
-                                        Number(
-                                            FEPIMM.counters.find(
-                                                (counter) => counter.name === 'Contador Inyecciones'
-                                            )?.value
-                                        ) || 0, // Ensure valid ID
+                                    value: getCounterValue(FEPIMM, 'Gramos Inyeccion'),
                                 })),
                             },
                             {
                                 name: 'Ineficiencias',
                                 children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
                                     name: 'PIMM ' + String(FEPIMM.plcId),
-                                    value: Number(FEPIMM.ineficiencias) || 0, // Ensure valid ID
+                                    value: FEPIMM.ineficiencias
                                 })),
                             },
                         ],
@@ -641,18 +580,8 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                 StackedBarChart: {
                     data: lastGroupPLC?.FEPIMMs.map((FEPIMM, index) => ({
                         category: 'PIMM ' + FEPIMM.plcId,
-                        motor:
-                            Number(
-                                FEPIMM.counters.find(
-                                    (counter) => counter.name === 'KW Motor'
-                                )?.value
-                            ) || 0,
-                        maquina:
-                            Number(
-                                FEPIMM.counters.find(
-                                    (counter) => counter.name === 'KW Total Maquina'
-                                )?.value
-                            ) || 0,
+                        motor: getCounterValue(FEPIMM, 'KW Motor'),
+                        maquina: getCounterValue(FEPIMM, 'KW Total Maquina'),
                     })),
                 },
                 SeriesLineChart: {
@@ -685,7 +614,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                             children: FEPIMM.counters
                                 .filter((counter) =>
                                     counter.name?.toLowerCase().includes('cavidad')
-                                ) // Ensure `name` is defined
+                                )
                                 .map((counter) => ({
                                     name: counter.name,
                                     value: Number(counter.value) || 0, // Prevent NaN issues
@@ -700,12 +629,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 if (!acc[FEPIMM.plcId]) {
                                     acc[FEPIMM.plcId] = [];
                                 }
-
-                                const counter = FEPIMM.counters.find(
-                                    (counter) => counter.name === 'Gramos Inyeccion'
-                                );
-                                const value = counter ? Number(counter.value) : 0;
-
+                                const value =  getCounterValue(FEPIMM, "Gramos Inyeccion");
                                 acc[FEPIMM.plcId].push({
                                     timestamp: FEPIMM.timestamp,
                                     value: value,
@@ -773,13 +697,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                     data: {
                         name: 'Ciclos',
                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => {
-                            const puerta =
-                                Number(
-                                    FEPIMM.counters.find(
-                                        (counter) =>
-                                            counter.name === 'Segundos Ultimo Ciclo Puerta'
-                                    )?.value
-                                ) || 0;
+                            const puerta = getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Puerta');
 
                             return {
                                 name: `PIMM ${FEPIMM.plcId}`,
@@ -811,17 +729,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                     acc[FEPIMM.plcId] = [];
                                 }
 
-                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
-                                    const counterMap = new Map(
-                                        FEPIMM.counters.map((c) => [c.name, c])
-                                    );
+                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {                            
                                     return (
                                         acc +
                                         Number(
-                                            counterMap.get('Segundos Ultimo Ciclo Total')?.value
+                                            getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Total')
                                         ) -
                                         Number(
-                                            counterMap.get('Segundos Ultimo Ciclo Puerta')?.value
+                                            getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Puerta')
                                         )
                                     );
                                 }, 0);
@@ -845,14 +760,11 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 if (!acc[FEPIMM.plcId]) {
                                     acc[FEPIMM.plcId] = [];
                                 }
-                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
-                                    const counterMap = new Map(
-                                        FEPIMM.counters.map((c) => [c.name, c])
-                                    );
+                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {                                  
                                     return (
                                         acc +
                                         Number(
-                                            counterMap.get('Segundos Ultimo Ciclo Puerta')?.value
+                                            getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Puerta')
                                         )
                                     );
                                 }, 0);
@@ -978,7 +890,6 @@ export const applyFilters = async (
     const computeDerivedCounterValues = (PIMMs: PIMM[]): FEPIMM[] => {
         const FEPIMMs: FEPIMM[] = [];
         PIMMs.forEach((PIMM: PIMM, i: number) => {
-            const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
             const diffDate =
                 (PIMMs.at(-1)?.timestamp ?? 0) -
                 (PIMMs.at(0)?.timestamp ?? 0);
@@ -986,26 +897,25 @@ export const applyFilters = async (
             FEPIMMs.push({
                 ...PIMM,
                 buenas:
-                    Number(counterMap.get('Contador Unidades')?.value) -
-                    Number(counterMap.get('Unidades Defecto Inicio Turno')?.value) -
-                    Number(counterMap.get('Unidades No Conformes')?.value),
+                   getCounterValue(PIMM, 'Contador Unidades') -
+                   getCounterValue(PIMM, 'Unidades Defecto Inicio Turno') -
+                   getCounterValue(PIMM, 'Unidades No Conformes'),
                 ineficiencias:
-                    (Number(counterMap.get('Minutos Motor Encendido')?.value) * 60) /
-                    Number(counterMap.get('Segundos Ciclo Estandar')?.value) -
-                    Number(counterMap.get('Contador Inyecciones')?.value),
+                 (getCounterValue(PIMM, 'Minutos Motor Encendido') * 60) /
+                    getCounterValue(PIMM, 'Segundos Ciclo Estandar') -
+                    getCounterValue(PIMM, 'Contador Inyecciones'),
                 maquina:
-                    Number(counterMap.get('Segundos Ultimo Ciclo Total')?.value) -
-                    Number(counterMap.get('Segundos Ultimo Ciclo Puerta')?.value),
+                getCounterValue(PIMM, 'Segundos Ultimo Ciclo Total') -
+                    getCounterValue(PIMM, 'Segundos Ultimo Ciclo Puerta'),
                 producidas:
                     diffDate / MS_CONVERSION[stepRef.current] -
-                    Number(counterMap.get('Minutos No Programada')?.value) -
-                    (Number(counterMap.get('Minutos Mantto Maquina')?.value) +
-                        Number(counterMap.get('Minutos Mantto Molde')?.value) +
-                        Number(counterMap.get('Minutos Sin Operario')?.value) +
-                        Number(counterMap.get('Minutos Por Material')?.value) +
-                        Number(counterMap.get('Minutos Calidad')?.value) +
-                        Number(counterMap.get('Minutos Montaje')?.value)),
-            });
+                    getCounterValue(PIMM, 'Minutos No Programada') -
+                    (getCounterValue(PIMM, 'Minutos Mantto Maquina') +
+                        getCounterValue(PIMM, 'Minutos Mantto Molde') +
+                        getCounterValue(PIMM, 'Minutos Sin Operario') +
+                        getCounterValue(PIMM, 'Minutos Por Material') +
+                        getCounterValue(PIMM, 'Minutos Calidad') +
+                        getCounterValue(PIMM, 'Minutos Montaje')),            });
         });
         return FEPIMMs;
     };
