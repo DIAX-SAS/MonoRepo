@@ -1,21 +1,26 @@
-FROM node:alpine AS builder
-ENV PORT=80
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_SITE_URL="diax.website"
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN apk add --update python3 make g++ && rm -rf /var/cache/apk/*
-RUN npm install
+# Use the latest Node.js image
+FROM node:latest AS builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package and yarn files from the Nx root
+COPY package.json yarn.lock ./
+
+# Install dependencies globally
+RUN yarn global add nx && yarn install --frozen-lockfile
+
+# Copy the backend project files
 COPY . .
-RUN npx nx build frontend
 
-FROM node:alpine
-ENV PORT=80
-WORKDIR /usr/src/app
-RUN npm install -g pm2@latest
-COPY --from=builder /usr/src/app/apps/frontend/.next/standalone .
-COPY --from=builder /usr/src/app/apps/frontend/.next/static ./apps/frontend/.next/static
-COPY apps/frontend/public ./apps/frontend/public
-EXPOSE $PORT
+# Explicitly copy the .env.template file
+COPY apps/diax-front/.env.local.template .env.local.template
 
-ENTRYPOINT ["pm2-runtime","apps/frontend/server.js"]
+# Rename the .env.template to .env
+RUN mv .env.local.template .env.local
+
+# Expose the application port
+EXPOSE 80
+
+# Set the command to run your application
+CMD ["yarn", "nx", "run", "diax-front:serve", "--configuration=production","--port=80"]

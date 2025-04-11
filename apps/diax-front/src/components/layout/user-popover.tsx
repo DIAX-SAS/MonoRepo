@@ -8,17 +8,16 @@ import Typography from '@mui/material/Typography';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import * as React from 'react';
 import { useSession, signOut } from "next-auth/react"
-import { config } from '../../config';
 export interface UserPopoverProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   open: boolean;
 }
 
 export const handleSignOut = async (): Promise<void> => {
-  const cognitoLogoutUrl = `${config.auth.cognitoDomain}/logout?` +
+  const cognitoLogoutUrl = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/logout?` +
     new URLSearchParams({
-      client_id:config.auth.clientId,
-      logout_uri:config.auth.logoutUri,
+      client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || "",
+      logout_uri: process.env.NEXT_PUBLIC_FRONT_URI || "",
     }).toString();
 
 
