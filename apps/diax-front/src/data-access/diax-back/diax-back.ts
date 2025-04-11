@@ -1,8 +1,6 @@
 import { AccessToken, FilterPimmsDto, ResponsePimms } from '../../app/dashboard/dashboard.types';
-import { config } from '../../config';
 
-const URL = config.backendURL;
-
+const URL = `${process.env.NEXT_PUBLIC_API_BASE_PATH}/api` ;
 
 export async function fetchData(auth: AccessToken, parameters:FilterPimmsDto ):Promise<ResponsePimms> {
   const response = await fetch(URL.concat('/pimms'), {

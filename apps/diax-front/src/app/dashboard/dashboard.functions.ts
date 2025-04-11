@@ -1,9 +1,30 @@
 import React, { Dispatch, RefObject } from 'react';
 import { AccessToken, AccumulatedData, GraphData, GroupedFEPIMM, PIMM, ReduceGroupedPIMMs, ReduceMolde, type FEPIMM, type Filters, type Parameters } from './dashboard.types';
-import { config } from '../../config';
 import mqtt from 'mqtt';
 import { fetchCredentialsCore, fetchData } from '../../data-access/diax-back/diax-back';
 
+const config = {
+    offsetKeys: [
+      'Minutos Motor Encendido',
+      'Contador Inyecciones',
+      'Contador Unidades',
+      'KW Motor',
+      'KW Total Maquina',
+      'Minutos Mantto Maquina',
+      'Minutos Mantto Molde',
+      'Minutos Montaje',
+      'Minutos Sin Operario',
+      'Minutos No Programada',
+      'Minutos Fin Produccion',
+      'Minutos Por Material',
+      'Minutos Calidad',
+      'Minutos Fin Turno',
+      'Unidades Defecto Inicio Turno',
+      'Unidades No Conformes',
+    ],
+    keyPIMMNumber: 'Numero Inyectora',
+  };
+  
 const MS_CONVERSION: { [key in Parameters['step']]: number } = {
     second: 1000,
     minute: 1000 * 60,
@@ -930,7 +951,7 @@ export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefine
     const response = await fetchCredentialsCore(accessTokenRef.current);
     const { sessionToken } = response.token;
 
-    const url = config.socketURL;
+    const url = process.env.NEXT_PUBLIC_SOCKET_URI || "wss://";
     MQTTRef.current = mqtt.connect(url, {
         username: 'the_username',
         password: sessionToken,

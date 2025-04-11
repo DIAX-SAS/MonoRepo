@@ -11,18 +11,6 @@ jest.mock("next-auth/react", () => ({
   signOut: jest.fn(),
 }));
 
-jest.mock("../../../config", () => ({
-  config: {
-    auth: {
-      cognitoDomain: "https://example-cognito.com",
-      clientId: "mock-client-id",
-      logoutUri: "https://example.com/logout",
-      redirectUri: "https://example.com/redirect",
-      response_type: "code",
-    },
-  },
-}));
-
 describe("UserPopover Component", () => {
   let setOpenMock: jest.Mock;
 
