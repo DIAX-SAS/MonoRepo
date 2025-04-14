@@ -2,7 +2,7 @@
 FROM alpine:latest
 
 # Establecer el directorio de trabajo
-WORKDIR /modbus
+WORKDIR /raspberryPI
 
 # Copiar el contenido del directorio actual en el contenedor
 COPY . .
@@ -13,17 +13,24 @@ RUN apk update && \
 
 # Crear y activar un entorno virtual
 RUN python3 -m venv venv
-ENV PATH="/modbus/venv/bin:$PATH"
+ENV PATH="/raspberryPI/venv/bin:$PATH"
 
 # Instalar los paquetes requeridos en el entorno virtual
 RUN pip install --upgrade pip && \
-  pip install pytest pymodbus AWSIoTPythonSDK
+    pip install -r requirements.txt
 
-# Crear un script Bash para ejecutar el archivo Python cada segundo
-RUN echo -e '#!/bin/bash\nwhile true; do\n  python /modbus/modbus.py\n  sleep 1\ndone' > /modbus/runner.sh
+ENV in_s=1
+
+# Crear un script Bash para ejecutar el archivo Python con intervalo controlado por in_s
+RUN echo -e '#!/bin/bash\n'\
+'while true; do\n'\
+'  python /raspberryPI/main.py\n'\
+'  sleep "${in_s:-1}"\n'\
+'done' > /raspberryPI/runner.sh
 
 # Dar permisos de ejecución al script Bash
-RUN chmod +x /modbus/runner.sh
+RUN chmod +x /raspberryPI/runner.sh
 
 # Configurar el contenedor para ejecutar el script al iniciarse
-CMD ["/bin/bash", "/modbus/runner.sh"]
+CMD ["/bin/bash", "/raspberryPI/runner.sh"]
+

@@ -58,3 +58,15 @@ test-results/
 test-results/**/*.xml
 test-results/**/*.json
 test-results/**/*.log
+
+# virtual environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+
+# Certificates
+*.pem
+*.crt
+*.key

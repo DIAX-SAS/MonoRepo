@@ -1,5 +1,5 @@
 import pytest, json
-from modbus_functions import (
+from  apps.things.uploader.raspberryPI.utils.functions import (
     validate_ip,
     sum_hex_and_decimal,
     get_length_registers,

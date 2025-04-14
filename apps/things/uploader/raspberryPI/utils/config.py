@@ -90,3 +90,8 @@ variablesNames = {
     "MF10": "Debug.Rendimiento",
     "MF11": "Debug.Eficiencia"
 }
+
+# Dictionary of IPs
+plc_ips = {
+    "PLC_TEST": "192.168.0.152",
+}

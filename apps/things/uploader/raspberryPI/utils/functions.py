@@ -6,7 +6,7 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import struct
 import sys
 import os
-from config import statesNames,countersNames
+from apps.things.uploader.raspberryPI.utils.config import statesNames,countersNames
 import re
 
 
@@ -218,7 +218,7 @@ def process_32bit_float(registers, endianness):
 
 
 def send_to_iot_core(data, topic):
-    cert_dir = os.path.join(os.path.dirname(__file__), "certificates")
+    cert_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "certificates")
     client_id = "009160061988"
     endpoint = "a2hfw5fwhnlmh8-ats.iot.us-east-1.amazonaws.com"
     port = 8883

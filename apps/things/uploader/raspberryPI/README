@@ -1,21 +1,8 @@
-Dependencies
-├── python
-├── pytest
-├── pymodbus
-├── AWSIoTPythonSDK
-
-File structure
 ├── certificates/
 │   ├── AmazonRootCA1.pem
 │   ├── AmazonRootCA3.pem
 │   ├── certificate.pem.crt
 │   ├── private.pem.key
 │   └── public.pem.key
-│
-├── Dockerfile
-├── modbus_functions.py
-├── modbus_tests.py
-├── modbus.py
-│
-└── README
+
 
