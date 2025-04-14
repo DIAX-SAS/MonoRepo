@@ -1,3 +1,4 @@
+"""This file contains the configuration for the Raspberry Pi uploader."""
 countersNames = {
 "ML0": "Minutos Motor Encendido",
 "ML131": "Contador Inyecciones",

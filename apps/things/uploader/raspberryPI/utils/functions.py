@@ -1,16 +1,15 @@
+"""This module contains utility functions for Modbus communication and data processing."""
 import ipaddress
-from pymodbus.client import ModbusTcpClient
-import json
-import datetime
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import struct
 import sys
 import os
-from apps.things.uploader.raspberryPI.utils.config import statesNames,countersNames
 import re
-
+from pymodbus.client import ModbusTcpClient
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+from apps.things.uploader.raspberryPI.utils.config import statesNames,countersNames
 
 def validate_ip(ip):
+    """Validate the given IP address."""
     try:
         ipaddress.ip_address(ip)
         return True
@@ -19,16 +18,17 @@ def validate_ip(ip):
 
 
 def sum_hex_and_decimal(hex_address, decimal_value):
-    # Convert the hexadecimal address to a decimal integer
+    """This function takes a hexadecimal address and a decimal value,
+    converts the hexadecimal address to a decimal integer, and sums it with the decimal value."""
     hex_as_decimal = int(hex_address, 16)
-
-    # Sum the hexadecimal (converted to decimal) and the decimal value
     result = hex_as_decimal + decimal_value
-
     return result
 
 
 def get_length_registers(position_value, is_32bit=False, include_uplimit=False):
+    """This function calculates the length of registers based on the given position value.
+    If is_32bit is True, it multiplies the position value by 2.
+    If include_uplimit is True, it adds 1 to the position value."""
     if include_uplimit:
         position_value = position_value + 1
     if is_32bit:
@@ -40,19 +40,21 @@ def get_length_registers(position_value, is_32bit=False, include_uplimit=False):
 
 
 def get_system_endianness():
-    # Check the byte order of the system
+    """This function checks the system's endianness and returns 'little' or 'big'."""
     if sys.byteorder == "little":
         return "little"
-    else:
-        return "big"
+    return "big"
 
 
 def ensure_length(lst, length):
-    # Pad the list with zeros if it's shorter than the expected length
+    """This function ensures that the list has the specified length.
+    If the list is shorter, it pads the list with zeros.
+    If the list is longer, it truncates the list to the specified length."""
     return lst + [0] * (length - len(lst)) if len(lst) < length else lst[:length]
 
 
 def make_modbus_requests(ip):
+    """This function makes Modbus requests to the PLC and returns the data."""
     client = ModbusTcpClient(ip)
     client.connect()
 
@@ -149,34 +151,37 @@ def make_modbus_requests(ip):
         "states":calculate_given_variables(statesNames, variables),
         "PIMMNumber":variables.get("MI31")
     }
-    
 
-def calculate_given_variables(toExtract, WhereToExtract):
-    newObjects = []
-    for key, value in toExtract.items():
-        newObjects.append({
+def calculate_given_variables(to_extract, where_to_extract):
+    """This function takes a dictionary of variables to extract and their corresponding values,
+    and returns a list of dictionaries with the extracted variables."""
+    new_objects = []
+    for key, value in to_extract.items():
+        new_objects.append({
             "id": key,
             "name": value,
-            "value": WhereToExtract.get(key, None),  
+            "value": where_to_extract.get(key, None),  
             "valueType": calculate_type(key)     
         })
-    return newObjects
+    return new_objects
 
 
 def calculate_type(value):
-    result = re.sub(r'\d', '', value)#Delete all numbers within the value
-    if(result =="MI"):
+    """This function takes a string value and returns its type based on the fixed rules."""
+    result = re.sub(r'\d', '', value)  # Delete all numbers within the value
+    if result == "MI":
         return "integer"
-    if(result =="ML"):
+    if result == "ML":
         return "long"
-    if(result =="MF"):
+    if result == "MF":
         return "float"
-    if(result =="I"):
+    if result == "I":
         return "input"
     return "unknown"
 
-    
 def process_32bit_integer(registers, endianness):
+    """This function processes two 16-bit registers into a single 32-bit integer.
+    The endianness parameter determines the byte order."""
     first_register, second_register = registers
 
     if endianness == "big":
@@ -192,10 +197,13 @@ def process_32bit_integer(registers, endianness):
 
 
 def process_bit_boolean(coil):
-    return True if coil == 1 else False
+    """This function processes a single bit (coil) and returns its boolean value."""
+    return coil == 1
 
 
 def process_32bit_float(registers, endianness):
+    """This function processes two 16-bit registers into a single 32-bit float.
+    The endianness parameter determines the byte order."""
     first_register, second_register = registers
     # Combine two 16-bit registers into one 32-bit integer (this represents the float in raw form)
     combined_value = (first_register << 16) | second_register
@@ -218,6 +226,7 @@ def process_32bit_float(registers, endianness):
 
 
 def send_to_iot_core(data, topic):
+    """This function sends data to AWS IoT Core using MQTT."""
     cert_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "certificates")
     client_id = "009160061988"
     endpoint = "a2hfw5fwhnlmh8-ats.iot.us-east-1.amazonaws.com"
