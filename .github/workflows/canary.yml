@@ -31,7 +31,7 @@ jobs:
       #CANARY
       - name: Run diax-front e2e tests
         run: |
-          yarn wait-on https://diax.webiste/ --timeout 10000
+          yarn wait-on https://diax.webiste/ 
           yarn nx run diax-canary:e2e
 
      
