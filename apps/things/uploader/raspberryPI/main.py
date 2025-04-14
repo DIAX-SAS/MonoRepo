@@ -15,7 +15,7 @@ def process_and_send_data(plc_addresses):
             return
         plc_data = make_modbus_requests(ip)
         data_json = json.dumps({ "timestamp":timestamp_in_ms,
-                                 "PLCNumber":plc_data["PIMMNumber"],
+                                 "plcId":plc_data["PIMMNumber"],
                                  "states":plc_data["states"], 
                                  "counters":plc_data["counters"]})
         send_to_iot_core(data_json, "PIMMStateTopic")
