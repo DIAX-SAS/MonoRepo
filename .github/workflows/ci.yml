@@ -81,11 +81,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.13'
-  
-      - name: Create and activate virtual environment
-        run: |
-          python -m venv apps/things/uploader/raspberryPI/.venv
-          source apps/things/uploader/raspberryPI/.venv/bin/activate
 
       - name: Install Python dependencies
         run: |         
@@ -98,10 +93,3 @@ jobs:
       - name: Run raspberryPI unit tests
         run: |        
           yarn nx run raspberryPI:test
-      
-      - name: Deactivate virtual environment
-        run: |
-          deactivate
-      
-
-
