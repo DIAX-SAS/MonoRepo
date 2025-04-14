@@ -14,9 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Yarn
-        run: npm install -g yarn
-
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -78,6 +75,33 @@ jobs:
           yarn wait-on http://localhost:4000/
           yarn nx run diax-front-e2e:e2e
           kill $SERVER_PID
+
+      #UPLOADER
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.13'
+  
+      - name: Create and activate virtual environment
+        run: |
+          python -m venv apps/things/uploader/raspberryPI/.venv
+          source apps/things/uploader/raspberryPI/.venv/bin/activate
+
+      - name: Install Python dependencies
+        run: |         
+          pip install -r apps/things/uploader/raspberryPI/requirements.txt
+
+      - name: Run raspberryPI lint
+        run: |         
+          yarn nx run raspberryPI:lint
+
+      - name: Run raspberryPI unit tests
+        run: |        
+          yarn nx run raspberryPI:test
+      
+      - name: Deactivate virtual environment
+        run: |
+          deactivate
       
 
 

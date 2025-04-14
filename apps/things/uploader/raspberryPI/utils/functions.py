@@ -6,7 +6,7 @@ import os
 import re
 from pymodbus.client import ModbusTcpClient
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
-from apps.things.uploader.raspberryPI.utils.config import statesNames,countersNames
+from utils.config import statesNames,countersNames
 
 def validate_ip(ip):
     """Validate the given IP address."""

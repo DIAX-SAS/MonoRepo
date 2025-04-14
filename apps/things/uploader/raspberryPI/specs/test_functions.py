@@ -1,7 +1,7 @@
 """Tests for the utility functions in the Raspberry Pi uploader module."""
 import json
 import pytest
-from  apps.things.uploader.raspberryPI.utils.functions import (
+from utils.functions import (
     validate_ip,
     sum_hex_and_decimal,
     get_length_registers,
