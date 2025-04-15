@@ -31,7 +31,7 @@ jobs:
       #CANARY
       - name: Run diax-front e2e tests
         run: |
-          yarn wait-on https://diax.website/ 
+          yarn wait-on $FQDN 
           yarn nx run diax-canary:e2e
 
      

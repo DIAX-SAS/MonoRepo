@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test';
 
 export async function login(page: Page) {
-  await page.goto(`${process.env.FQDN}/sign-in`);
+  await page.goto(`/sign-in`);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.getByRole('button', { name: 'Sign in with Cognito' }).click();
   await page.getByRole('textbox', { name: 'Username' }).click();
@@ -9,7 +9,7 @@ export async function login(page: Page) {
   await page.getByRole('textbox', { name: 'Password' }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill(process.env.COGNITO_TEST_PASSWORD);
   await page.getByRole('button', { name: 'submit' }).click();
-  await page.goto(`${process.env.FQDN}/dashboard`);
+  await page.goto(`/dashboard`);
 }
 
 export async function logout(page: Page) {

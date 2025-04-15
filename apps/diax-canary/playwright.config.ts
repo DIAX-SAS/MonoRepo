@@ -6,7 +6,7 @@ dotenv.config({
   path: "apps/diax-canary/.env"
 });
 
-const FRONTEND_URL = process.env.BASE_URL || 'http://localhost:4000';
+const FRONTEND_URL = process.env.FQDN || 'http://localhost:4000';
 
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
