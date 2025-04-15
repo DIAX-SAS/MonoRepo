@@ -29,13 +29,10 @@ jobs:
           sudo docker build -f apps/diax-front/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/diax-front:latest --push .
 
       - name: Deploy to ECS
-        uses: imehedi/actions-awscli-v2@latest
-        with:
-          args: ecs update-service --cluster diax-main --service diax-front --force-new-deployment
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          aws ecs update-service --cluster diax-main --service diax-front --force-new-deployment --no-cli-pager
+      
+      
 
   build-and-push-diax-back:
 
@@ -63,11 +60,7 @@ jobs:
           sudo docker build -f apps/diax-back/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/diax-back:latest --push .
 
       - name: Deploy to ECS
-        uses: imehedi/actions-awscli-v2@latest
-        with:
-          args: ecs update-service --cluster diax-main --service diax-back --force-new-deployment
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-           
+        run: |
+          aws ecs update-service --cluster diax-main --service diax-back --force-new-deployment --no-cli-pager
+
+
