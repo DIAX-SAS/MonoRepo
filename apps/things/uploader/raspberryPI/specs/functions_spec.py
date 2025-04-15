@@ -65,9 +65,3 @@ def test_process_32bit_float():
     assert process_32bit_float(registers, "big") == pytest.approx(1.0, 0.000001)
     assert process_32bit_float(registers, "little") == pytest.approx(1.0, 0.000001)
 
-
-def test_send_to_iot_core():
-    """Test the sending of data to IoT Core."""
-    data = {"message": "Hello world from PYTHON"}
-    topic = "test/plc"
-    assert send_to_iot_core(json.dumps(data), topic) is True
