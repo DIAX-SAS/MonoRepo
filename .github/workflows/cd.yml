@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4     
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -25,17 +25,14 @@ jobs:
           aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 009160061988.dkr.ecr.us-east-1.amazonaws.com
 
       - name: Build and push Docker image
-        run: |          
+        run: |
           sudo docker build -f apps/diax-front/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/diax-front:latest --push .
 
       - name: Deploy to ECS
         run: |
           aws ecs update-service --cluster diax-main --service diax-front --force-new-deployment --no-cli-pager
-      
-      
 
   build-and-push-diax-back:
-
     env:
       ECR_IMAGE: diax-registry/diax-back
       AWS_DEFAULT_REGION: us-east-1
@@ -50,10 +47,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-        
+
       - name: Login to Amazon ECR
         run: |
-            aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 009160061988.dkr.ecr.us-east-1.amazonaws.com     
+          aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 009160061988.dkr.ecr.us-east-1.amazonaws.com
 
       - name: Build and push Docker image
         run: |
@@ -63,4 +60,23 @@ jobs:
         run: |
           aws ecs update-service --cluster diax-main --service diax-back --force-new-deployment --no-cli-pager
 
+  build-and-push-raspberryPI:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Build Docker image
+        run: |
+          sudo docker build -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberryPI:latest apps/things/uploader/raspberryPI
+      - name: Stop and remove existing container
+        run: |
+          sudo docker stop uploader/raspberryPI || true
+          sudo docker rm uploader/raspberryPI || true
+
+      - name: Run Docker container
+        run: |
+          sudo docker run -d \
+            --name uploader/raspberryPI \
+            --restart always \
+            009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberryPI:latest
