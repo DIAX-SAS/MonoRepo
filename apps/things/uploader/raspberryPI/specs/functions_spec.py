@@ -1,5 +1,4 @@
 """Tests for the utility functions in the Raspberry Pi uploader module."""
-import json
 import pytest
 from utils.functions import (
     validate_ip,
@@ -10,7 +9,6 @@ from utils.functions import (
     process_32bit_integer,
     process_32bit_float,
     process_bit_boolean,
-    send_to_iot_core,
 )
 
 
@@ -64,4 +62,3 @@ def test_process_32bit_float():
     registers = [0x3F80, 0x0000]  # Representing 1.0 in IEEE 754
     assert process_32bit_float(registers, "big") == pytest.approx(1.0, 0.000001)
     assert process_32bit_float(registers, "little") == pytest.approx(1.0, 0.000001)
-
