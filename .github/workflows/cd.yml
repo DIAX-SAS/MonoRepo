@@ -71,12 +71,12 @@ jobs:
           sudo docker build -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest apps/things/uploader/raspberryPI
       - name: Stop and remove existing container
         run: |
-          sudo docker stop uploader/raspberryPI || true
-          sudo docker rm uploader/raspberryPI || true
+          sudo docker stop uploader-raspberryPI || true
+          sudo docker rm uploader-raspberryPI || true
 
       - name: Run Docker container
         run: |
           sudo docker run -d \
-            --name uploader/raspberryPI \
+            --name uploader-raspberryPI \
             --restart always \
             009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest
