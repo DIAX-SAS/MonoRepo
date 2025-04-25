@@ -4,6 +4,7 @@ import struct
 import sys
 import os
 import re
+from datetime import datetime, timezone
 from pymodbus.client import ModbusTcpClient
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from utils.config import statesNames,countersNames
@@ -258,3 +259,9 @@ def send_to_iot_core(data, topic):
     mqtt_client.disconnect()
 
     return is_sent
+
+def extract_epoch_day_from_epoch(timestamp_in_ms):
+    """Extract the epoch day from a timestamp in milliseconds."""
+    dt = datetime.fromtimestamp(timestamp_in_ms / 1000, tz=timezone.utc)
+    day_start = datetime(dt.year, dt.month, dt.day, tzinfo=timezone.utc)
+    return int(day_start.timestamp() * 1000)

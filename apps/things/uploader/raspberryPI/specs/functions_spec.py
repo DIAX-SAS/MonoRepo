@@ -1,4 +1,5 @@
 """Tests for the utility functions in the Raspberry Pi uploader module."""
+from datetime import datetime, timezone
 import pytest
 from utils.functions import (
     validate_ip,
@@ -9,6 +10,7 @@ from utils.functions import (
     process_32bit_integer,
     process_32bit_float,
     process_bit_boolean,
+    extract_epoch_day_from_epoch
 )
 
 
@@ -62,3 +64,15 @@ def test_process_32bit_float():
     registers = [0x3F80, 0x0000]  # Representing 1.0 in IEEE 754
     assert process_32bit_float(registers, "big") == pytest.approx(1.0, 0.000001)
     assert process_32bit_float(registers, "little") == pytest.approx(1.0, 0.000001)
+
+def test_extract_epoch_day_from_epoch():
+    """Test the extraction of epoch day from a timestamp in milliseconds."""
+    # Input: 2024-04-03T01:02:03.999Z
+    dt = datetime(2024, 4, 3, 1, 2, 3, 999000, tzinfo=timezone.utc)
+    input_ts_ms = int(dt.timestamp() * 1000)
+
+    # Expected: 2024-04-03T00:00:00.000Z
+    expected_dt = datetime(2024, 4, 3, 0, 0, 0, tzinfo=timezone.utc)
+    expected_ts_ms = int(expected_dt.timestamp() * 1000)
+
+    assert extract_epoch_day_from_epoch(input_ts_ms) == expected_ts_ms
