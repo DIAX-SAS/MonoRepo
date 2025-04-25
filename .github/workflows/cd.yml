@@ -79,4 +79,6 @@ jobs:
           sudo docker run -d \
             --name uploader-raspberryPI \
             --restart always \
+            -v /home/equip/Desktop/modbus/certificates:/raspberryPI/certificates \
             009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest
+        
