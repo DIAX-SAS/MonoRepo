@@ -1,6 +1,6 @@
 import boto3
 import json
-from datetime import datetime
+from datetime import datetime,timedelta
 from boto3.dynamodb.conditions import Key
 from itertools import islice
 # AWS clients
@@ -19,16 +19,20 @@ def batch_write_items(table, items):
         for item in items:
             batch.put_item(Item=item)
 
+def get_partitions(init_time, end_time):
 
-def check_partition_exists(table, pimm_number):
-    """Checks whether a partition exists in a table."""
-    response = table.query(
-        KeyConditionExpression="PLCNumber = :p",
-        ExpressionAttributeValues={":p": pimm_number},
-        Limit=1,  # Solo necesitamos saber si existe
-    )
-    return len(response.get("Items", [])) > 0
+    start = datetime.utcfromtimestamp(init_time / 1000)
+    start = start.replace(hour=0, minute=0, second=0, microsecond=0)
 
+    end = datetime.utcfromtimestamp(end_time / 1000)
+    end = end.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    total_days = ((end - start).days) + 1
+
+    return [
+        int((start + timedelta(days=i)).timestamp() * 1000)
+        for i in range(total_days)
+    ]
 
 def lambda_handler(event, context):   
     
@@ -36,7 +40,7 @@ def lambda_handler(event, context):
     SOURCE_TABLE_NAME = event["SOURCE_TABLE_NAME"]
     TARGET_TABLE_NAME = event["TARGET_TABLE_NAME"]
     MS_CONVERSION = event["MS_CONVERSION"]
-    TIME_EVENT = int(datetime.now().timestamp() * 1000)
+    TIME_EVENT = int(datetime.utcnow().timestamp() * 1000)
 
     source_table = dynamodb.Table(SOURCE_TABLE_NAME)
     target_table = dynamodb.Table(TARGET_TABLE_NAME)
@@ -45,23 +49,14 @@ def lambda_handler(event, context):
     start_time = now - MS_CONVERSION  # 1 minute ago in milliseconds
 
     pimm_number = 0
-    false_count = 0
-    partitions = []
-
-    while false_count < 5 and partitions:
-        if check_partition_exists(source_table, pimm_number):
-            partitions.append(pimm_number)
-            false_count = 0  # Reset false counter since we found a valid partition
-        else:
-            false_count += 1  # Increment false counter
-
-        pimm_number += 1  # Move to the next number
+    partitions = get_partitions(start_time, now) 
+    
     unique_items = []
 
     for partition in partitions:
         # Query latest data
         response = source_table.query(
-            KeyConditionExpression=Key("PIMMNumber").eq(partition)
+            KeyConditionExpression=Key("epochDay").eq(partition)
             & Key("timestamp").between(start_time, now)
         )
         items = response.get("Items", [])
@@ -72,10 +67,10 @@ def lambda_handler(event, context):
         # Find state changes
         before_item = items[0]  # First item
         for item in items:
-            for i in range(len(item["payload"]["states"])):  # Correct dictionary access
+            for i in range(len(item["states"])):  # Correct dictionary access
                 if (
-                    item["payload"]["states"][i]["value"]
-                    != before_item["payload"]["states"][i]["value"]
+                    item["states"][i]["value"]
+                    != before_item["states"][i]["value"]
                 ):
                     unique_items.append(item)
                     before_item = item  # Update previous item
