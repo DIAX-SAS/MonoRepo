@@ -1,5 +1,5 @@
 # Usar la imagen base de Alpine
-FROM alpine:latest
+FROM arm64v8/alpine:latest
 
 # Establecer el directorio de trabajo
 WORKDIR /raspberryPI
@@ -16,7 +16,9 @@ RUN python3 -m venv venv
 ENV PATH="/raspberryPI/venv/bin:$PATH"
 
 # Instalar los paquetes requeridos en el entorno virtual
-RUN pip install --upgrade pip && \
+RUN echo "Contenido del directorio actual:" && ls -la
+RUN ls && \
+    pip install --upgrade pip && \
     pip install -r requirements.txt
 
 ENV in_s=1
