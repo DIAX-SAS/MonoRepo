@@ -5,9 +5,12 @@ import sys
 import os
 import re
 from datetime import datetime, timezone
-from pymodbus.client import ModbusTcpClient
+import asyncio
+from pymodbus.client import AsyncModbusTcpClient
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from utils.config import statesNames,countersNames
+
+
 
 def validate_ip(ip):
     """Validate the given IP address."""
@@ -53,47 +56,63 @@ def ensure_length(lst, length):
     If the list is longer, it truncates the list to the specified length."""
     return lst + [0] * (length - len(lst)) if len(lst) < length else lst[:length]
 
+def get_holding_registers(client, offset, length):
+    """This function reads holding registers from the Modbus slave."""
+    response = client.read_holding_registers(address=offset, count=length)
+    response = ensure_length(response.registers, length)
+    return response.registers
 
-def make_modbus_requests(ip):
-    """This function makes Modbus requests to the PLC and returns the data."""
-    client = ModbusTcpClient(ip)
-    client.connect()
 
-    endianness = get_system_endianness()
+async def read_sections(client):
+    """This function reads different sections of registers and coils from the Modbus slave."""
+    tasks = []
 
     # FIRST SECTION
     offset = sum_hex_and_decimal("0x7000", 0)
     length = get_length_registers(5, True, True)
-    ml_data = client.read_holding_registers(
-        address=offset, count=length
-    ).registers  # ML0, ML1, ML3, ML5
-    ml_data = ensure_length(ml_data, length)
+    tasks.append(client.read_holding_registers(address=offset, count=length))
 
     # SECOND SECTION
     offset = sum_hex_and_decimal("0x7000", get_length_registers(131))
     length = get_length_registers(10)
-
-    ml_extra_data = client.read_holding_registers(
-        address=offset, count=length
-    ).registers  # ML131, ML135
-    ml_extra_data = ensure_length(ml_extra_data, length)
+    tasks.append(client.read_holding_registers(address=offset, count=length))
 
     # THIRD SECTION
     offset = sum_hex_and_decimal("0x6000", get_length_registers(3, False))
     length = get_length_registers(1, False)
-    i3 = client.read_coils(address=offset, count=length).bits  # I3
+    tasks.append(client.read_coils(address=offset, count=length))
 
     # FOURTH SECTION
     offset = sum_hex_and_decimal("0x0000", get_length_registers(17, False))
     length = get_length_registers(112, False, True)
-    mi_data = client.read_holding_registers(address=offset, count=length).registers
-    mi_data = ensure_length(mi_data, length)
+    tasks.append(client.read_holding_registers(address=offset, count=length))
 
     # FIFTH SECTION
     offset = sum_hex_and_decimal("0x4000", get_length_registers(1, False))
     length = get_length_registers(18, True, True)
-    mf_data = client.read_holding_registers(address=offset, count=length).registers
-    mf_data = ensure_length(mf_data, length)
+    tasks.append(client.read_holding_registers(address=offset, count=length))
+
+    # Execute all read requests concurrently
+    results = await asyncio.gather(*tasks)
+
+    # Unpack the results
+    ml_data = ensure_length(results[0].registers, get_length_registers(5, True, True))
+    ml_extra_data = ensure_length(results[1].registers, get_length_registers(10))
+    i3 = results[2].bits
+    mi_data = ensure_length(results[3].registers, get_length_registers(112, False, True))
+    mf_data = ensure_length(results[4].registers, get_length_registers(18, True, True))
+
+    return ml_data, ml_extra_data, i3, mi_data, mf_data
+
+
+async def make_modbus_requests(ip):
+    """This function makes Modbus requests to the PLC and returns the data."""
+    client = AsyncModbusTcpClient(ip)
+    await client.connect()
+
+    endianness = get_system_endianness()
+
+    [ml_data, ml_extra_data, i3, mi_data, mf_data] = await read_sections(client)
 
     client.close()
 
@@ -226,7 +245,7 @@ def process_32bit_float(registers, endianness):
     return round(float_value, 7)
 
 
-def send_to_iot_core(data, topic):
+async def send_to_iot_core(data, topic):
     """This function sends data to AWS IoT Core using MQTT."""
     cert_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "certificates")
     client_id = "009160061988"
