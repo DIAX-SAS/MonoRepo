@@ -4,13 +4,12 @@ import struct
 import sys
 import os
 import re
-from datetime import datetime, timezone
 import asyncio
+from datetime import datetime, timezone
+from awscrt import mqtt
+from awsiot import mqtt_connection_builder
 from pymodbus.client import AsyncModbusTcpClient
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from utils.config import statesNames,countersNames
-
-
 
 def validate_ip(ip):
     """Validate the given IP address."""
@@ -245,39 +244,49 @@ def process_32bit_float(registers, endianness):
     return round(float_value, 7)
 
 
-async def send_to_iot_core(data, topic):
-    """This function sends data to AWS IoT Core using MQTT."""
+
+async def send_multiple_to_iot_core(messages, topic):
+    """Sends multiple messages concurrently to AWS IoT Core
+    over a single MQTT connection with QoS 0."""
+
     cert_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "certificates")
     client_id = "009160061988"
     endpoint = "a2hfw5fwhnlmh8-ats.iot.us-east-1.amazonaws.com"
-    port = 8883
 
-    # Rutas de los certificados
     root_ca = os.path.join(cert_dir, "AmazonRootCA1.pem")
     cert_file = os.path.join(cert_dir, "certificate.pem.crt")
     private_key = os.path.join(cert_dir, "private.pem.key")
 
-    # Crear el cliente MQTT
-    mqtt_client = AWSIoTMQTTClient(client_id)
-    mqtt_client.configureEndpoint(endpoint, port)
-    mqtt_client.configureCredentials(root_ca, private_key, cert_file)
+    mqtt_connection = mqtt_connection_builder.mtls_from_path(
+        endpoint=endpoint,
+        cert_filepath=cert_file,
+        pri_key_filepath=private_key,
+        ca_filepath=root_ca,
+        client_id=client_id,
+        clean_session=True,
+        keep_alive_secs=30,
+    )
 
-    # Configuraciones adicionales (opcional)
-    mqtt_client.configureAutoReconnectBackoffTime(1, 32, 20)
-    mqtt_client.configureOfflinePublishQueueing(-1)  # Cola ilimitada
-    mqtt_client.configureDrainingFrequency(2)  # Frecuencia de drenaje de la cola
-    mqtt_client.configureConnectDisconnectTimeout(
-        5
-    )  # Tiempo de espera para conectar/desconectar
-    mqtt_client.configureMQTTOperationTimeout(
-        3
-    )  # Tiempo de espera para operaciones MQTT
+    connect_future = mqtt_connection.connect()
+    connect_future.result()
 
-    mqtt_client.connect()
-    is_sent = mqtt_client.publish(topic, data, 0)  # QoS 1
-    mqtt_client.disconnect()
+    publish_futures = []
+    for data in messages:
+        future, _packet_id = mqtt_connection.publish(
+            topic=topic,
+            payload=data,
+            qos=mqtt.QoS.AT_MOST_ONCE,  # QoS 0
+        )
+        publish_futures.append(future)
 
-    return is_sent
+    for future in publish_futures:
+        future.result()
+
+    disconnect_future = mqtt_connection.disconnect()
+    disconnect_future.result()
+
+    return True
+
 
 def extract_epoch_day_from_epoch(timestamp_in_ms):
     """Extract the epoch day from a timestamp in milliseconds."""
