@@ -279,8 +279,7 @@ async def send_multiple_to_iot_core(messages, topic):
         )
         publish_futures.append(future)
 
-    for future in publish_futures:
-        future.result()
+    await asyncio.gather(*publish_futures)
 
     disconnect_future = mqtt_connection.disconnect()
     disconnect_future.result()
