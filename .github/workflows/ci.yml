@@ -66,13 +66,16 @@ jobs:
         run: yarn nx run diax-front:lint
 
       - name: Run diax-front unit tests
-        run: yarn nx run diax-front:test --maxWorkers=2 --detectOpenHandles --forceExit
+        run: yarn nx run diax-front:test:ci
+
+      - name: Run diax-front build
+        run: yarn nx run diax-front:build:production
 
       - name: Run diax-front e2e tests
         run: |
-          yarn nx run diax-front:serve & 
+          yarn nx run diax-front:serve:production & 
           SERVER_PID=$!
-          yarn wait-on http://localhost:4000/
+          yarn wait-on http://localhost:80/
           yarn nx run diax-front-e2e:e2e
           kill $SERVER_PID
 

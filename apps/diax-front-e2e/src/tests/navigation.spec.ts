@@ -29,6 +29,6 @@ test.describe('Navigation', () => {
   });
   test('Redirect page sends user to home', async ({ page }) => {
     await page.goto('/redirect');
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/sign-in');
   });
 });
