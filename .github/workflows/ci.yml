@@ -51,11 +51,14 @@ jobs:
         run: yarn nx run diax-back:lint
 
       - name: Run diax-back unit tests
-        run: yarn nx run diax-back:test --maxWorkers=2 --detectOpenHandles --forceExit
+        run: yarn nx run diax-back:test:ci
+      
+      - name: Run diax-back build
+        run: yarn nx run diax-back:build:production
 
       - name: Run diax-back e2e tests
         run: |
-          yarn nx run diax-back:serve & 
+          yarn nx run diax-back:serve:production & 
           SERVER_PID=$!
           yarn wait-on http://localhost:3000/api 
           yarn nx run diax-back-e2e:e2e
