@@ -1,10 +1,11 @@
 import { Schema } from 'dynamoose';
 
+
 export const PimmVariableDTOSchema = new Schema(
   {
     id: { type: String, required: true },
     name: { type: String, required: true },
-    value: { type: String, required: true },
+    value: { type: [Number , Boolean , String], required: true },
     valueType: { type: String, required: true },
   },
   {

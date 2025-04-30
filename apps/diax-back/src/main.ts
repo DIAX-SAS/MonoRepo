@@ -9,7 +9,8 @@ async function bootstrap() {
     origin: (origin, callback) => {
       const allowedOrigins = [
         /\.diax\.website$/,
-        /^http:\/\/localhost(:\d+)?$/
+        /^http:\/\/localhost(:\d+)?$/,
+        "https://diax.website",
       ];
       if (!origin || allowedOrigins.some(pattern => pattern instanceof RegExp ? pattern.test(origin) : pattern === origin)) {
         callback(null, true);
