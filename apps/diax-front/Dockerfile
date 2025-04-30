@@ -13,12 +13,6 @@ RUN yarn global add nx && yarn install --frozen-lockfile
 # Copy the backend project files
 COPY . .
 
-# Explicitly copy the .env.template file
-COPY apps/diax-front/.env.local.template .env.local.template
-
-# Rename the .env.template to .env
-RUN mv .env.local.template .env.local
-
 # Expose the application port
 EXPOSE 80
 
