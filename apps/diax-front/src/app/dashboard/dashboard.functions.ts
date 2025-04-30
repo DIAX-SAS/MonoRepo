@@ -5,33 +5,33 @@ import { fetchCredentialsCore, fetchData } from '../../data-access/diax-back/dia
 
 const config = {
     offsetKeys: [
-      'Minutos Motor Encendido',
-      'Contador Inyecciones',
-      'Contador Unidades',
-      'KW Motor',
-      'KW Total Maquina',
-      'Minutos Mantto Maquina',
-      'Minutos Mantto Molde',
-      'Minutos Montaje',
-      'Minutos Sin Operario',
-      'Minutos No Programada',
-      'Minutos Fin Produccion',
-      'Minutos Por Material',
-      'Minutos Calidad',
-      'Minutos Fin Turno',
-      'Unidades Defecto Inicio Turno',
-      'Unidades No Conformes',
+        'Minutos Motor Encendido',
+        'Contador Inyecciones',
+        'Contador Unidades',
+        'KW Motor',
+        'KW Total Maquina',
+        'Minutos Mantto Maquina',
+        'Minutos Mantto Molde',
+        'Minutos Montaje',
+        'Minutos Sin Operario',
+        'Minutos No Programada',
+        'Minutos Fin Produccion',
+        'Minutos Por Material',
+        'Minutos Calidad',
+        'Minutos Fin Turno',
+        'Unidades Defecto Inicio Turno',
+        'Unidades No Conformes',
     ],
     keyPIMMNumber: 'Numero Inyectora',
-  };
-  
+};
+
 const MS_CONVERSION: { [key in Parameters['step']]: number } = {
     second: 1000,
     minute: 1000 * 60,
     hour: 1000 * 60 * 60,
 };
 const getCounterValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
-    Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;      
+    Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;
 
 export const theme = {
     scheme: 'monokai',
@@ -116,7 +116,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
 
             const reduceGroupedPIMMs = (grouped: GroupedFEPIMM): ReduceGroupedPIMMs => {
                 const reduceGroupedPIMMs = grouped.FEPIMMs.reduce(
-                    (acc, FEPIMM: FEPIMM): ReduceGroupedPIMMs => {                        
+                    (acc, FEPIMM: FEPIMM): ReduceGroupedPIMMs => {
                         return {
                             acc_buenas: acc.acc_buenas + (FEPIMM.buenas || 0),
                             acc_noConformes:
@@ -180,7 +180,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
             const reduceByMoldes = (grouped: GroupedFEPIMM): Record<string, ReduceMolde> => {
                 const reduceByMoldes = grouped.FEPIMMs.reduce(
                     (acc, FEPIMM: FEPIMM): Record<string, ReduceMolde> => {
-                        const stateMap = new Map(FEPIMM.states.map((s) => [s.name, s]));                      
+                        const stateMap = new Map(FEPIMM.states.map((s) => [s.name, s]));
                         const moldes: Record<string, ReduceMolde> = {};
 
                         if (!moldes[String(stateMap.get('Molde')?.value)]) {
@@ -194,14 +194,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 acc_gramosgeneral: 0,
                             };
                         }
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav1 += getCounterValue(FEPIMM, 'Gramos Cavidad 1');                         
+                        moldes[String(stateMap.get('Molde')?.value)].acc_cav1 += getCounterValue(FEPIMM, 'Gramos Cavidad 1');
                         moldes[String(stateMap.get('Molde')?.value)].acc_cav2 += getCounterValue(FEPIMM, 'Gramos Cavidad 2');
                         moldes[String(stateMap.get('Molde')?.value)].acc_cav3 += getCounterValue(FEPIMM, 'Gramos Cavidad 3');
                         moldes[String(stateMap.get('Molde')?.value)].acc_cav4 += getCounterValue(FEPIMM, 'Gramos Cavidad 4');
                         moldes[String(stateMap.get('Molde')?.value)].acc_cav5 += getCounterValue(FEPIMM, 'Gramos Cavidad 5');
                         moldes[String(stateMap.get('Molde')?.value)].acc_cav6 += getCounterValue(FEPIMM, 'Gramos Cavidad 6');
                         moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral += getCounterValue(FEPIMM, 'Gramos Inyeccion');
-                        
+
                         return { ...acc, ...moldes };
                     },
                     {
@@ -379,7 +379,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                         name: 'Arranque',
                                         children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
                                             name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Unidades No Conformes'), 
+                                            value: getCounterValue(FEPIMM, 'Unidades No Conformes'),
                                         })),
                                     },
                                     {
@@ -650,7 +650,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 if (!acc[FEPIMM.plcId]) {
                                     acc[FEPIMM.plcId] = [];
                                 }
-                                const value =  getCounterValue(FEPIMM, "Gramos Inyeccion");
+                                const value = getCounterValue(FEPIMM, "Gramos Inyeccion");
                                 acc[FEPIMM.plcId].push({
                                     timestamp: FEPIMM.timestamp,
                                     value: value,
@@ -750,7 +750,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                     acc[FEPIMM.plcId] = [];
                                 }
 
-                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {                            
+                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
                                     return (
                                         acc +
                                         Number(
@@ -781,7 +781,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefOb
                                 if (!acc[FEPIMM.plcId]) {
                                     acc[FEPIMM.plcId] = [];
                                 }
-                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {                                  
+                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
                                     return (
                                         acc +
                                         Number(
@@ -918,15 +918,15 @@ export const applyFilters = async (
             FEPIMMs.push({
                 ...PIMM,
                 buenas:
-                   getCounterValue(PIMM, 'Contador Unidades') -
-                   getCounterValue(PIMM, 'Unidades Defecto Inicio Turno') -
-                   getCounterValue(PIMM, 'Unidades No Conformes'),
+                    getCounterValue(PIMM, 'Contador Unidades') -
+                    getCounterValue(PIMM, 'Unidades Defecto Inicio Turno') -
+                    getCounterValue(PIMM, 'Unidades No Conformes'),
                 ineficiencias:
-                 (getCounterValue(PIMM, 'Minutos Motor Encendido') * 60) /
+                    (getCounterValue(PIMM, 'Minutos Motor Encendido') * 60) /
                     getCounterValue(PIMM, 'Segundos Ciclo Estandar') -
                     getCounterValue(PIMM, 'Contador Inyecciones'),
                 maquina:
-                getCounterValue(PIMM, 'Segundos Ultimo Ciclo Total') -
+                    getCounterValue(PIMM, 'Segundos Ultimo Ciclo Total') -
                     getCounterValue(PIMM, 'Segundos Ultimo Ciclo Puerta'),
                 producidas:
                     diffDate / MS_CONVERSION[stepRef.current] -
@@ -936,7 +936,8 @@ export const applyFilters = async (
                         getCounterValue(PIMM, 'Minutos Sin Operario') +
                         getCounterValue(PIMM, 'Minutos Por Material') +
                         getCounterValue(PIMM, 'Minutos Calidad') +
-                        getCounterValue(PIMM, 'Minutos Montaje')),            });
+                        getCounterValue(PIMM, 'Minutos Montaje')),
+            });
         });
         return FEPIMMs;
     };
@@ -974,12 +975,13 @@ export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefine
         });
     });
 
-    MQTTRef.current.on('message', (topic, message) => {
+    MQTTRef.current.on('message', async (topic, message) => {
         const data = JSON.parse(message.toString());
         setPIMMs((prev) => {
-            const newData = [...prev, data];
-            newData.shift();
-            return newData;
+            const newPrev = [...prev];
+            newPrev.shift();
+            const newData = [...newPrev, data];
+            return newData.sort((a, b) => a.timestamp - b.timestamp);
         });
     });
 
