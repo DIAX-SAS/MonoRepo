@@ -27,13 +27,15 @@ export class PimmsService {
   }
 
   async getPimmsIotCredentials() {
+    const isDev = process.env.NODE_ENV === 'development';
     const smClient = new SecretsManagerClient({
       region: 'us-east-1',
       endpoint: this.endPointSecrets,
-      credentials: {
-        accessKeyId: this.accessKeyId,
-        secretAccessKey: this.secretAccessKey,
-      },
+      ...(isDev && {
+        credentials: {
+          accessKeyId: this.accessKeyId,
+          secretAccessKey: this.secretAccessKey,        },
+      }),
     });
 
     const { SecretString } = await smClient.send(
