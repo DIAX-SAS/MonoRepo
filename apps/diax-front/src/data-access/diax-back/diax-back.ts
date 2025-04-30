@@ -20,7 +20,7 @@ export async function fetchData(auth: AccessToken, parameters:FilterPimmsDto ):P
 }
 
 export async function fetchCredentialsCore(auth: AccessToken) {
-  const response = await fetch(URL.concat('/pimms/credentials'), {
+  const response = await fetch(URL.concat('/pimms/iot/credentials'), {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

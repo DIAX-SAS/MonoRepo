@@ -53,7 +53,7 @@ describe("API Service Tests", () => {
     const {fetchCredentialsCore} = (await import("../diax-back"));
     const result = await fetchCredentialsCore(mockAuth);
 
-    expect(fetch).toHaveBeenCalledWith("http://mock-api-base-path.com/api/pimms/credentials", {
+    expect(fetch).toHaveBeenCalledWith("http://mock-api-base-path.com/api/pimms/iot/credentials", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
