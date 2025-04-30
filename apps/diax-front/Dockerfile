@@ -22,5 +22,7 @@ RUN mv .env.local.template .env.local
 # Expose the application port
 EXPOSE 80
 
+RUN yarn nx run diax-front:build:production
+
 # Set the command to run your application
 CMD ["yarn", "nx", "run", "diax-front:serve", "--configuration=production","--port=80"]
