@@ -26,17 +26,23 @@ import { CognitoAuthModule } from '@nestjs-cognito/auth';
     DynamooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({       
-        ddb: new DynamoDB({
-          region: configService.get<string>('AWS_REGION'),
-          credentials: {
-            accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID'),
-            secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY'),
-          },
-          endpoint: configService.get<string>('DYNAMO_URI'),
-        }),
-      }),
-    }),
+      useFactory: async (configService: ConfigService) => {
+        const isDev = process.env.NODE_ENV === 'development';
+    
+        return {
+          ddb: new DynamoDB({
+            region: configService.get<string>('AWS_REGION'),
+            ...(isDev && {
+              credentials: {
+                accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID'),
+                secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY'),
+              },
+            }),
+            endpoint: configService.get<string>('DYNAMO_URI'),
+          }),
+        };
+      },
+    })    ,
     PimmsModule,
   ],
   controllers: [AppController],
