@@ -76,9 +76,9 @@ jobs:
 
       - name: Run diax-front e2e tests
         run: |
-          yarn nx run diax-front:serve:production & 
+          yarn nx run diax-front:serve:production --port=4000 & 
           SERVER_PID=$!
-          yarn wait-on http://localhost:80/
+          yarn wait-on http://localhost:4000/
           yarn nx run diax-front-e2e:e2e
           kill $SERVER_PID
 
