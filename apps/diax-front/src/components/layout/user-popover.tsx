@@ -25,7 +25,7 @@ export const handleSignOut = async (): Promise<void> => {
   await signOut({ redirect: false });
 
   // Redirect to Cognito's logout URL to fully sign out
-  window.location.href = cognitoLogoutUrl;
+  window.location.replace(cognitoLogoutUrl);
 };
 
 export function UserPopover({
