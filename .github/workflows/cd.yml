@@ -60,6 +60,31 @@ jobs:
         run: |
           aws ecs update-service --cluster diax-main --service diax-back --force-new-deployment --no-cli-pager
 
+  build-and-push-certificates-iot:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          sudo docker build -t certificates:latest -f apps/things/uploader/raspberryPI/utils/Dockerfile .
+
+      - name: Stop and remove existing container
+        run: |
+          sudo docker stop certificates || true
+          sudo docker rm certificates || true
+
+      - name: Run Docker container
+        run: |
+          sudo docker run -d \
+            --name certificates \
+            --restart always \
+            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -v iot-certs:/certificates \
+            certificates:latest
+
   build-and-push-raspberryPI:
     runs-on: self-hosted
     steps:
@@ -73,12 +98,11 @@ jobs:
         run: |
           sudo docker stop uploader-raspberryPI || true
           sudo docker rm uploader-raspberryPI || true
-
       - name: Run Docker container
         run: |
           sudo docker run -d \
             --name uploader-raspberryPI \
             --restart always \
-            -v /home/equip/Desktop/modbus/certificates:/raspberryPI/certificates \
+            -v iot-certs:/raspberryPI/certificates \
             009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest
         
