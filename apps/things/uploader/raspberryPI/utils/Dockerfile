@@ -1,28 +1,26 @@
 FROM arm64v8/alpine:latest
 
-# Instala dependencias necesarias
+# Install dependencies
 RUN apk add --no-cache \
-    curl \
-    unzip \
-    groff \
-    less \
-    bash \
     python3 \
-    py3-pip
+    py3-pip \
+    bash
 
-# Instala AWS CLI v2
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && ./aws/install && \
-    rm -rf awscliv2.zip aws
-
-# Directorio de trabajo
+# Set working directory
 WORKDIR /app
 
-# Crear carpeta para certificados
+# Create and activate a virtual environment
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Upgrade pip and install required Python packages
+RUN pip install --upgrade pip && pip install boto3
+
+# Create folder for certificates
 RUN mkdir /certificates
 
-# Copiar script de Python
+# Copy your Python script
 COPY apps/things/uploader/raspberryPI/utils/fetch_credentials.py .
 
-# Ejecutar el script
+# Set default command
 CMD ["python3", "fetch_credentials.py"]
