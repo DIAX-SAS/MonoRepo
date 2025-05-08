@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # Install dependencies globally
-RUN yarn global add nx && yarn install --frozen-lockfile
+RUN  yarn install --frozen-lockfile
 
 # Copy the backend project files
 COPY . .
