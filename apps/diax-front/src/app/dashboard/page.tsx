@@ -121,29 +121,28 @@ export default function Page(): React.JSX.Element {
           <CardContent>
             <Grid container>
               <Grid sx={{ xs: 6, md: 6 }}>
-    
-                  <Box
-                    display="grid"
-                    gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
-                    gap={2}
-                  >
-                    <CardFactor
-                      value={graphData?.indicadores?.data?.performance}
-                      title="Rendimiento"
-                    />
-                    <CardFactor
-                      value={graphData?.indicadores?.data?.availability}
-                      title="Disponibilidad"
-                    />
-                    <CardFactor
-                      value={graphData?.indicadores?.data?.quality}
-                      title="Calidad"
-                    />
-                    <CardFactor
-                      value={graphData?.indicadores?.data?.efficiency}
-                      title="Eficiencia"
-                    />
-                  </Box>              
+                <Box
+                  display="grid"
+                  gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+                  gap={2}
+                >
+                  <CardFactor
+                    value={graphData?.indicadores?.data?.performance}
+                    title="Rendimiento"
+                  />
+                  <CardFactor
+                    value={graphData?.indicadores?.data?.availability}
+                    title="Disponibilidad"
+                  />
+                  <CardFactor
+                    value={graphData?.indicadores?.data?.quality}
+                    title="Calidad"
+                  />
+                  <CardFactor
+                    value={graphData?.indicadores?.data?.efficiency}
+                    title="Eficiencia"
+                  />
+                </Box>
               </Grid>
               <Grid sx={{ xs: 6, md: 6 }}>
                 <PolarChart
@@ -161,41 +160,89 @@ export default function Page(): React.JSX.Element {
         </Card>
       </Grid2>
 
-      <Grid2 size={{ xs: 12, sm: 12 }}>
-       
-        <SectionMetric title="Disponibilidad" data={{
-          linechart: graphData?.disponibilidad.charts?.SeriesLineChart,
-          piechart: graphData?.disponibilidad.charts?.MultiLayerPieChart,
-          unit: 'minutos',
-        }} />
-        <SectionMetric title="Calidad" data={{
-          linechart: graphData?.calidad.charts?.SeriesLineChart,
-          piechart: graphData?.calidad.charts?.MultiLayerPieChart,
-          unit: 'unidades',
-        }} />
-        <SectionMetric title="Rendimiento" data={{
-          linechart: graphData?.rendimiento.charts?.SeriesLineChart,
-          piechart: graphData?.rendimiento.charts?.MultiLayerPieChart,
-          unit: 'inyecciones',
-        }} />  
-        <SectionMetric title="Energía" data={{
-          linechart: graphData?.energia.charts?.SeriesLineChart,
-          piechart: graphData?.energia.charts?.MultiLayerPieChart,
-          unit: 'kW',
-        }} />
-        <SectionMetric title="Material" data={{
-          linechart: graphData?.material.charts?.SeriesLineChart,
-          piechart: graphData?.material.charts?.MultiLayerPieChart,
-          unit: 'gramos',
-        }} />
-        <SectionMetric title="Ciclos" data={{
-          linechart: graphData?.ciclos.charts?.SeriesLineChart,
-          piechart: graphData?.ciclos.charts?.MultiLayerPieChart,
-          unit: 'segundos',
-        }} />
-        {/* Montaje Section */}
-        <Table data={graphData?.montaje.charts?.Table?.data} />
-      </Grid2>
+      <Grid container spacing={3} columns={{ xs: 4, sm: 8, md: 12 }}>
+        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
+          <SectionMetric
+            title="Disponibilidad"
+            data={{
+              linechart: graphData?.disponibilidad.charts?.SeriesLineChart,
+              piechart: graphData?.disponibilidad.charts?.MultiLayerPieChart,
+              unit: 'minutos',
+            }}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
+          <SectionMetric
+            title="Calidad"
+            data={{
+              linechart: graphData?.calidad.charts?.SeriesLineChart,
+              piechart: graphData?.calidad.charts?.MultiLayerPieChart,
+              unit: 'unidades',
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
+          <SectionMetric
+            title="Rendimiento"
+            data={{
+              linechart: graphData?.rendimiento.charts?.SeriesLineChart,
+              piechart: graphData?.rendimiento.charts?.MultiLayerPieChart,
+              unit: 'inyecciones',
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
+          <SectionMetric
+            title="Energía"
+            data={{
+              linechart: graphData?.energia.charts?.SeriesLineChart,
+              piechart: graphData?.energia.charts?.MultiLayerPieChart,
+              barchart: graphData?.energia.charts?.StackedBarChart,
+              unit: 'kW',
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
+          <SectionMetric
+            title="Material"
+            options={['PIMM', 'Molde']}
+            data={{
+              linechart: [
+                graphData?.material.charts?.SeriesLineChart,
+                graphData?.molde.charts?.SeriesLineChart,
+              ],
+              piechart: [
+                graphData?.material.charts?.MultiLayerPieChart,
+                graphData?.molde.charts?.MultiLayerPieChart,
+              ],
+              unit: 'gramos',
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
+          <SectionMetric
+            title="Ciclos"
+            data={{
+              linechart: graphData?.ciclos.charts?.SeriesLineChart,
+              piechart: graphData?.ciclos.charts?.MultiLayerPieChart,
+              unit: 'segundos',
+            }}
+          />
+        </Grid>
+        <Grid>
+          {/* Montaje Section */}
+          <Card>
+            <CardHeader
+              title="Montaje"
+              sx={{ borderBottom: '1px solid #ddd' }}
+            />
+            <CardContent>
+              <Table data={graphData?.montaje.charts?.Table?.data} />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Grid2>
   );
 }

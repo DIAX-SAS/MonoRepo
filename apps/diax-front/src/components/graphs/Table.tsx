@@ -33,12 +33,6 @@ const MountingTable: React.FC<MountingTableProps> = ({  data }) => {
       component={Paper}
       sx={{ maxWidth: 600, mx: "auto", my: 3, p: 2 }}
     >
-      <Typography       
-        align="center"
-        sx={{ fontWeight: "bold", mb: 2 }}
-      >
-        Mold Mounting
-      </Typography>
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: "#f4f4f4" }}>
