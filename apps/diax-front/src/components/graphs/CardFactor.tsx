@@ -1,13 +1,13 @@
-import * as React from "react";
+import * as React from 'react';
 import {
   Card,
   CardContent,
   LinearProgress,
   Stack,
   Typography,
-  Box
-} from "@mui/material";
-import type { SxProps } from "@mui/material/styles";
+  Box,
+} from '@mui/material';
+import type { SxProps } from '@mui/material/styles';
 
 export interface TasksProgressProps {
   sx?: SxProps;
@@ -24,8 +24,8 @@ export default function CardFactor({
     <Card sx={{ p: 1, ...sx }}>
       <CardContent>
         <Stack spacing={2}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Box>
+          <Box display="flex" justifyContent="flex-end" alignItems="center">
+            <Box textAlign="right">
               <Typography
                 variant="overline"
                 color="text.secondary"
