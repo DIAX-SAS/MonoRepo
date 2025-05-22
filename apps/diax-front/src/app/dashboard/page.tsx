@@ -25,6 +25,7 @@ import { PIMM } from './dashboard.types';
 import mqtt from 'mqtt';
 import * as React from 'react';
 import { useAuthSession } from '../../hooks/useAuthSession';
+import { SectionMetric } from '../../components/graphs/SectionMetric';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -161,124 +162,39 @@ export default function Page(): React.JSX.Element {
       </Grid2>
 
       <Grid2 size={{ xs: 12, sm: 12 }}>
-        {/* Calidad Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader title="Calidad" sx={{ borderBottom: '1px solid #ddd' }} />
-          <CardContent>
-            <MultiLayerPieChart
-              data={graphData?.calidad?.charts?.MultiLayerPieChart?.data}
-            />
-            <TimeSeriesLineChart
-              series={graphData?.calidad.charts?.SeriesLineChart?.data}
-              labelY="Piezas (Unidades)"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Disponibilidad Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader
-            title="Disponibilidad"
-            sx={{ borderBottom: '1px solid #ddd' }}
-          />
-          <CardContent>
-            <MultiLayerPieChart
-              data={graphData?.disponibilidad?.charts?.MultiLayerPieChart?.data}
-            />
-            <TimeSeriesLineChart
-              series={graphData?.disponibilidad.charts?.SeriesLineChart?.data}
-              labelY="Piezas (Unidades)"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Rendimiento Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader
-            title="Rendimiento"
-            sx={{ borderBottom: '1px solid #ddd' }}
-          />
-          <CardContent>
-            <MultiLayerPieChart
-              data={graphData?.rendimiento.charts?.MultiLayerPieChart?.data}
-            />
-            <TimeSeriesLineChart
-              series={graphData?.rendimiento?.charts?.SeriesLineChart?.data}
-              labelY="Piezas (Unidades)"
-            />
-          </CardContent>
-        </Card>
-
+       
+        <SectionMetric title="Disponibilidad" data={{
+          linechart: graphData?.disponibilidad.charts?.SeriesLineChart,
+          piechart: graphData?.disponibilidad.charts?.MultiLayerPieChart,
+          unit: 'minutos',
+        }} />
+        <SectionMetric title="Calidad" data={{
+          linechart: graphData?.calidad.charts?.SeriesLineChart,
+          piechart: graphData?.calidad.charts?.MultiLayerPieChart,
+          unit: 'unidades',
+        }} />
+        <SectionMetric title="Rendimiento" data={{
+          linechart: graphData?.rendimiento.charts?.SeriesLineChart,
+          piechart: graphData?.rendimiento.charts?.MultiLayerPieChart,
+          unit: 'inyecciones',
+        }} />  
+        <SectionMetric title="Energía" data={{
+          linechart: graphData?.energia.charts?.SeriesLineChart,
+          piechart: graphData?.energia.charts?.MultiLayerPieChart,
+          unit: 'kW',
+        }} />
+        <SectionMetric title="Material" data={{
+          linechart: graphData?.material.charts?.SeriesLineChart,
+          piechart: graphData?.material.charts?.MultiLayerPieChart,
+          unit: 'gramos',
+        }} />
+        <SectionMetric title="Ciclos" data={{
+          linechart: graphData?.ciclos.charts?.SeriesLineChart,
+          piechart: graphData?.ciclos.charts?.MultiLayerPieChart,
+          unit: 'segundos',
+        }} />
         {/* Montaje Section */}
         <Table data={graphData?.montaje.charts?.Table?.data} />
-
-        {/* Energía Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader title="Energía" sx={{ borderBottom: '1px solid #ddd' }} />
-          <CardContent>
-            <StackedBarChart
-              labelY="Energía (kWh)"
-              data={graphData?.energia.charts?.StackedBarChart?.data}
-              keys={['motor', 'maquina']}
-            />
-            <TimeSeriesLineChart
-              labelY="Energía (kWh)"
-              series={graphData?.energia.charts?.SeriesLineChart?.data}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Material Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader
-            title="Material"
-            sx={{ borderBottom: '1px solid #ddd' }}
-          />
-          <CardContent>
-            <MultiLayerPieChart
-              data={graphData?.material.charts?.MultiLayerPieChart?.data}
-            />
-            <TimeSeriesLineChart
-              labelY="Material (g)"
-              series={graphData?.material.charts?.SeriesLineChart?.data}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Molde Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader title="Molde" sx={{ borderBottom: '1px solid #ddd' }} />
-          <CardContent>
-            <MultiLayerPieChart
-              data={graphData?.molde.charts?.MultiLayerPieChart?.data}
-            />
-            <TimeSeriesLineChart
-              labelY="Material (g)"
-              series={graphData?.molde.charts?.SeriesLineChart?.data}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Ciclos por PIMM Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader
-            title="Ciclos por PIMM"
-            sx={{ borderBottom: '1px solid #ddd' }}
-          />
-          <CardContent>
-            <MultiLayerPieChart
-              data={graphData?.ciclos.charts?.MultiLayerPieChart?.data}
-            />
-            <TimeSeriesLineChart
-              labelY="Maquina (Ciclos)"
-              series={graphData?.ciclos.charts?.SeriesLineChart?.data}
-            />
-            <TimeSeriesLineChart
-              labelY="Puerta (Ciclos)"
-              series={graphData?.ciclos.charts?.SeriesLineChart?.data2}
-            />
-          </CardContent>
-        </Card>
       </Grid2>
     </Grid2>
   );
