@@ -19,6 +19,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Grid2 from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid2';
 import Box from '@mui/material/Box';
 import { PIMM } from './dashboard.types';
 import mqtt from 'mqtt';
@@ -117,35 +118,44 @@ export default function Page(): React.JSX.Element {
             sx={{ borderBottom: '1px solid #ddd' }}
           />
           <CardContent>
-            <Box
-              display="grid"
-              gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
-              gap={2}
-            >
-              <CardFactor
-                value={graphData?.indicadores?.data?.performance}
-                title="Rendimiento"
-              />
-              <CardFactor
-                value={graphData?.indicadores?.data?.availability}
-                title="Disponibilidad"
-              />
-              <CardFactor
-                value={graphData?.indicadores?.data?.quality}
-                title="Calidad"
-              />
-              <CardFactor
-                value={graphData?.indicadores?.data?.efficiency}
-                title="Eficiencia"
-              />
-            </Box>
-            <PolarChart
-              data={graphData?.indicadores.charts?.PolarChart?.data}
-            />
-            <TimeSeriesLineChart
-              series={graphData?.indicadores.charts?.SeriesLineChart?.data}
-              labelY="OEE(%)"
-            />
+            <Grid container>
+              <Grid sx={{ xs: 6, md: 6 }}>
+    
+                  <Box
+                    display="grid"
+                    gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+                    gap={2}
+                  >
+                    <CardFactor
+                      value={graphData?.indicadores?.data?.performance}
+                      title="Rendimiento"
+                    />
+                    <CardFactor
+                      value={graphData?.indicadores?.data?.availability}
+                      title="Disponibilidad"
+                    />
+                    <CardFactor
+                      value={graphData?.indicadores?.data?.quality}
+                      title="Calidad"
+                    />
+                    <CardFactor
+                      value={graphData?.indicadores?.data?.efficiency}
+                      title="Eficiencia"
+                    />
+                  </Box>              
+              </Grid>
+              <Grid sx={{ xs: 6, md: 6 }}>
+                <PolarChart
+                  data={graphData?.indicadores.charts?.PolarChart?.data}
+                />
+              </Grid>
+              <Grid>
+                <TimeSeriesLineChart
+                  series={graphData?.indicadores.charts?.SeriesLineChart?.data}
+                  labelY="OEE(%)"
+                />
+              </Grid>
+            </Grid>
           </CardContent>
         </Card>
       </Grid2>
