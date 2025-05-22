@@ -13,8 +13,8 @@ export type CategoryPolar= {
 };
 
 const PolarChart: React.FC<PolarChartProps> = ({
-  width = 500,
-  height = 500,
+  width = 400,
+  height = 400,
   data,
 }) => {
   const ref = useRef<SVGSVGElement | null>(null);

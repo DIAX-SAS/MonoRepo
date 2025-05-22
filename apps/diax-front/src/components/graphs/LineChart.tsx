@@ -12,8 +12,6 @@ export interface LineSeries {
 }
 
 interface TimeSeriesLineChartProps {
-  width?: number;
-  height?: number;
   series: LineSeries[] | undefined;
   labelY: string;
 }
@@ -26,20 +24,21 @@ const colors = {
   cyan: ["#23C897", "#41E6B5", "#76F1CC", "#A8F6DF", "#D9F6EE"],
 };
 
-const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, height = 400, series, labelY }) => {
-  const ref = useRef<SVGSVGElement | null>(null);
-
-
+const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ series, labelY }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
+    if (!containerRef.current || !svgRef.current || !series) return;
 
-    if (!ref.current) return;
-
-    if (!series) return;
-
+    const container = containerRef.current;
+    //const { width, height } = container.getBoundingClientRect();
+    const [ width, height ] = [400, 400]; // Set fixed width and height for the chart
     const margin = { top: 30, right: 100, bottom: 60, left: 70 };
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
+
+    if (chartWidth <= 0 || chartHeight <= 0) return;
 
     const allData = series.flatMap((s) => s.data);
     const xExtent = d3.extent(allData, (d) => new Date(d.timestamp * 1000)) as [Date, Date];
@@ -48,7 +47,7 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, 
     const xScale = d3.scaleTime().domain(xExtent).range([0, chartWidth]);
     const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([chartHeight, 0]);
 
-    const svg = d3.select(ref.current);
+    const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
     const g = svg
@@ -58,11 +57,10 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, 
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const xAxisGroup = g.append("g").attr("transform", `translate(0,${chartHeight})`);
-    xAxisGroup.call(d3.axisBottom(xScale).tickFormat((d: Date | d3.NumberValue) => d3.timeFormat("%H:%M:%S")(d as Date)));
+    xAxisGroup.call(d3.axisBottom(xScale).tickFormat((d) => d3.timeFormat("%H:%M:%S")(d as Date)));
 
     g.append("g").call(d3.axisLeft(yScale));
 
-    // Y-Axis Label
     g.append("text")
       .attr("x", -chartHeight / 2)
       .attr("y", -50)
@@ -72,7 +70,6 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, 
       .attr("font-size", "14px")
       .text(labelY);
 
-    // X-Axis Label
     g.append("text")
       .attr("x", chartWidth / 2)
       .attr("y", chartHeight + 40)
@@ -143,7 +140,7 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, 
       ])
       .on("zoom", (event) => {
         const newXScale = event.transform.rescaleX(xScale);
-        xAxisGroup.call(d3.axisBottom(newXScale).tickFormat((d: d3.AxisDomain, index: number) => d3.timeFormat("%H:%M:%S")(d as Date)));
+        xAxisGroup.call(d3.axisBottom(newXScale).tickFormat((d) => d3.timeFormat("%H:%M:%S")(d as Date)));
 
         lineGroup.selectAll<SVGPathElement, DataPoint>("path").attr("d", (_, i) => {
           return d3
@@ -155,13 +152,16 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, 
       });
 
     svg.call(zoom);
-
     svg.on("dblclick", () => {
       svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
     });
-  }, [width, height, series, labelY]);
+  }, [series, labelY]);
 
-  return <svg ref={ref}></svg>;
+  return (
+    <div ref={containerRef} style={{ width: "100%", height: "100%", background: "#0000" }}>
+      <svg ref={svgRef} />
+    </div>
+  );
 };
 
 export default TimeSeriesLineChart;

@@ -119,7 +119,14 @@ export default function Page(): React.JSX.Element {
             sx={{ borderBottom: '1px solid #ddd' }}
           />
           <CardContent>
-            <Grid container>
+            <Grid
+              container
+              direction="row"
+              sx={{
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
               <Grid sx={{ xs: 6, md: 6 }}>
                 <Box
                   display="grid"
@@ -156,6 +163,13 @@ export default function Page(): React.JSX.Element {
                 />
               </Grid>
             </Grid>
+          </CardContent>
+        </Card>
+        {/* Montaje Section */}
+        <Card>
+          <CardHeader title="Montaje" sx={{ borderBottom: '1px solid #ddd' }} />
+          <CardContent>
+            <Table data={graphData?.montaje.charts?.Table?.data} />
           </CardContent>
         </Card>
       </Grid2>
@@ -230,18 +244,7 @@ export default function Page(): React.JSX.Element {
             }}
           />
         </Grid>
-        <Grid>
-          {/* Montaje Section */}
-          <Card>
-            <CardHeader
-              title="Montaje"
-              sx={{ borderBottom: '1px solid #ddd' }}
-            />
-            <CardContent>
-              <Table data={graphData?.montaje.charts?.Table?.data} />
-            </CardContent>
-          </Card>
-        </Grid>
+        <Grid></Grid>
       </Grid>
     </Grid2>
   );
