@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import Page from '../page';
-import { ResponsePIMM } from '@repo-hub/internal';
+import { ResponsePimms } from '../dashboard.types';
 
 jest.mock('../../../components/graphs/CardFactor', () => {
   return {
@@ -69,7 +69,7 @@ jest.mock('../../../hooks/useAuthSession', () => {
 jest.mock('../../../data-access/diax-back/diax-back', () => {
   return {
     __esModule: true,
-    fetchData: (): ResponsePIMM => ({
+    fetchData: (): ResponsePimms => ({
       lastID: null,
       pimms: [],
       totalProcessed: 0,

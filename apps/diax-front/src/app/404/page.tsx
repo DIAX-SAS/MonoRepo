@@ -1,10 +1,6 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-
+import { Button, Box, Stack, Typography } from '../../components/core';
 
 export default function NotFound(): React.JSX.Element {
   return (

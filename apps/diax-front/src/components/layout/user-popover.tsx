@@ -1,13 +1,15 @@
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
-import Popover from '@mui/material/Popover';
-import Typography from '@mui/material/Typography';
-import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import * as React from 'react';
 import { useSession, signOut } from "next-auth/react"
+import {
+  Box,
+  Popover,
+  Typography,
+  Divider,
+  MenuList,
+  MenuItem,
+  ListItemIcon,
+  SignOutIcon,
+} from '../core';
 export interface UserPopoverProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   open: boolean;

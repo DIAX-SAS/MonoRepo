@@ -1,12 +1,14 @@
 'use client';
 
-import FilterForm from '../../components/filters/filter-form';
-import CardFactor from '../../components/graphs/CardFactor';
-import TimeSeriesLineChart from '../../components/graphs/LineChart';
-import MultiLayerPieChart from '../../components/graphs/MultiLayerPieChart';
-import PolarChart from '../../components/graphs/PolarChart';
-import StackedBarChart from '../../components/graphs/StackedBarChart';
-import Table from '../../components/graphs/Table';
+import * as React from 'react';
+import {
+  PolarChart,
+  TimeSeriesLineChart,
+  FilterForm,
+  CardFactor,
+  Table,
+  SectionMetric
+} from '../../components/graphs';
 import {
   AccessToken,
   GraphData,
@@ -14,18 +16,18 @@ import {
   type FEPIMM,
   type Filters,
   type Parameters,
+  PIMM
 } from './dashboard.types';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Grid2 from '@mui/material/Grid2';
-import Grid from '@mui/material/Grid2';
-import Box from '@mui/material/Box';
-import { PIMM } from './dashboard.types';
+import {
+  Grid2,
+  Grid,
+  Card,
+  CardHeader,
+  CardContent,
+  Box,
+} from '../../components/core';
 import mqtt from 'mqtt';
-import * as React from 'react';
 import { useAuthSession } from '../../hooks/useAuthSession';
-import { SectionMetric } from '../../components/graphs/SectionMetric';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({

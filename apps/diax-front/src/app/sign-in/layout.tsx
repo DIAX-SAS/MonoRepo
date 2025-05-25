@@ -1,9 +1,7 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { Logo } from '../../components/core/logo';
+import { Box, Stack, Typography } from '../../components/core';
+import { Logo } from '../../components/core';
 
 export interface LayoutProps {
   children: React.ReactNode;

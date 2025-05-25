@@ -1,11 +1,7 @@
 import * as React from 'react';
-import { Card, CardHeader, CardContent, Box, Typography } from '@mui/material';
-import MultiLayerPieChart from './MultiLayerPieChart';
-import TimeSeriesLineChart from './LineChart';
-import SelectPicker from 'rsuite/esm/SelectPicker';
+import { Card, CardContent, CardHeader, Grid, Box, SelectPicker } from '../core';
+import { MultiLayerPieChart, StackedBarChart, TimeSeriesLineChart } from '../graphs';
 import type { Graphs } from '../../app/dashboard/dashboard.types';
-import StackedBarChart from './StackedBarChart';
-import Grid from '@mui/material/Grid2';
 
 export interface Data {
   linechart:
@@ -66,11 +62,16 @@ export function SectionMetric({
     <Card sx={{ p: 2, mb: 3 }}>
       <CardHeader title={title} sx={{ borderBottom: '1px solid #ddd' }} />
       <CardContent>
-        <Grid container spacing={2} mb={2}     direction="row"
-        sx={{
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
+        <Grid
+          container
+          spacing={2}
+          mb={2}
+          direction="row"
+          sx={{
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           {pickerOptions.length > 0 && linechartArray.length > 1 && (
             <Grid>
               <Box mb={2}>
