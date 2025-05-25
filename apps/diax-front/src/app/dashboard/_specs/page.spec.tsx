@@ -48,13 +48,6 @@ jest.mock('../../../components/graphs/Table', () => {
   };
 });
 
-jest.mock('react-json-tree', () => {
-  return {
-    __esModule: true,
-    JSONTree: () => <div>Mocked JSONTree</div>,
-  };
-});
-
 jest.mock('../../../hooks/useAuthSession', () => {
   return {
     __esModule: true,
@@ -90,7 +83,7 @@ describe('Dashboard page', () => {
     await act(async () => {
       render(<Page />);
     });
-    expect(screen.getByText('Information')).toBeDefined();
+    expect(screen.getByText('Configuración')).toBeDefined();
   });
   it('should render all graph components successfully', async () => {
     render(<Page />);
@@ -103,7 +96,6 @@ describe('Dashboard page', () => {
       expect(screen.getByText("Mocked PolarChart")).toBeDefined();
       expect(screen.getByText("Mocked StackedBarChart")).toBeDefined();
       expect(screen.getByText("Mocked Table")).toBeDefined();
-      expect(screen.getByText("Mocked JSONTree")).toBeDefined();
     });
   });
 
