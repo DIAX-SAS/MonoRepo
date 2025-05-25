@@ -2,6 +2,19 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import Page from '../page';
 import { ResponsePimms } from '../dashboard.types';
 
+jest.mock('next-auth/react', () => ({
+  __esModule: true,
+  signIn: jest.fn(),
+  useSession: jest.fn(() => ({
+    data: {
+      accessToken: 'mocked_access_token',
+      user: { name: 'Fernando' },
+    },
+    status: 'authenticated',
+  })),
+}));
+
+
 jest.mock('../../../components/graphs/CardFactor', () => {
   return {
     __esModule: true,
@@ -45,17 +58,6 @@ jest.mock('../../../components/graphs/Table', () => {
   return {
     __esModule: true,
     default: () => <div>Mocked Table</div>,
-  };
-});
-
-jest.mock('../../../hooks/useAuthSession', () => {
-  return {
-    __esModule: true,
-    useAuthSession: () => ({
-      session: 'mocked-session',
-      status: 'mocked-status',
-      isRefreshing: 'false',
-    }),
   };
 });
 

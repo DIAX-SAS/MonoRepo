@@ -5,7 +5,7 @@ import { JWT } from "next-auth/jwt";
 
 async function refreshAccessToken(token: JWT) {
   try {
-    const url = `${process.env.COGNITO_URI}/oauth2/token`;
+    const url = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/oauth2/token`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -66,11 +66,11 @@ export const authOptions: NextAuthOptions = {
           accessToken: account.access_token,
           idToken: account.id_token,
           refreshToken: account.refresh_token,
-          expiresAt: Date.now() + (Number(account.expires_in) * 1000) || Date.now() + 3600 * 1000,
+          expiresAt: Date.now() + (Number(account.expires_in) * 1000),
           ...user
         };
       }
-      if (!token.expiresAt || Date.now() > token.expiresAt || trigger == "update") {
+      if (!token.expiresAt || Date.now() > token.expiresAt) {
         return await refreshAccessToken(token);
       }   
 

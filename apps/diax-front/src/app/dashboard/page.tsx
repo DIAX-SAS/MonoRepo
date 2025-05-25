@@ -27,7 +27,7 @@ import {
   Box,
 } from '../../components/core';
 import mqtt from 'mqtt';
-import { useAuthSession } from '../../hooks/useAuthSession';
+import { useSession } from 'next-auth/react';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -46,7 +46,7 @@ export default function Page(): React.JSX.Element {
     step: PimmsStepUnit.SECOND,
   });
 
-  const { session } = useAuthSession();
+ const { data: session } = useSession();
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
