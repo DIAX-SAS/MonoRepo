@@ -16,15 +16,18 @@ test.describe('Navigation', () => {
   })
   test("components of dashboard are visible", async ({ page }) => {
     await (login(page));
-    await expect(page.getByText('Information')).toBeVisible();
+    await expect(page.getByText('Configuración')).toBeVisible();
     await expect(page.getByText('Indicadores')).toBeVisible();
-    await expect(page.getByText('Energía', { exact: true })).toBeVisible();
+    await expect(page.getByText('Montaje')).toBeVisible();
+    await expect(page.getByText('Disponibilidad').nth(2)).toBeVisible();
+    await expect(page.getByText('Calidad').nth(2)).toBeVisible();
+    await expect(page.getByText('Rendimiento').nth(2)).toBeVisible();
+    await expect(page.getByText('Energía')).toBeVisible();
     await expect(page.getByText('Material', { exact: true })).toBeVisible();
-    await expect(page.getByText('Molde', { exact: true })).toBeVisible();
-    await expect(page.getByText('Ciclos por PIMM')).toBeVisible();
+    await expect(page.getByText('Ciclos', { exact: true })).toBeVisible();
   })
   test('404 is expected', async ({ page }) => {
-    await page.goto('http://localhost:4000/non-existing-page');
+    await page.goto(`${process.env.FQDN}/non-existing-page`);
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   });
   test('Redirect page sends user to home', async ({ page }) => {
