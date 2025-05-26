@@ -40,6 +40,7 @@ export default function CardFactor({
           </Box>
 
           <LinearProgress
+            data-testid={`${title}-factor`}
             value={value}
             variant="determinate"
             role="progressbar"

@@ -4,15 +4,14 @@ import { login, logout } from '../utils/test-helper';
 test.describe('Authentication', () => {
   test('User can log in with valid credentials', async ({ page }) => {
     await login(page);
-    await expect(page.getByText('Information')).toBeVisible();
-    await expect(page.getByText('Indicadores')).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: /^Calidad0Piezas \(Unidades\)Time$/ }).locator('span')).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: /^Disponibilidad0Piezas \(Unidades\)Time$/ }).locator('span')).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: /^Rendimiento0Piezas \(Unidades\)Time$/ }).locator('span')).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: /^Energía$/ }).first()).toBeVisible();
-    await expect(page.getByText('Mold Mounting')).toBeVisible();
-    await expect(page.getByText('Material', { exact: true })).toBeVisible();
-    await expect(page.getByText('Molde', { exact: true })).toBeVisible();
-    await expect(page.getByText('Ciclos por PIMM')).toBeVisible();
+    await expect(page.getByText('Configuración')).toBeVisible();
+    await page.getByRole('checkbox', { name: 'Live Live' }).check();
+    await expect(page.getByTestId("Disponibilidad-factor"))
+      .not.toHaveAttribute("aria-valuenow", "0", { timeout: 30000 });
+    await expect(page.getByTestId("Rendimiento-factor"))
+      .not.toHaveAttribute("aria-valuenow", "0",);
+  
+    await logout(page);
   });
+  
 });
