@@ -2,24 +2,60 @@ import {
   Controller,
   Post,
   Body,
-  Get
+  Get,
 } from '@nestjs/common';
 import { PimmsService } from './pimms.service';
 import { Authentication } from '@nestjs-cognito/auth';
-import { GetPimmsResponseDTO, PimmsFilterDto } from './pimms.interface';
+import {
+  GetPimmsResponseDTO,
+  PimmsFilterDto,
+  IotCredentialsDto, // <- Create this DTO if not yet
+} from './pimms.interface'; // Or .dto.ts if you prefer separating interfaces
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
+@ApiTags('PIMMS')
+@ApiBearerAuth()
 @Controller('pimms')
 @Authentication()
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized — missing or invalid token',
+  schema: {
+    example: {
+      statusCode: 401,
+      message: 'Authentication failed',
+    },
+  },
+})
 export class PIMMSController {
-  constructor(private readonly PimmsService: PimmsService) { }
+  constructor(private readonly PimmsService: PimmsService) {}
 
   @Post('')
+  @ApiOperation({ summary: 'Get PIMMS data based on filters' })
+  @ApiBody({ type: PimmsFilterDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved filtered PIMMS data',
+    type: GetPimmsResponseDTO,
+  })
   getPIMMS(@Body() pimmsFilterDto: PimmsFilterDto): Promise<GetPimmsResponseDTO> {
     return this.PimmsService.getPIMMS(pimmsFilterDto);
   }
 
   @Get('iot/credentials')
-  getPimmsIotCredentials() {
-    return this.PimmsService.getPimmsIotCredentials();   
+  @ApiOperation({ summary: 'Get IoT credentials for PIMMS' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved IoT credentials',
+    type: IotCredentialsDto,
+  })
+  getPimmsIotCredentials(): Promise<IotCredentialsDto> {
+    return this.PimmsService.getPimmsIotCredentials();
   }
 }

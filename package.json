@@ -25,6 +25,7 @@
     "@nestjs/core": "^latest",
     "@nestjs/jwt": "^latest",
     "@nestjs/platform-express": "^11.0.11",
+    "@nestjs/swagger": "^11.2.0",
     "@nx/next": "21.1.1",
     "@nx/webpack": "21.1.1",
     "@phosphor-icons/react": "^latest",
@@ -46,7 +47,8 @@
     "react-oidc-context": "^latest",
     "react-router-dom": "^latest",
     "reflect-metadata": "^0.2.2",
-    "rsuite": "^latest"
+    "rsuite": "^latest",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.39.0",
