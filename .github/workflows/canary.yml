@@ -6,7 +6,7 @@ on:
     - cron: '0 5 * * *'      # Ejecuta todos los días a las 5:00 AM UTC
 
 jobs:
-  build:
+  try-to-sing:
     runs-on: ubuntu-latest
     env:
       FQDN: https://diax.website
@@ -19,6 +19,23 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
+
+      - name: Copy enviromental variables
+        run: |
+          cp apps/diax-canary/.env.template apps/diax-canary/.env
+
+          #Replace if it exists or append if it doesn't
+          sed -i 's/^COGNITO_TEST_PASSWORD=.*/COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}/' apps/diax-canary/.env || echo "COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}" >> apps/diax-canary/.env
+          
+      - name: Cache node_modules and Yarn cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       - name: Install dependencies
         run: |
