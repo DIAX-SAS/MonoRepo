@@ -74,7 +74,7 @@ export const CollapsibleList: React.FC<ChartTreeProps> = ({
 
       {hasChildren && (
         <Collapse in={open} timeout="auto" unmountOnExit>
-          {data.children!.map((child, index) => (
+          {data.children?.map((child, index) => (
             <CollapsibleList key={index} data={child} level={level + 1} unit={unit} />
           ))}
         </Collapse>

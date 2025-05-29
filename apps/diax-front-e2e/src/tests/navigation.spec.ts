@@ -27,7 +27,7 @@ test.describe('Navigation', () => {
     await expect(page.getByText('Ciclos', { exact: true })).toBeVisible();
   })
   test('404 is expected', async ({ page }) => {
-    await page.goto(`${process.env.FQDN}/non-existing-page`);
+    await page.goto(`/non-existing-page`);
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   });
   test('Redirect page sends user to home', async ({ page }) => {

@@ -10,8 +10,8 @@ test.describe('Authentication', () => {
       .not.toHaveAttribute("aria-valuenow", "0", { timeout: 30000 });
     await expect(page.getByTestId("Rendimiento-factor"))
       .not.toHaveAttribute("aria-valuenow", "0",);
-  
+
     await logout(page);
   });
-  
+
 });
