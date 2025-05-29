@@ -926,7 +926,7 @@ export const applyFilters = async (
     );
 };
 
-export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefined>, accessTokenRef: RefObject<AccessToken>, setPIMMs: Dispatch<React.SetStateAction<PIMM[]>>) => {
+export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefined>, accessTokenRef: RefObject<AccessToken>, setPIMMs: Dispatch<React.SetStateAction<PIMM[]>>, setFilters:Dispatch<React.SetStateAction<Filters>>) => {
     if (MQTTRef.current && MQTTRef.current.connected) return;
     const response = await fetchCredentialsCore(accessTokenRef.current);
     const { sessionToken } = response.token;
@@ -955,10 +955,38 @@ export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefine
     });
 
     MQTTRef.current.on('message', async (topic, message) => {
-        const data = JSON.parse(message.toString());
+        const data: PIMM = JSON.parse(message.toString());
         setPIMMs((prev) => {
             const newPrev = [...prev, data];
             return newPrev.sort((a, b) => a.timestamp - b.timestamp);
+        });
+        setFilters((prevFilters) => {
+            const updatedFilters = {
+                equipos: new Map(prevFilters.equipos),
+                operarios: new Map(prevFilters.operarios),
+                ordenes: new Map(prevFilters.ordenes),
+                lotes: new Map(prevFilters.lotes),
+                moldes: new Map(prevFilters.moldes),
+                materiales: new Map(prevFilters.materiales),
+            };
+
+            for (const pimm of [data]) {
+                const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
+
+                const setIfDefined = (map: Map<string, boolean>, key: string) => {
+                    const value = String(stateMap.get(key)?.value);
+                    if (value !== undefined && !map.has(value)) map.set(value, false);
+                };
+
+                setIfDefined(updatedFilters.operarios, 'Operario');
+                setIfDefined(updatedFilters.moldes, 'Molde');
+                setIfDefined(updatedFilters.materiales, 'Material');
+                setIfDefined(updatedFilters.lotes, 'Lote');
+                setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
+                setIfDefined(updatedFilters.ordenes, 'Orden');
+            }
+
+            return updatedFilters;
         });
     });
 

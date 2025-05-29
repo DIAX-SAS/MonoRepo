@@ -87,7 +87,7 @@ export default function Page(): React.JSX.Element {
         './dashboard.functions'
       );
       if (parameters.live) {
-        connectToIoT(MQTTRef, accessTokenRef, setPIMMs);
+        connectToIoT(MQTTRef, accessTokenRef, setPIMMs, setFilters);
       } else {
         closeConnection(MQTTRef);
       }
