@@ -10,6 +10,7 @@ import Grid from '@mui/material/Grid2';
 import Container from '@mui/material/Container';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { Logo } from './logo';
+import  {CollapsibleList}  from './CollapsibleList';
 import { DateRangePicker, SelectPicker } from 'rsuite';
 import {
   Accordion,
@@ -44,6 +45,7 @@ import MenuList from '@mui/material/MenuList';
 import Popover from '@mui/material/Popover';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 
+export { CollapsibleList };
 export { ListItemIcon, MenuItem, MenuList, Popover, SignOutIcon };
 export { Avatar, IconButton, Divider, Drawer, type Icon, ListIcon, ChartPieIcon, UserIcon, UsersIcon };
 export { Box };

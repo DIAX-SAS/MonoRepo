@@ -1,6 +1,18 @@
 import * as React from 'react';
-import { Card, CardContent, CardHeader, Grid, Box, SelectPicker } from '../core';
-import { MultiLayerPieChart, StackedBarChart, TimeSeriesLineChart } from '../graphs';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Grid,
+  Box,
+  SelectPicker,
+  CollapsibleList,
+} from '../core';
+import {
+  MultiLayerPieChart,
+  StackedBarChart,
+  TimeSeriesLineChart,
+} from '../graphs';
 import type { Graphs } from '../../app/dashboard/dashboard.types';
 
 export interface Data {
@@ -110,6 +122,15 @@ export function SectionMetric({
               <TimeSeriesLineChart
                 series={selectedLineChart.data}
                 labelY={data.unit}
+              />
+            </Grid>
+          )}
+
+          {selectedPieChart && (
+            <Grid>
+              <CollapsibleList
+                data={selectedPieChart.data}
+                unit={data.unit}
               />
             </Grid>
           )}
