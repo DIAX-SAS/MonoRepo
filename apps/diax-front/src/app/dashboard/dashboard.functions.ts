@@ -957,10 +957,8 @@ export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefine
     MQTTRef.current.on('message', async (topic, message) => {
         const data = JSON.parse(message.toString());
         setPIMMs((prev) => {
-            const newPrev = [...prev];
-            newPrev.shift();
-            const newData = [...newPrev, data];
-            return newData.sort((a, b) => a.timestamp - b.timestamp);
+            const newPrev = [...prev, data];
+            return newPrev.sort((a, b) => a.timestamp - b.timestamp);
         });
     });
 
