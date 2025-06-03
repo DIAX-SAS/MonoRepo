@@ -996,7 +996,7 @@ export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefine
     MQTTRef.current.on('message', async (topic, message) => {
         const data: PIMM = JSON.parse(message.toString());
 
-        setPIMMsAndFilters(setPIMMs, setFilters, [data]);
+        setPIMMs((prevPIMMs) => [...prevPIMMs, data]);
     });
 
     MQTTRef.current.on('error', (err) => {

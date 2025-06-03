@@ -1,37 +1,28 @@
+import { headers } from 'next/headers';
 import { AccessToken, FilterPimmsDto, ResponsePimms } from '../../app/dashboard/dashboard.types';
 
 const URL = `${process.env.NEXT_PUBLIC_API_BASE_PATH}/api` ;
 
-export async function fetchData(auth: AccessToken, parameters:FilterPimmsDto ):Promise<ResponsePimms> {
-  const response = await fetch(URL.concat('/pimms'), {
-    method: 'POST',
+
+export async function fetchData(url, params) {
+  [method, headers, body] = params;
+  return fetch(URL.concat(url), {
+    method: method,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${auth.accessToken}`,
+      ...headers
     },
-    body: JSON.stringify(parameters),
+    body: JSON.stringify(body),
   });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  const responseContent = await response.json();
-  return responseContent;
+  
 }
 
-export async function fetchCredentialsCore(auth: AccessToken) {
-  const response = await fetch(URL.concat('/pimms/iot/credentials'), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${auth.accessToken}`,
-    },
-  });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
+export async function fetchPIMMs(parameters:FilterPimmsDto ):Promise<ResponsePimms> {
+  return fetchData('/pimms', 'POST', parameters);
+}
 
-  const data = await response.json();
-  return data;
+export async function fetchCredentialsCore() {
+  return fetchData('/pimms/iot/credentials', 'GET');
 }

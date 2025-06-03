@@ -28,6 +28,7 @@ import {
 } from '../../components/core';
 import mqtt from 'mqtt';
 import { useSession } from 'next-auth/react';
+import { fetchPIMMs } from '../../data-access/diax-back/diax-back';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -58,6 +59,98 @@ export default function Page(): React.JSX.Element {
   });
   const stepRef = React.useRef<Parameters['step']>(parameters.step);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  React.useEffect(() => {
+    // paint graph
+  }, [filteredPIMMs]);
+
+  React.useEffect(() => {
+    // apply new filters to new PIMMs
+    // set filteredPIMMs
+  }, [PIMMs, filters]);
+
+  React.useEffect(() => {
+    // update filters with new data
+  }, [PIMMs]);
+
+  React.useEffect(() => {
+    // reset PIMMs
+    // reset filters
+    // if live then params = 60 minutes of PIMMs
+    // fetch PIMMs (async)
+      // then: add each PIMM to PIMMs
+    // if live connect to MQTT, else close connection
+  }, [parameters]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   React.useEffect(() => {
     accessTokenRef.current = { accessToken: session?.accessToken };
   }, [session]);
@@ -77,17 +170,32 @@ export default function Page(): React.JSX.Element {
   }, [PIMMs, filters]);
 
   React.useEffect(() => {
-    (async () => {
-      const { fetchPIMMs } = await import('./dashboard.functions');
-      fetchPIMMs(parameters, setPIMMs, setFilters, accessTokenRef);
-    })();
+    
+    const lastDate = parameters.startDate;
+    for (
+        let currDate = parameters.startDate;
+        currDate <= parameters.endDate;
+        currDate += 6 * 60 * 1000
+    ) {
+        fetchPIMMs({
+            initTime: lastDate,
+            endTime: currDate,
+            stepUnit: parameters.step,
+            lastID: null,
+        }).then(async (data) => {
+            const pimms = await data.json
+            setPIMMs((prevPIMMs) => [...prevPIMMs, ...pimms]);
+        });
+    }
 
+
+    
     (async () => {
       const { connectToIoT, closeConnection } = await import(
         './dashboard.functions'
       );
       if (parameters.live) {
-        connectToIoT(MQTTRef, accessTokenRef, setPIMMs, setFilters);
+        connectToIoT(MQTTRef);
       } else {
         closeConnection(MQTTRef);
       }
@@ -250,4 +358,7 @@ export default function Page(): React.JSX.Element {
       </Grid>
     </Grid2>
   );
+  
 }
+
+
