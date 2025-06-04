@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import Page from '../page';
-import { ResponsePimms } from '../dashboard.types';
+import { ResponsePimms, ResponseToken } from '../dashboard.types';
 
 jest.mock('next-auth/react', () => ({
   __esModule: true,
@@ -61,15 +61,24 @@ jest.mock('../../../components/graphs/Table', () => {
   };
 });
 
-jest.mock('../../../data-access/diax-back/diax-back', () => {
+jest.mock('../../../data-access/diax-back/diax-back', () => {  
   return {
     __esModule: true,
-    fetchData: (): ResponsePimms => ({
-      lastID: null,
-      pimms: [],
-      totalProcessed: 0,
-    }),
-    fetchCredentialsCore: () => ({ token: 'mocked-token' }),
+    fetchPIMMs: jest.fn((): Promise<ResponsePimms> => 
+      Promise.resolve({
+        lastID: null,
+        pimms: [],
+        totalProcessed: 0,
+      })
+    ),
+    fetchCredentialsCore: jest.fn((): Promise<ResponseToken> => 
+      Promise.resolve({ 
+        token: {
+          sessionToken: 'mocked-token',
+          // Add other required token properties if needed
+        } 
+      })
+    ),
   };
 });
 

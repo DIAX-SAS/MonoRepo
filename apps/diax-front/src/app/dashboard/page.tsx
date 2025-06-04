@@ -7,16 +7,15 @@ import {
   FilterForm,
   CardFactor,
   Table,
-  SectionMetric
+  SectionMetric,
 } from '../../components/graphs';
 import {
-  AccessToken,
   GraphData,
   PimmsStepUnit,
   type FEPIMM,
   type Filters,
   type Parameters,
-  PIMM
+  PIMM,
 } from './dashboard.types';
 import {
   Grid2,
@@ -27,8 +26,10 @@ import {
   Box,
 } from '../../components/core';
 import mqtt from 'mqtt';
-import { useSession } from 'next-auth/react';
-import { fetchPIMMs } from '../../data-access/diax-back/diax-back';
+import {
+  fetchCredentialsCore,
+  fetchPIMMs,
+} from '../../data-access/diax-back/diax-back';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -47,113 +48,13 @@ export default function Page(): React.JSX.Element {
     step: PimmsStepUnit.SECOND,
   });
 
- const { data: session } = useSession();
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
 
   const MQTTRef = React.useRef<mqtt.MqttClient | undefined>(undefined);
 
-  const accessTokenRef = React.useRef<AccessToken>({
-    accessToken: session?.accessToken,
-  });
   const stepRef = React.useRef<Parameters['step']>(parameters.step);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  React.useEffect(() => {
-    // paint graph
-  }, [filteredPIMMs]);
-
-  React.useEffect(() => {
-    // apply new filters to new PIMMs
-    // set filteredPIMMs
-  }, [PIMMs, filters]);
-
-  React.useEffect(() => {
-    // update filters with new data
-  }, [PIMMs]);
-
-  React.useEffect(() => {
-    // reset PIMMs
-    // reset filters
-    // if live then params = 60 minutes of PIMMs
-    // fetch PIMMs (async)
-      // then: add each PIMM to PIMMs
-    // if live connect to MQTT, else close connection
-  }, [parameters]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  React.useEffect(() => {
-    accessTokenRef.current = { accessToken: session?.accessToken };
-  }, [session]);
 
   React.useEffect(() => {
     (async () => {
@@ -170,34 +71,104 @@ export default function Page(): React.JSX.Element {
   }, [PIMMs, filters]);
 
   React.useEffect(() => {
-    
+    setFilters((prevFilters) => {
+      const updatedFilters = {
+        equipos: new Map(prevFilters.equipos),
+        operarios: new Map(prevFilters.operarios),
+        ordenes: new Map(prevFilters.ordenes),
+        lotes: new Map(prevFilters.lotes),
+        moldes: new Map(prevFilters.moldes),
+        materiales: new Map(prevFilters.materiales),
+      };
+
+      for (const pimm of PIMMs) {
+        const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
+
+        const setIfDefined = (map: Map<string, boolean>, key: string) => {
+          const value = String(stateMap.get(key)?.value);
+          if (value !== undefined && !map.has(value)) map.set(value, false);
+        };
+
+        setIfDefined(updatedFilters.operarios, 'Operario');
+        setIfDefined(updatedFilters.moldes, 'Molde');
+        setIfDefined(updatedFilters.materiales, 'Material');
+        setIfDefined(updatedFilters.lotes, 'Lote');
+        setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
+        setIfDefined(updatedFilters.ordenes, 'Orden');
+      }
+
+      return updatedFilters;
+    });
+  }, [PIMMs]);
+
+  React.useEffect(() => {
+    setPIMMs([]);
+    setFilters({
+      equipos: new Map<string, boolean>(),
+      operarios: new Map<string, boolean>(),
+      ordenes: new Map<string, boolean>(),
+      lotes: new Map<string, boolean>(),
+      moldes: new Map<string, boolean>(),
+      materiales: new Map<string, boolean>(),
+    });
+
     const lastDate = parameters.startDate;
     for (
-        let currDate = parameters.startDate;
-        currDate <= parameters.endDate;
-        currDate += 6 * 60 * 1000
+      let currDate = parameters.startDate;
+      currDate <= parameters.endDate;
+      currDate += 6 * 60 * 1000
     ) {
-        fetchPIMMs({
-            initTime: lastDate,
-            endTime: currDate,
-            stepUnit: parameters.step,
-            lastID: null,
-        }).then(async (data) => {
-            const pimms = await data.json
-            setPIMMs((prevPIMMs) => [...prevPIMMs, ...pimms]);
-        });
+      fetchPIMMs({
+        initTime: lastDate,
+        endTime: currDate,
+        stepUnit: parameters.step,
+        lastID: null,
+      }).then(async (data) => {
+        const pimms = await data.pimms;
+        setPIMMs((prevPIMMs) => [...prevPIMMs, ...pimms]);
+      });
     }
 
-
-    
     (async () => {
-      const { connectToIoT, closeConnection } = await import(
-        './dashboard.functions'
-      );
       if (parameters.live) {
-        connectToIoT(MQTTRef);
-      } else {
-        closeConnection(MQTTRef);
+        const token = (await fetchCredentialsCore()).token.sessionToken;
+
+        const client = mqtt.connect(process.env.NEXT_PUBLIC_SOCKET_URI || '', {
+          username: 'the_username',
+          password: token,
+          clientId: `clientId-${Date.now()}-${Math.random()
+            .toString(16)
+            .substring(2)}`,
+          protocolId: 'MQTT',
+          protocolVersion: 5,
+          clean: true,
+          reconnectPeriod: 0,
+          connectTimeout: 5000,
+          keepalive: 30,
+        });
+
+        MQTTRef.current = client;
+
+        client.on('connect', () => {
+          client.subscribe('PIMMStateTopic');
+        });
+
+        client.on('message', (topic, message) => {
+          try {
+            const data: PIMM = JSON.parse(message.toString());
+            setPIMMs((prev) => [...prev, data]);
+          } catch (e) {
+            console.error('Failed to parse PIMM message:', e);
+          }
+        });
+
+        client.on('error', (err) => {
+          console.error('MQTT connection error:', err);
+        });
+      } else {      
+          MQTTRef.current?.unsubscribe('PIMMStateTopic');
+          MQTTRef.current?.end();
+          MQTTRef.current = undefined;        
       }
     })();
   }, [parameters]);
@@ -358,7 +329,4 @@ export default function Page(): React.JSX.Element {
       </Grid>
     </Grid2>
   );
-  
 }
-
-

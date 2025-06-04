@@ -120,3 +120,9 @@ export type Graphs = {
 export type AccessToken = {
   accessToken: string | undefined;
 }
+
+export type ResponseToken = {
+  token: {
+    sessionToken: string
+  }
+}
