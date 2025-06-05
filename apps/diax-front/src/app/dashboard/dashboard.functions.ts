@@ -1,7 +1,5 @@
-import React, { Dispatch, RefObject } from 'react';
-import { AccessToken, AccumulatedData, GraphData, GroupedFEPIMM, PIMM, ReduceGroupedPIMMs, ReduceMolde, type FEPIMM, type Filters, type Parameters } from './dashboard.types';
-import mqtt from 'mqtt';
-import { fetchCredentialsCore, fetchData } from '../../data-access/diax-back/diax-back';
+import { RefObject } from 'react';
+import { AccumulatedData, GraphData, GroupedFEPIMM, PIMM, ReduceGroupedPIMMs, ReduceMolde, type FEPIMM, type Filters, type Parameters } from './dashboard.types';
 
 const config = {
     offsetKeys: [
@@ -30,8 +28,11 @@ const MS_CONVERSION: { [key in Parameters['step']]: number } = {
     minute: 1000 * 60,
     hour: 1000 * 60 * 60,
 };
+
 const getCounterValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
     Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;
+const getStateValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
+    Number(FEPIMM.states.find((c) => c.name === counterName)?.value) || 0;
 
 export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefObject<Parameters['step']>) => {
     const groupByUnitTime = (
@@ -798,32 +799,23 @@ export const applyFilters = async (
 
     const filterPIMMsByState = (PIMMs: PIMM[], filters: Filters): PIMM[] => {
         const filteredPIMMsByState: PIMM[] = [];
-        const allFiltersFalse = Object.values(filters).every((filterMap) =>
-            Array.from(filterMap.values()).every((value) => value === false)
-        );
         PIMMs.forEach((PIMM: PIMM, i: number) => {
-            const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
+            if (filterSet(PIMM, filters.lotes, "Lote") &&
+                filterSet(PIMM, filters.materiales, "Material") &&
+                filterSet(PIMM, filters.moldes, "Molde") &&
+                filterSet(PIMM, filters.operarios, "Operario") &&
+                filterSet(PIMM, filters.ordenes, "Orden") &&
+                filterSet(PIMM, filters.equipos, "Numero Inyectora")) {
 
-            let shouldContinue = allFiltersFalse;
-            if (
-                filters.equipos.get(String(stateMap.get('Numero Inyectora')?.value))
-            )
-                shouldContinue = true;
-            if (filters.lotes.get(String(stateMap.get('Lote')?.value)))
-                shouldContinue = true;
-            if (filters.materiales.get(String(stateMap.get('Material')?.value)))
-                shouldContinue = true;
-            if (filters.moldes.get(String(stateMap.get('Molde')?.value)))
-                shouldContinue = true;
-            if (filters.operarios.get(String(stateMap.get('Operario')?.value)))
-                shouldContinue = true;
-            if (filters.ordenes.get(String(stateMap.get('Orden')?.value)))
-                shouldContinue = true;
-
-            if (shouldContinue) {
-                filteredPIMMsByState.push(PIMM);
+                filteredPIMMsByState.push(JSON.parse(JSON.stringify(PIMM)));
             }
         });
+        const filterSet = (FEPIMM: FEPIMM | PIMM, map: Map<string, boolean>, name: string) => {
+            if (map.size == 0) {
+                return true;
+            }
+            return map.get(String(getStateValue(FEPIMM, name)))
+        }
         return filteredPIMMsByState;
     };
 
@@ -926,133 +918,6 @@ export const applyFilters = async (
     );
 };
 
-export const connectToIoT = async (MQTTRef: RefObject<mqtt.MqttClient | undefined>, accessTokenRef: RefObject<AccessToken>, setPIMMs: Dispatch<React.SetStateAction<PIMM[]>>) => {
-    if (MQTTRef.current && MQTTRef.current.connected) return;
-    const response = await fetchCredentialsCore(accessTokenRef.current);
-    const { sessionToken } = response.token;
 
-    const url = process.env.NEXT_PUBLIC_SOCKET_URI || "wss://";
-    MQTTRef.current = mqtt.connect(url, {
-        username: 'the_username',
-        password: sessionToken,
-        clientId: `clientId-${Date.now()}-${Math.random()
-            .toString(16)
-            .substring(2)}`,
-        protocolId: 'MQTT',
-        protocolVersion: 5,
-        clean: true,
-        reconnectPeriod: 0,
-        connectTimeout: 5000,
-        keepalive: 30,
-    });
 
-    MQTTRef.current.on('connect', () => {
-        MQTTRef.current?.subscribe('PIMMStateTopic', (err) => {
-            if (err) {
-                throw new Error(err.message);
-            }
-        });
-    });
 
-    MQTTRef.current.on('message', async (topic, message) => {
-        const data = JSON.parse(message.toString());
-        setPIMMs((prev) => {
-            const newPrev = [...prev];
-            newPrev.shift();
-            const newData = [...newPrev, data];
-            return newData.sort((a, b) => a.timestamp - b.timestamp);
-        });
-    });
-
-    MQTTRef.current.on('error', (err) => {
-        throw new Error(err.message);
-    });
-};
-
-export const fetchPIMMs = async (parameters: Parameters, setPIMMs: Dispatch<React.SetStateAction<PIMM[]>>, setFilters: Dispatch<React.SetStateAction<Filters>>, accessTokenRef: RefObject<AccessToken>) => {
-    function generateTimestamps(
-        startTimestamp: number,
-        endTimestamp: number,
-        intervalInMLSeconds: number
-    ) {
-        const timestamps = [];
-        for (
-            let current = startTimestamp;
-            current <= endTimestamp;
-            current += intervalInMLSeconds
-        ) {
-            timestamps.push(current);
-        }
-        return timestamps;
-    }
-
-    // Calculate number of pages and start keys
-    setPIMMs([]);
-    setFilters({
-        equipos: new Map<string, boolean>(),
-        operarios: new Map<string, boolean>(),
-        ordenes: new Map<string, boolean>(),
-        lotes: new Map<string, boolean>(),
-        moldes: new Map<string, boolean>(),
-        materiales: new Map<string, boolean>(),
-    });
-    const partitions = generateTimestamps(
-        parameters.startDate,
-        parameters.endDate,
-        6 * 60 * 1000
-    );
-    let beforePartition = parameters.startDate;
-    partitions.map(async (partition) => {
-        const partitionParameters = {
-            initTime: beforePartition,
-            endTime: partition,
-            stepUnit: parameters.step,
-            lastID: null,
-        };
-        beforePartition = partition;
-        const data = await fetchData(
-            accessTokenRef.current,
-            partitionParameters
-        );
-
-        setPIMMs((prevState) => {
-            const newPIMMS = [...prevState, ...data.pimms];
-            return newPIMMS.sort((a, b) => a.timestamp - b.timestamp);
-        });
-        setFilters((prevFilters) => {
-            const updatedFilters = {
-                equipos: new Map(prevFilters.equipos),
-                operarios: new Map(prevFilters.operarios),
-                ordenes: new Map(prevFilters.ordenes),
-                lotes: new Map(prevFilters.lotes),
-                moldes: new Map(prevFilters.moldes),
-                materiales: new Map(prevFilters.materiales),
-            };
-
-            for (const pimm of data.pimms) {
-                const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
-
-                const setIfDefined = (map: Map<string, boolean>, key: string) => {
-                    const value = String(stateMap.get(key)?.value);
-                    if (value !== undefined) map.set(value, false);
-                };
-
-                setIfDefined(updatedFilters.operarios, 'Operario');
-                setIfDefined(updatedFilters.moldes, 'Molde');
-                setIfDefined(updatedFilters.materiales, 'Material');
-                setIfDefined(updatedFilters.lotes, 'Lote');
-                setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
-                setIfDefined(updatedFilters.ordenes, 'Orden');
-            }
-
-            return updatedFilters;
-        });
-    });
-};
-
-export const closeConnection = (MQTTRef: RefObject<mqtt.MqttClient | undefined>) => {
-    if (MQTTRef.current) {
-        MQTTRef.current.end();
-        MQTTRef.current = undefined;
-    }
-};

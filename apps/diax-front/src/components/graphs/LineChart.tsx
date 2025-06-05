@@ -31,8 +31,6 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ series, label
   useEffect(() => {
     if (!containerRef.current || !svgRef.current || !series) return;
 
-    const container = containerRef.current;
-    //const { width, height } = container.getBoundingClientRect();
     const [ width, height ] = [400, 400]; // Set fixed width and height for the chart
     const margin = { top: 30, right: 100, bottom: 60, left: 70 };
     const chartWidth = width - margin.left - margin.right;

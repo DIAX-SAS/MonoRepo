@@ -1,22 +1,23 @@
 'use client';
-
 import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Divider from '@mui/material/Divider';
-import Drawer from '@mui/material/Drawer';
-import Typography from '@mui/material/Typography';
-import { List as ListIcon } from '@phosphor-icons/react';
+import {
+  Box,
+  Stack,
+  Avatar,
+  IconButton,
+  Typography,
+  Divider,
+  Drawer,
+  ChartPieIcon,
+  UserIcon,
+  UsersIcon,
+  type Icon,
+  ListIcon,
+  Logo,
+} from '../core';
 import RouterLink from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Logo } from '../../components/core/logo';
 import { UserPopover } from './user-popover';
-import type { Icon } from '@phosphor-icons/react/dist/lib/types';
-import { ChartPie as ChartPieIcon } from '@phosphor-icons/react/dist/ssr/ChartPie';
-import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
-import { Users as UsersIcon } from '@phosphor-icons/react/dist/ssr/Users';
 
 const navIcons = {
   'chart-pie': ChartPieIcon,
@@ -80,7 +81,7 @@ export function Navigation(): React.JSX.Element {
       {/* Header */}
       <Box
         component="header"
-        data-testid='mock-navigation'
+        data-testid="mock-navigation"
         sx={{
           borderBottom: 1,
           borderColor: 'divider',
@@ -100,7 +101,12 @@ export function Navigation(): React.JSX.Element {
             px: 2,
           }}
         >
-          <IconButton role="start-navigation" title='Start Navigation' aria-label='Start Navigation' onClick={() => dispatch({ type: 'TOGGLE_NAV' })}>
+          <IconButton
+            role="start-navigation"
+            title="Start Navigation"
+            aria-label="Start Navigation"
+            onClick={() => dispatch({ type: 'TOGGLE_NAV' })}
+          >
             <ListIcon />
           </IconButton>
           <Avatar
@@ -203,16 +209,16 @@ function NavItem({
   return (
     <li>
       <Box
-        id='nav-item'
+        id="nav-item"
         aria-label="Navigation Item"
         component={href ? (external ? 'a' : RouterLink) : 'button'}
         href={href}
-        title='Navigation Item'
+        title="Navigation Item"
         target={external ? '_blank' : undefined}
         rel={external ? 'noreferrer' : undefined}
-        role={href ? 'link' : 'button'} 
-        aria-disabled={disabled ? 'true' : 'false'} 
-        tabIndex={disabled ? -1 : 0} 
+        role={href ? 'link' : 'button'}
+        aria-disabled={disabled ? 'true' : 'false'}
+        tabIndex={disabled ? -1 : 0}
         sx={{
           alignItems: 'center',
           borderRadius: 1,

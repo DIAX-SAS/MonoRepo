@@ -3,19 +3,20 @@ import {
   type Parameters,
 } from '../../app/dashboard/dashboard.types';
 import React from 'react';
-import { DateRangePicker, SelectPicker } from 'rsuite';
-import Grid from '@mui/material/Grid2';
 import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
-  Typography,
   Box,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Grid,
+  DateRangePicker,
+  SelectPicker,
+  ExpandMoreIcon,
+  Typography,
+} from '../core';
 
 type PropsFilter = {
   filters: Filters;
@@ -67,7 +68,7 @@ const FilterForm: React.FC<PropsFilter> = ({
           alignItems: 'center',
         }}
       >
-        <Grid >
+        <Grid>
           <DateRangePicker
             data-testid="dateRangePicker"
             format="dd MMM yyyy hh:mm:ss aa"
@@ -101,7 +102,7 @@ const FilterForm: React.FC<PropsFilter> = ({
               alignItems: 'center',
             }}
           >
-            <Grid >
+            <Grid>
               <FormControlLabel
                 control={
                   <Checkbox

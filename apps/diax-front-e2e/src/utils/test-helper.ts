@@ -1,15 +1,12 @@
 import { Page } from '@playwright/test';
 
 export async function login(page: Page) {
-  await page.goto('http://localhost:4000/sign-in');
+  await page.goto(`/sign-in`);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByRole('button', { name: 'Sign in with Cognito' }).click();
-  await page.getByRole('textbox', { name: 'Username' }).click();
-  await page.getByRole('textbox', { name: 'Username' }).fill(process.env.COGNITO_TEST_USER);
-  await page.getByRole('textbox', { name: 'Password' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill(process.env.COGNITO_TEST_USER);
+  await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill(process.env.COGNITO_TEST_PASSWORD);
-  await page.getByRole('button', { name: 'submit' }).click();
-  await page.goto('http://localhost:4000/dashboard');
+  await page.getByRole('button', { name: 'Continue' }).click();
 }
 
 export async function logout(page: Page) {

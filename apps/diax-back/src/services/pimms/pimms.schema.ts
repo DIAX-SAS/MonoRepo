@@ -25,12 +25,7 @@ export const PIMMSchema = new Schema(
       rangeKey: true,
     },
     plcId: {
-      type: Number,
-      index:{
-        name:"LSI_plcId",
-        type:"local",       
-        project:true
-      }
+      type: Number
     },
     counters: {
       type: Array,

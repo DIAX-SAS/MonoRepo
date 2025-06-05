@@ -6,8 +6,8 @@ import {
   Stack,
   Typography,
   Box,
-} from '@mui/material';
-import type { SxProps } from '@mui/material/styles';
+  type SxProps,
+} from '../core';
 
 export interface TasksProgressProps {
   sx?: SxProps;
@@ -40,6 +40,7 @@ export default function CardFactor({
           </Box>
 
           <LinearProgress
+            data-testid={`${title}-factor`}
             value={value}
             variant="determinate"
             role="progressbar"

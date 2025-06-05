@@ -12,7 +12,7 @@
         "target": "node",
         "compiler": "tsc",
         "outputPath": "dist/apps/diax-back",
-        "main": "apps/diax-back/src/main.ts",
+        "main": "apps/diax-back/src/environments/main.ts",
         "tsConfig": "apps/diax-back/tsconfig.app.json",
         "assets": [
           "apps/diax-back/src/assets"
@@ -27,8 +27,8 @@
           "outputPath": "dist/apps/diax-back",
           "fileReplacements": [
             {
-              "replace": "apps/diax-back/src/environments/environment.ts",
-              "with": "apps/diax-back/src/environments/environment.prod.ts"
+              "replace": "apps/diax-back/src/environments/main.ts",
+              "with": "apps/diax-back/src/environments/main.production.ts"
             }
           ]
         }

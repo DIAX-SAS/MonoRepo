@@ -1,13 +1,4 @@
-import {
-  LineSeries,
-} from '../../components/graphs/LineChart';
-import  {
-  ChartNode,
-} from '../../components/graphs/MultiLayerPieChart';
-import { CategoryPolar } from '../../components/graphs/PolarChart';
-import  {
-  Category,
-} from '../../components/graphs/StackedBarChart';
+import { LineSeries, Category, CategoryPolar, ChartNode } from '../../components/graphs';
 
 export enum PimmsStepUnit {
   SECOND = "second",
@@ -128,4 +119,10 @@ export type Graphs = {
 
 export type AccessToken = {
   accessToken: string | undefined;
+}
+
+export type ResponseToken = {
+  token: {
+    sessionToken: string
+  }
 }

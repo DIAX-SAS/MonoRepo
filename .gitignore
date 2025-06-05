@@ -70,3 +70,5 @@ __pycache__/
 *.pem
 *.crt
 *.key
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md

@@ -1,31 +1,35 @@
 'use client';
 
-import FilterForm from '../../components/filters/filter-form';
-import CardFactor from '../../components/graphs/CardFactor';
-import TimeSeriesLineChart from '../../components/graphs/LineChart';
-import MultiLayerPieChart from '../../components/graphs/MultiLayerPieChart';
-import PolarChart from '../../components/graphs/PolarChart';
-import StackedBarChart from '../../components/graphs/StackedBarChart';
-import Table from '../../components/graphs/Table';
+import * as React from 'react';
 import {
-  AccessToken,
+  PolarChart,
+  TimeSeriesLineChart,
+  FilterForm,
+  CardFactor,
+  Table,
+  SectionMetric,
+} from '../../components/graphs';
+import {
   GraphData,
   PimmsStepUnit,
   type FEPIMM,
   type Filters,
   type Parameters,
+  PIMM,
 } from './dashboard.types';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Grid2 from '@mui/material/Grid2';
-import Grid from '@mui/material/Grid2';
-import Box from '@mui/material/Box';
-import { PIMM } from './dashboard.types';
+import {
+  Grid2,
+  Grid,
+  Card,
+  CardHeader,
+  CardContent,
+  Box,
+} from '../../components/core';
 import mqtt from 'mqtt';
-import * as React from 'react';
-import { useAuthSession } from '../../hooks/useAuthSession';
-import { SectionMetric } from '../../components/graphs/SectionMetric';
+import {
+  fetchPIMMs,
+} from '../../data-access/diax-back/diax-back';
+import { closeConnectionToMQTTBroker, connectToMQTTBroker } from '../../data-access/mqtt-broker/mqtt-broker';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -44,21 +48,13 @@ export default function Page(): React.JSX.Element {
     step: PimmsStepUnit.SECOND,
   });
 
-  const { session } = useAuthSession();
   const [PIMMs, setPIMMs] = React.useState<PIMM[]>([]);
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
 
   const MQTTRef = React.useRef<mqtt.MqttClient | undefined>(undefined);
 
-  const accessTokenRef = React.useRef<AccessToken>({
-    accessToken: session?.accessToken,
-  });
   const stepRef = React.useRef<Parameters['step']>(parameters.step);
-
-  React.useEffect(() => {
-    accessTokenRef.current = { accessToken: session?.accessToken };
-  }, [session]);
 
   React.useEffect(() => {
     (async () => {
@@ -75,19 +71,72 @@ export default function Page(): React.JSX.Element {
   }, [PIMMs, filters]);
 
   React.useEffect(() => {
-    (async () => {
-      const { fetchPIMMs } = await import('./dashboard.functions');
-      fetchPIMMs(parameters, setPIMMs, setFilters, accessTokenRef);
-    })();
+    setFilters((prevFilters) => {
+      const updatedFilters = {
+        equipos: new Map(prevFilters.equipos),
+        operarios: new Map(prevFilters.operarios),
+        ordenes: new Map(prevFilters.ordenes),
+        lotes: new Map(prevFilters.lotes),
+        moldes: new Map(prevFilters.moldes),
+        materiales: new Map(prevFilters.materiales),
+      };
+
+      for (const pimm of PIMMs) {
+        const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
+
+        const setIfDefined = (map: Map<string, boolean>, key: string) => {
+          const value = String(stateMap.get(key)?.value);
+          if (value !== undefined && !map.has(value)) map.set(value, false);
+        };
+
+        setIfDefined(updatedFilters.operarios, 'Operario');
+        setIfDefined(updatedFilters.moldes, 'Molde');
+        setIfDefined(updatedFilters.materiales, 'Material');
+        setIfDefined(updatedFilters.lotes, 'Lote');
+        setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
+        setIfDefined(updatedFilters.ordenes, 'Orden');
+      }
+
+      return updatedFilters;
+    });
+  }, [PIMMs]);
+
+  React.useEffect(() => {
+    setPIMMs([]);
+    setFilters({
+      equipos: new Map<string, boolean>(),
+      operarios: new Map<string, boolean>(),
+      ordenes: new Map<string, boolean>(),
+      lotes: new Map<string, boolean>(),
+      moldes: new Map<string, boolean>(),
+      materiales: new Map<string, boolean>(),
+    });
+
+    const lastDate = parameters.startDate;
+    const interval = 6 * 60 * 1000;
+    for (
+      let currDate = parameters.startDate + interval;
+      currDate <= parameters.endDate;
+      currDate += interval
+    ) {
+      fetchPIMMs({
+        initTime: lastDate - interval,
+        endTime: currDate,
+        stepUnit: parameters.step,
+        lastID: null,
+      }).then(async (data) => {
+        const pimms = data.pimms;
+        setPIMMs((prevPIMMs) => [...prevPIMMs, ...pimms].sort((a:PIMM, b: PIMM) => (a.timestamp - b.timestamp)));
+      });
+    }
 
     (async () => {
-      const { connectToIoT, closeConnection } = await import(
-        './dashboard.functions'
-      );
       if (parameters.live) {
-        connectToIoT(MQTTRef, accessTokenRef, setPIMMs);
+        connectToMQTTBroker(MQTTRef, 'PIMMStateTopic', async (topic, message) => {
+          setPIMMs((prev) => [...prev, JSON.parse(message.toString())].sort((a: PIMM, b: PIMM) => (a.timestamp - b.timestamp)));
+        });
       } else {
-        closeConnection(MQTTRef);
+        closeConnectionToMQTTBroker(MQTTRef);
       }
     })();
   }, [parameters]);
