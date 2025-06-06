@@ -104,22 +104,9 @@ export type GraphCategory =
 export type GraphData = Record<
   GraphCategory,
   {
-    readonly data?: Record<string, number | undefined>;
-    readonly charts?: Partial<Graphs>;
+    readonly data: FEPIMM[] | CategoryPolar[] | Category[] | ChartNode | LineSeries[] | Record<string, number | undefined>;
   }
 >;
-
-export type Graphs = {
-  readonly SeriesLineChart?: { data: LineSeries[]; data2?: LineSeries[] };
-  readonly MultiLayerPieChart?: { data: ChartNode };
-  readonly StackedBarChart?: { data: Category[] };
-  readonly PolarChart?: { data: CategoryPolar[] };
-  readonly Table?: { data: FEPIMM[] };
-};
-
-export type AccessToken = {
-  accessToken: string | undefined;
-}
 
 export type ResponseToken = {
   token: {
