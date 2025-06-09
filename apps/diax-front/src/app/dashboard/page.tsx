@@ -27,9 +27,9 @@ import {
 } from '../../components/core';
 import mqtt from 'mqtt';
 import {
+  fetchCredentialsCore,
   fetchPIMMs,
 } from '../../data-access/diax-back/diax-back';
-import { closeConnectionToMQTTBroker, connectToMQTTBroker } from '../../data-access/mqtt-broker/mqtt-broker';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -52,53 +52,102 @@ export default function Page(): React.JSX.Element {
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
 
-  const MQTTRef = React.useRef<mqtt.MqttClient | undefined>(undefined);
 
-  const stepRef = React.useRef<Parameters['step']>(parameters.step);
+
+
+  React.useEffect(() => {
+    // paint graph
+  }, [filteredPIMMs]);
+
 
   React.useEffect(() => {
     (async () => {
       const { calculateGraphData } = await import('./dashboard.functions');
-      setGraphData(await calculateGraphData(filteredPIMMs, stepRef));
+      setGraphData(await calculateGraphData(filteredPIMMs));
     })();
   }, [filteredPIMMs]);
 
+
   React.useEffect(() => {
-    (async () => {
-      const { applyFilters } = await import('./dashboard.functions');
-      setFilteredPIMMs(await applyFilters(filters, PIMMs, stepRef));
-    })();
+    const updatedFilteredPIMMs: FEPIMM[] = [];
+    
+    // renombrar casi todo
+    const varMaps = {
+      equipos: 'Numero Inyectora',
+      operarios: 'Operario',
+      ordenes: 'Orden',
+      lotes: 'Lote',
+      moldes: 'Molde',
+      materiales: 'Material',
+    }
+
+    for (const pimm of PIMMs) {
+      Object.keys(varMaps).forEach(filterVar =>{
+          filters[filterVar as keyof typeof filters].forEach((value, key) => {
+          if (value && pimm.states.some((state) => state.name === varMaps[filterVar as keyof typeof varMaps] && state.value === key))
+          {
+            const fepimm: FEPIMM = {
+              ...pimm,
+              
+              // offset
+              // derived
+              buenas: 0,
+              ineficiencias: 0,
+              producidas: 0,
+              maquina: 0,
+            };
+
+            updatedFilteredPIMMs.push(fepimm);
+          }
+        });  
+      })
+    }
+
+    setFilteredPIMMs(updatedFilteredPIMMs);
   }, [PIMMs, filters]);
 
   React.useEffect(() => {
-    setFilters((prevFilters) => {
-      const updatedFilters = {
-        equipos: new Map(prevFilters.equipos),
-        operarios: new Map(prevFilters.operarios),
-        ordenes: new Map(prevFilters.ordenes),
-        lotes: new Map(prevFilters.lotes),
-        moldes: new Map(prevFilters.moldes),
-        materiales: new Map(prevFilters.materiales),
-      };
+    const updatedFilters = {
+      equipos: new Map(filters.equipos),
+      operarios: new Map(filters.operarios),
+      ordenes: new Map(filters.ordenes),
+      lotes: new Map(filters.lotes),
+      moldes: new Map(filters.moldes),
+      materiales: new Map(filters.materiales),
+    };
 
-      for (const pimm of PIMMs) {
-        const stateMap = new Map(pimm.states.map((s) => [s.name, s]));
+    const filterSets = {
+      equipos: new Set(),
+      operarios: new Set(),
+      ordenes: new Set(),
+      lotes: new Set(),
+      moldes: new Set(),
+      materiales: new Set(),
+    };
 
-        const setIfDefined = (map: Map<string, boolean>, key: string) => {
-          const value = String(stateMap.get(key)?.value);
-          if (value !== undefined && !map.has(value)) map.set(value, false);
-        };
-
-        setIfDefined(updatedFilters.operarios, 'Operario');
-        setIfDefined(updatedFilters.moldes, 'Molde');
-        setIfDefined(updatedFilters.materiales, 'Material');
-        setIfDefined(updatedFilters.lotes, 'Lote');
-        setIfDefined(updatedFilters.equipos, 'Numero Inyectora');
-        setIfDefined(updatedFilters.ordenes, 'Orden');
+    for (const pimm of PIMMs) {
+      for (const state of pimm.states) {
+        if (state.name === 'Operario') 
+          filterSets.operarios.add(state.value);
+        if (state.name === 'Molde') 
+          filterSets.moldes.add(state.value);
+        if (state.name === 'Material') 
+          filterSets.materiales.add(state.value);
+        if (state.name === 'Lote') 
+          filterSets.lotes.add(state.value);
+        if (state.name === 'Numero Inyectora') 
+          filterSets.equipos.add(state.value);
+        if (state.name === 'Orden') 
+          filterSets.ordenes.add(state.value);
       }
+    }
 
-      return updatedFilters;
+    filterSets.equipos.forEach(equipo => {
+      if (!updatedFilters.equipos.has(equipo as string))
+        updatedFilters.equipos.set(equipo as string, true);
     });
+
+    setFilters(updatedFilters);
   }, [PIMMs]);
 
   React.useEffect(() => {
@@ -113,30 +162,61 @@ export default function Page(): React.JSX.Element {
     });
 
     const lastDate = parameters.startDate;
-    const interval = 6 * 60 * 1000;
     for (
-      let currDate = parameters.startDate + interval;
+      let currDate = parameters.startDate;
       currDate <= parameters.endDate;
-      currDate += interval
+      currDate += 6 * 60 * 1000
     ) {
       fetchPIMMs({
-        initTime: lastDate - interval,
+        initTime: lastDate,
         endTime: currDate,
         stepUnit: parameters.step,
         lastID: null,
       }).then(async (data) => {
-        const pimms = data.pimms;
-        setPIMMs((prevPIMMs) => [...prevPIMMs, ...pimms].sort((a:PIMM, b: PIMM) => (a.timestamp - b.timestamp)));
+        setPIMMs((prevPIMMs) => [...prevPIMMs, ...data.pimms]);
       });
     }
 
     (async () => {
       if (parameters.live) {
-        connectToMQTTBroker(MQTTRef, 'PIMMStateTopic', async (topic, message) => {
-          setPIMMs((prev) => [...prev, JSON.parse(message.toString())].sort((a: PIMM, b: PIMM) => (a.timestamp - b.timestamp)));
+        const token = (await fetchCredentialsCore()).token.sessionToken;
+
+        const client = mqtt.connect(process.env.NEXT_PUBLIC_SOCKET_URI || '', {
+          username: 'the_username',
+          password: token,
+          clientId: `clientId-${Date.now()}-${Math.random()
+            .toString(16)
+            .substring(2)}`,
+          protocolId: 'MQTT',
+          protocolVersion: 5,
+          clean: true,
+          reconnectPeriod: 0,
+          connectTimeout: 5000,
+          keepalive: 30,
         });
-      } else {
-        closeConnectionToMQTTBroker(MQTTRef);
+
+        MQTTRef.current = client;
+
+        client.on('connect', () => {
+          client.subscribe('PIMMStateTopic');
+        });
+
+        client.on('message', (topic, message) => {
+          try {
+            const data: PIMM = JSON.parse(message.toString());
+            setPIMMs((prev) => [...prev, data]);
+          } catch (e) {
+            console.error('Failed to parse PIMM message:', e);
+          }
+        });
+
+        client.on('error', (err) => {
+          console.error('MQTT connection error:', err);
+        });
+      } else {      
+          MQTTRef.current?.unsubscribe('PIMMStateTopic');
+          MQTTRef.current?.end();
+          MQTTRef.current = undefined;
       }
     })();
   }, [parameters]);

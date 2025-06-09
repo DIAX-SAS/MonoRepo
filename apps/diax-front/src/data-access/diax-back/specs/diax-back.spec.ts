@@ -3,7 +3,6 @@ import { headers, cookies } from 'next/headers';
 import { getToken } from 'next-auth/jwt';
 import { FilterPimmsDto, PimmsStepUnit } from '../../../app/dashboard/dashboard.types.ts';
 
-// Mock next/headers with proper types
 jest.mock('next/headers', () => ({
   headers: jest.fn(() => new Headers()),
   cookies: jest.fn(() => ({
@@ -11,7 +10,7 @@ jest.mock('next/headers', () => ({
   }))
 }));
 
-// Mock next-auth/jwt with proper types
+// Mock next-auth/jwt
 jest.mock('next-auth/jwt', () => ({
   __esModule: true,
   getToken: jest.fn(() => Promise.resolve({ 
@@ -19,34 +18,19 @@ jest.mock('next-auth/jwt', () => ({
   }))
 }));
 
-// Mock the global fetch with proper typing
+
+// Mock the global fetch
 global.fetch = jest.fn();
 
-// Type the mocks properly
+// Type the mocks for TypeScript
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockGetToken = getToken as jest.MockedFunction<typeof getToken>;
-const mockFetch = global.fetch as jest.Mock<Promise<Response>>;
+const mockFetch = global.fetch as jest.MockedFunction<typeof global.fetch>;
 
 describe('fetchData utilities', () => {
   const mockToken = { accessToken: 'test-token' };
-  const mockResponse: Response = {
-    ok: true,
-    json: jest.fn(),
-    headers: new Headers(),
-    redirected: false,
-    status: 200,
-    statusText: 'OK',
-    type: 'basic',
-    url: '',
-    clone: jest.fn(),
-    body: null,
-    bodyUsed: false,
-    arrayBuffer: jest.fn(),
-    blob: jest.fn(),
-    formData: jest.fn(),
-    text: jest.fn()
-  } as unknown as Response;
+  const mockResponse = { ok: true, json: jest.fn() };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -55,14 +39,14 @@ describe('fetchData utilities', () => {
     mockHeaders.mockReturnValue(Promise.resolve(new Headers({})));
     mockCookies.mockReturnValue({
       getAll: jest.fn().mockReturnValue([{ name: 'cookie1', value: 'value1' }])
-    } as unknown as ReturnType<typeof cookies>);
+    } as any);
     mockGetToken.mockResolvedValue(mockToken);
-    mockFetch.mockResolvedValue(mockResponse);
+    mockFetch.mockResolvedValue(mockResponse as any);
   });
 
   describe('fetchData', () => {
     it('should make a successful request with proper headers', async () => {
-      (mockResponse.json as jest.Mock).mockResolvedValue({ data: 'test' });
+      mockResponse.json.mockResolvedValue({ data: 'test' });
 
       const result = await fetchData('/test', { method: 'GET' });
 
@@ -119,25 +103,12 @@ describe('fetchData utilities', () => {
     });
 
     it('should throw error when request fails', async () => {
-      const errorResponse: Response = {
+      const errorResponse = {
         ok: false,
         status: 500,
-        statusText: 'Server Error',
-        headers: new Headers(),
-        redirected: false,
-        type: 'basic',
-        url: '',
-        clone: jest.fn(),
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: jest.fn(),
-        blob: jest.fn(),
-        formData: jest.fn(),
-        json: jest.fn(),
-        text: jest.fn()
-      } as unknown as Response;
-      
-      mockFetch.mockResolvedValue(errorResponse);
+        statusText: 'Server Error'
+      };
+      mockFetch.mockResolvedValue(errorResponse as any);
 
       await expect(fetchData('/test', { method: 'GET' }))
         .rejects.toThrow('Request failed with status 500');
@@ -147,7 +118,7 @@ describe('fetchData utilities', () => {
   describe('fetchPIMMs', () => {
     it('should make POST request with parameters', async () => {
       const mockPIMMsResponse = { items: [], total: 0 };
-      (mockResponse.json as jest.Mock).mockResolvedValue(mockPIMMsResponse);
+      mockResponse.json.mockResolvedValue(mockPIMMsResponse);
 
       const params: FilterPimmsDto = { initTime: 0, endTime: 1, stepUnit: PimmsStepUnit.SECOND };
       const result = await fetchPIMMs(params);
@@ -166,7 +137,7 @@ describe('fetchData utilities', () => {
   describe('fetchCredentialsCore', () => {
     it('should make GET request without body', async () => {
       const mockTokenResponse = { token: 'test-token', expires: '2023-01-01' };
-      (mockResponse.json as jest.Mock).mockResolvedValue(mockTokenResponse);
+      mockResponse.json.mockResolvedValue(mockTokenResponse);
 
       const result = await fetchCredentialsCore();
 
