@@ -12,29 +12,57 @@
         "target": "node",
         "compiler": "tsc",
         "outputPath": "dist/apps/diax-back",
-        "main": "apps/diax-back/src/main.ts",
+        "main": "apps/diax-back/src/environments/main.ts",
         "tsConfig": "apps/diax-back/tsconfig.app.json",
-        "assets": [ "apps/diax-back/src/assets" ],
+        "assets": [
+          "apps/diax-back/src/assets"
+        ],
         "webpackConfig": "apps/diax-back/webpack.config.js"
+      },
+      "configurations": {
+        "production": {
+          "sourceMap": false,
+          "optimization": true,
+          "extractLicenses": true,
+          "outputPath": "dist/apps/diax-back",
+          "fileReplacements": [
+            {
+              "replace": "apps/diax-back/src/environments/main.ts",
+              "with": "apps/diax-back/src/environments/main.production.ts"
+            }
+          ]
+        }
       }
     },
     "serve": {
       "executor": "@nx/js:node",
-      "dependsOn": ["build"],
-      "options": {
-        "buildTarget": "diax-back:build",
-        "watch": true
+      "defaultConfiguration": "development",
+      "configurations": {
+        "development": {
+          "buildTarget": "diax-back:build:development",
+          "watch": true,
+          "inspect": "inspect"
+        },
+        "production": {
+          "buildTarget": "diax-back:build:production",
+          "watch": false,
+          "inspect": false
+        }
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["apps/diax-back/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/diax-back/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/diax-back/jest.config.ts",
         "logHeapUsage": true

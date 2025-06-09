@@ -1,6 +1,19 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import Page from '../page';
-import { ResponsePIMM } from '@repo-hub/internal';
+import { ResponsePimms, ResponseToken } from '../dashboard.types';
+
+jest.mock('next-auth/react', () => ({
+  __esModule: true,
+  signIn: jest.fn(),
+  useSession: jest.fn(() => ({
+    data: {
+      accessToken: 'mocked_access_token',
+      user: { name: 'Fernando' },
+    },
+    status: 'authenticated',
+  })),
+}));
+
 
 jest.mock('../../../components/graphs/CardFactor', () => {
   return {
@@ -48,33 +61,24 @@ jest.mock('../../../components/graphs/Table', () => {
   };
 });
 
-jest.mock('react-json-tree', () => {
+jest.mock('../../../data-access/diax-back/diax-back', () => {  
   return {
     __esModule: true,
-    JSONTree: () => <div>Mocked JSONTree</div>,
-  };
-});
-
-jest.mock('../../../hooks/useAuthSession', () => {
-  return {
-    __esModule: true,
-    useAuthSession: () => ({
-      session: 'mocked-session',
-      status: 'mocked-status',
-      isRefreshing: 'false',
-    }),
-  };
-});
-
-jest.mock('../../../data-access/diax-back/diax-back', () => {
-  return {
-    __esModule: true,
-    fetchData: (): ResponsePIMM => ({
-      lastID: null,
-      pimms: [],
-      totalProcessed: 0,
-    }),
-    fetchCredentialsCore: () => ({ token: 'mocked-token' }),
+    fetchPIMMs: jest.fn((): Promise<ResponsePimms> => 
+      Promise.resolve({
+        lastID: null,
+        pimms: [],
+        totalProcessed: 0,
+      })
+    ),
+    fetchCredentialsCore: jest.fn((): Promise<ResponseToken> => 
+      Promise.resolve({ 
+        token: {
+          sessionToken: 'mocked-token',
+          // Add other required token properties if needed
+        } 
+      })
+    ),
   };
 });
 
@@ -90,7 +94,7 @@ describe('Dashboard page', () => {
     await act(async () => {
       render(<Page />);
     });
-    expect(screen.getByText('Information')).toBeDefined();
+    expect(screen.getByText('Configuración')).toBeDefined();
   });
   it('should render all graph components successfully', async () => {
     render(<Page />);
@@ -103,7 +107,6 @@ describe('Dashboard page', () => {
       expect(screen.getByText("Mocked PolarChart")).toBeDefined();
       expect(screen.getByText("Mocked StackedBarChart")).toBeDefined();
       expect(screen.getByText("Mocked Table")).toBeDefined();
-      expect(screen.getByText("Mocked JSONTree")).toBeDefined();
     });
   });
 

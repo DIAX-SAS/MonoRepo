@@ -7,30 +7,55 @@
   "targets": {
     "build": {
       "executor": "@nx/next:build",
-      "options": {
-        "sourceMap": true,
-        "outputPath": "dist/apps/diax-front"
+      "defaultConfiguration": "development",
+      "configurations": {
+        "production": {
+          "debug": false,
+          "outputPath": "dist/apps/diax-front/production"
+        },
+        "development": {
+          "debug": true,
+          "outputPath": "dist/apps/diax-front/development",
+          "profile": true
+        }
       }
     },
     "serve": {
       "executor": "@nx/next:server",
-      "dependsOn": ["build"],
+      "defaultConfiguration": "development",
       "options": {
-        "port": 4000,
-        "buildTarget": "diax-front:build",
-        "watch": true
+        "buildTarget": "diax-front:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "diax-front:build:production",
+          "port": 80,
+          "dev": false
+        },
+        "development": {
+          "buildTarget": "diax-front:build:development",
+          "port": 4000,
+          "dev": true,
+          "turbo": true
+        }
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["apps/diax-front/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "apps/diax-front/**/*.{ts,tsx,js,jsx}"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/diax-front/jest.config.ts",
         "logHeapUsage": true,

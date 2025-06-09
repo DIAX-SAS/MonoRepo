@@ -1,0 +1,35 @@
+{
+  "name": "raspberryPI",
+  "root": "apps/things/uploader/raspberryPI",
+  "sourceRoot": "apps/things/uploader/raspberryPI/src",
+  "projectType": "application",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pylint .", 
+        "cwd": "apps/things/uploader/raspberryPI",
+        "env": {
+          "PYTHONPATH": "apps/things/uploader/raspberryPI"
+        }
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pytest .", 
+        "cwd": "apps/things/uploader/raspberryPI"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python main.py",  
+        "cwd": "apps/things/uploader/raspberryPI",
+        "env": {
+          "PYTHONPATH": "apps/things/uploader/raspberryPI"
+        }
+      }
+    }
+  }
+}

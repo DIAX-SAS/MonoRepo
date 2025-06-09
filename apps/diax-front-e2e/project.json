@@ -4,14 +4,24 @@
   "projectType": "application",
   "sourceRoot": "apps/diax-front-e2e/src",
   "tags": [],
-  "implicitDependencies": ["diax-front", "diax-back"],
+  "implicitDependencies": [
+    "diax-front",
+    "diax-back"
+  ],
   "targets": {
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "options": {
         "config": "apps/diax-front-e2e/playwright.config.ts"
       },
-      "outputs": ["{workspaceRoot}/dist/apps/diax-front-e2e"]
+      "outputs": [
+        "{workspaceRoot}/dist/apps/diax-front-e2e"
+      ],
+      "configurations": {
+        "ci": {
+          "workers": 2
+        }
+      }
     }
   }
 }

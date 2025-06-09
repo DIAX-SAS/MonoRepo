@@ -1,8 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from "@testing-library/react";
 import FilterForm from "../../../components/filters/filter-form"; // Adjust path if needed
-import React from "react";
-import { Filters, Parameters } from "../../../app/dashboard/dashboard.types";
+import { Filters, Parameters, PimmsStepUnit } from "../../../app/dashboard/dashboard.types";
 
 // Mock filters and parameters
 const mockFilters: Filters = {
@@ -20,7 +19,7 @@ const mockParameters: Parameters = {
   startDate: new Date().getTime(),
   endDate: new Date().getTime(),
   live: false,
-  step: "second",
+  step: PimmsStepUnit.SECOND,
 };
 
 describe("FilterForm Component", () => {
@@ -41,8 +40,8 @@ describe("FilterForm Component", () => {
   });
 
   it("renders Live checkbox", () => {
-    const checkbox = screen.getByLabelText("Live");
-    expect(checkbox).toBeInTheDocument();
+    const liveCheckbox = screen.getByTestId("liveCheckbox");
+    expect(liveCheckbox).toBeInTheDocument();
   });
 
   it("calls setFilters when a filter checkbox is clicked", () => {
@@ -52,7 +51,7 @@ describe("FilterForm Component", () => {
   });
 
   it("calls setParameters when Live checkbox is toggled", () => {
-    const liveCheckbox = screen.getByLabelText("Live");
+    const liveCheckbox = screen.getByTestId("liveCheckbox");
     fireEvent.click(liveCheckbox);
     expect(mockSetParameters).toHaveBeenCalled();
   });

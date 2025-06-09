@@ -23,11 +23,7 @@ describe('AppModule', () => {
               region: 'us-east-1',
               accessKeyId: 'accessKeyId',
               secretAccessKey: 'secretAccessKey',
-            },
-            model: {
-              create: false, // Set to true if you want Dynamoose to create tables automatically
-              update: true, // Set to true if you want to update existing table schema
-            },
+            }
           }),
         }),
 

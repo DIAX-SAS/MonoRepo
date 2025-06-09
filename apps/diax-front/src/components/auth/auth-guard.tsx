@@ -16,14 +16,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     if ( !status || status === "loading" ) return; // ✅ Avoid unnecessary execution
 
-    if (status === "unauthenticated") {
-      console.log("[AuthGuard]: User is not logged in, redirecting to /sign-in");
+    if (status === "unauthenticated") {     
       router.replace("/sign-in");
       return;
     }
 
-    if (status === "authenticated" && (pathname === "/" || pathname === "/sign-in")) {
-      console.log("[AuthGuard]: User is authenticated, redirecting to /dashboard");
+    if (status === "authenticated" && (pathname === "/" || pathname === "/sign-in")) {     
       router.replace("/dashboard");
     }
   }, [status, pathname, router]);

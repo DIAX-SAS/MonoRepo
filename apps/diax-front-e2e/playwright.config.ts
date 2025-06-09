@@ -1,7 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
+import * as dotenv from 'dotenv';
 
-const FRONTEND_URL = process.env.BASE_URL || 'http://localhost:4000';
+dotenv.config({
+  path: "apps/diax-front-e2e/.env"
+});
+
+const FRONTEND_URL = process.env.FQDN || 'http://localhost:4000';
 
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
@@ -15,5 +20,5 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     }
-  ],
+  ]
 });

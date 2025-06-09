@@ -1,30 +1,42 @@
+import "reflect-metadata";
 import { Test, TestingModule } from '@nestjs/testing';
-import { PIMMService } from '../pimms.service';
-import { ResponsePIMM } from '@repo-hub/internal';
-import { InfoSettingsDto } from '../pimms.dto';
-import { PimmsModule } from '../pimms.module';
-import { PIMMController } from '../pimms.controller';
-import { ConfigModule } from '@nestjs/config';
+import { PimmsService } from '../pimms.service';
+import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 
-jest.mock('@repo-hub/internal');
-jest.mock('jsonwebtoken');
-jest.mock('dynamoose');
-jest.mock('@nestjs-cognito/auth', () => ({
-  Authentication: () => jest.fn(),
-}));
+const moduleMocker = new ModuleMocker(global);
+import { ConfigService } from "@nestjs/config";
+import { PimmsFilterDto, GetPimmsResponseDTO, PimmsStepUnit } from "../pimms.interface";
+
 describe('PIMMService', () => {
-  let service: PIMMService;
+  let service: PimmsService;
   let module: TestingModule;
 
   beforeEach(async () => {
-    module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot({
-        isGlobal: true,
-      }), PimmsModule],
-      controllers: [PIMMController],
-      providers: [PIMMService]
-    }).compile();
-    service = module.get<PIMMService>(PIMMService);
+    module = await Test.createTestingModule({   
+      providers: [{
+        provide: "PIMMModel",
+        useValue: jest.fn()
+      },{
+        provide: "PIMMMinuteModel",
+        useValue: jest.fn()
+      },{
+        provide: "PIMMHourModel",
+        useValue: jest.fn()
+      },
+      PimmsService]
+    })
+    .useMocker((token) => {   
+      if (typeof token === 'function') {
+        const mockMetadata = moduleMocker.getMetadata(
+          token,
+        ) as MockFunctionMetadata<typeof ConfigService,"function">;       
+
+        const Mock = moduleMocker.generateFromMetadata(mockMetadata);
+        return new Mock();
+      }
+    })
+    .compile();
+    service = module.get<PimmsService>(PimmsService);
   });
 
   it('should be defined', () => {
@@ -32,12 +44,12 @@ describe('PIMMService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getPIMMSCredentials', () => {
+  describe('getPimmsIotCredentials', () => {
     it('should return temporal token and expiration date', async () => {
       const mockToken = 'mock-token';
       const mockExpirationDate = new Date();
 
-      jest.spyOn(service, 'getPIMMSCredentials').mockImplementation(async () => {
+      jest.spyOn(service, 'getPimmsIotCredentials').mockImplementation(async () => {
         return {
           token: {
             sessionToken: mockToken,
@@ -46,7 +58,7 @@ describe('PIMMService', () => {
         };
       });
 
-      const result = await service.getPIMMSCredentials();
+      const result = await service.getPimmsIotCredentials();
 
       expect(result).toEqual({
         token: {
@@ -59,17 +71,15 @@ describe('PIMMService', () => {
 
   describe('getPIMMS', () => {
     it('should return PIMMS data', async () => {
-      const mockSettings: InfoSettingsDto = {
-        filters: {
+      const mockSettings: PimmsFilterDto = {        
           initTime: 700000000,
           endTime: 700000001,
           lastID: null,
-          accUnit: 'second',
-        },
+          stepUnit: PimmsStepUnit.SECOND,        
       };
 
-      const mockResponse: ResponsePIMM = {
-        pimms: [{ timestamp: 700000000, counters: [], states: [], PLCNumber: 3 }],
+      const mockResponse: GetPimmsResponseDTO = {
+        pimms: [{ timestamp: 700000000, counters: [], states: [], plcId: 3 }],
         lastID: 700000001,
         totalProcessed: 1,
       };
