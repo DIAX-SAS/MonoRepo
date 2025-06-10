@@ -101,12 +101,13 @@ export type GraphCategory =
   | 'molde'
   | 'ciclos';
 
-export type GraphData = Record<
-  GraphCategory,
+export type Charts = "MultiLine" | "Polar" | "MultiPie" | "StackedBar";
+export type GraphData =
   {
-    readonly data: FEPIMM[] | CategoryPolar[] | Category[] | ChartNode | LineSeries[] | Record<string, number | undefined>;
+    [key in GraphCategory]: {
+      [key in Charts]: FEPIMM[] | CategoryPolar[] | Category[] | ChartNode | LineSeries[] | Record<string, number | undefined>;
+    }
   }
->;
 
 export type ResponseToken = {
   token: {
