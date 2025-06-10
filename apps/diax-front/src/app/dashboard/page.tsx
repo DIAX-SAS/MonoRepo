@@ -30,6 +30,10 @@ import {
   fetchCredentialsCore,
   fetchPIMMs,
 } from '../../data-access/diax-back/diax-back';
+import {
+  connectToMQTTBroker,
+  closeConnectionToMQTTBroker,
+} from '../../data-access/mqtt-broker/mqtt-broker';
 
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
@@ -179,44 +183,14 @@ export default function Page(): React.JSX.Element {
 
     (async () => {
       if (parameters.live) {
-        const token = (await fetchCredentialsCore()).token.sessionToken;
-
-        const client = mqtt.connect(process.env.NEXT_PUBLIC_SOCKET_URI || '', {
-          username: 'the_username',
-          password: token,
-          clientId: `clientId-${Date.now()}-${Math.random()
-            .toString(16)
-            .substring(2)}`,
-          protocolId: 'MQTT',
-          protocolVersion: 5,
-          clean: true,
-          reconnectPeriod: 0,
-          connectTimeout: 5000,
-          keepalive: 30,
-        });
-
-        MQTTRef.current = client;
-
-        client.on('connect', () => {
-          client.subscribe('PIMMStateTopic');
-        });
-
-        client.on('message', (topic, message) => {
-          try {
-            const data: PIMM = JSON.parse(message.toString());
-            setPIMMs((prev) => [...prev, data]);
-          } catch (e) {
-            console.error('Failed to parse PIMM message:', e);
-          }
-        });
-
-        client.on('error', (err) => {
-          console.error('MQTT connection error:', err);
+        connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
+          const pimmData = JSON.parse(payload.toString());
+          setPIMMs((prevPIMMs) => {
+            return [...prevPIMMs, pimmData];
+          });
         });
       } else {      
-          MQTTRef.current?.unsubscribe('PIMMStateTopic');
-          MQTTRef.current?.end();
-          MQTTRef.current = undefined;
+        closeConnectionToMQTTBroker('PIMMStateTopic');
       }
     })();
   }, [parameters]);
