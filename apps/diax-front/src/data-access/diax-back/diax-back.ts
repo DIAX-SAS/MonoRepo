@@ -1,57 +1,65 @@
 "use server";
-import { headers } from 'next/headers';
-import { getToken } from 'next-auth/jwt';
-import { FilterPimmsDto, ResponsePimms, ResponseToken } from '../../app/dashboard/dashboard.types';
-import { NextRequest } from 'next/server';
+
+import { headers as nextHeaders } from "next/headers";
+import { getToken } from "next-auth/jwt";
+import {
+  FilterPimmsDto,
+  ResponsePimms,
+  ResponseToken,
+} from "../../app/dashboard/dashboard.types";
 
 const URL = `${process.env.NEXT_PUBLIC_API_BASE_PATH}/api`;
 
-export async function fetchWrapper(
-  url: string, 
-  params: RequestInit,
-): Promise<Response> {
-  // IMPLEMENTAR CON UN MIDDLEWARE
-  // https://nextjs.org/docs/pages/building-your-application/routing/middleware
-  // also handle session token for mqtt
-  const { method, headers: customHeaders = {}, body } = params;
-
+// Generic fetch wrapper
+export async function fetchWrapper<TRequest = unknown, TResponse = unknown>(
+  url: string,
+  params: {
+    method: "GET" | "POST" | "PUT" | "DELETE";
+    body?: TRequest;
+    headers?: HeadersInit;
+  }
+): Promise<TResponse> {
+  const requestHeaders = await nextHeaders(); // Read Next.js headers
+  const { NextRequest } = await import("next/server");
   const token = await getToken({
-    req:  {
-      headers: Object.fromEntries((await headers()).entries()),
-      method: 'GET',
-      url: '',
-      statusCode: undefined,
-      statusMessage: undefined,
-      aborted: false,
-      complete: false,
-    } as unknown as NextRequest,
+    req: new NextRequest(process.env.NEXTAUTH_URL ?? "", {
+      headers: requestHeaders,
+    }),
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  const fetchHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token?.accessToken}`,
-    ...customHeaders,
+  const fetchHeaders: HeadersInit = {
+    "Content-Type": "application/json",
+    Authorization: token?.accessToken
+      ? `Bearer ${token.accessToken}`
+      : "",
+    ...params.headers,
   };
 
-  const response = await fetch(URL.concat(url), {
-    method,
+  const fetchOptions: RequestInit = {
+    method: params.method,
     headers: fetchHeaders,
-    body: JSON.stringify(body),
-  });
+  };
 
+  if (params.body && params.method !== "GET") {
+    fetchOptions.body = JSON.stringify(params.body);
+  }
+
+  const response = await fetch(`${URL}${url}`, fetchOptions);
   return response.json();
 }
 
-export async function fetchPIMMs(parameters: FilterPimmsDto): Promise<ResponsePimms> {
-  return fetchWrapper<FilterPimmsDto, ResponsePimms>('/pimms', { 
-    method: 'POST', 
-    body: parameters 
+export async function fetchPIMMs(
+  parameters: FilterPimmsDto
+): Promise<ResponsePimms> {
+  return fetchWrapper<FilterPimmsDto, ResponsePimms>("/pimms", {
+    method: "POST",
+    body: parameters,
   });
 }
 
 export async function fetchCredentialsCore(): Promise<ResponseToken> {
-  return fetchWrapper<never, ResponseToken>('/pimms/iot/credentials', { 
-    method: 'GET' 
+  return fetchWrapper<undefined, ResponseToken>("/pimms/iot/credentials", {
+    method: "GET",
   });
 }
