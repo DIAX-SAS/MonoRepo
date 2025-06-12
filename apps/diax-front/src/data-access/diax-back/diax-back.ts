@@ -1,7 +1,8 @@
 "use server";
 
-import { headers as nextHeaders } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../app/api/auth/[...nextauth]/_lib/authOptions"; // Asegúrate de exportar authOptions correctamente
+
 import {
   FilterPimmsDto,
   ResponsePimms,
@@ -10,7 +11,6 @@ import {
 
 const URL = `${process.env.NEXT_PUBLIC_API_BASE_PATH}/api`;
 
-// Generic fetch wrapper
 export async function fetchWrapper<TRequest = unknown, TResponse = unknown>(
   url: string,
   params: {
@@ -19,20 +19,12 @@ export async function fetchWrapper<TRequest = unknown, TResponse = unknown>(
     headers?: HeadersInit;
   }
 ): Promise<TResponse> {
-  const requestHeaders = await nextHeaders(); // Read Next.js headers
-  const { NextRequest } = await import("next/server");
-  const token = await getToken({
-    req: new NextRequest(process.env.NEXTAUTH_URL ?? "", {
-      headers: requestHeaders,
-    }),
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
 
   const fetchHeaders: HeadersInit = {
     "Content-Type": "application/json",
-    Authorization: token?.accessToken
-      ? `Bearer ${token.accessToken}`
-      : "",
+    Authorization: token ? `Bearer ${token}` : "",
     ...params.headers,
   };
 
@@ -46,6 +38,11 @@ export async function fetchWrapper<TRequest = unknown, TResponse = unknown>(
   }
 
   const response = await fetch(`${URL}${url}`, fetchOptions);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error ${response.status}: ${errorText}`);
+  }
+
   return response.json();
 }
 

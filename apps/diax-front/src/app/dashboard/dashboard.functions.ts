@@ -1,923 +1,575 @@
-import { RefObject } from 'react';
-import { AccumulatedData, GraphData, GroupedFEPIMM, PIMM, ReduceGroupedPIMMs, ReduceMolde, type FEPIMM, type Filters, type Parameters } from './dashboard.types';
+import { GraphData, PIMM, ReduceMolde, ReducePIMMs, type FEPIMM } from './dashboard.types';
 
-const config = {
-    offsetKeys: [
-        'Minutos Motor Encendido',
-        'Contador Inyecciones',
-        'Contador Unidades',
-        'KW Motor',
-        'KW Total Maquina',
-        'Minutos Mantto Maquina',
-        'Minutos Mantto Molde',
-        'Minutos Montaje',
-        'Minutos Sin Operario',
-        'Minutos No Programada',
-        'Minutos Fin Produccion',
-        'Minutos Por Material',
-        'Minutos Calidad',
-        'Minutos Fin Turno',
-        'Unidades Defecto Inicio Turno',
-        'Unidades No Conformes',
-    ],
-    keyPIMMNumber: 'Numero Inyectora',
-};
-
-const MS_CONVERSION: { [key in Parameters['step']]: number } = {
-    second: 1000,
-    minute: 1000 * 60,
-    hour: 1000 * 60 * 60,
-};
 
 const getCounterValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
     Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;
 const getStateValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
     Number(FEPIMM.states.find((c) => c.name === counterName)?.value) || 0;
 
-export const calculateGraphData = async (filteredPIMMs: FEPIMM[], stepRef: RefObject<Parameters['step']>) => {
-    const groupByUnitTime = (
-        data: FEPIMM[],
-        ms_agrupation: number
-    ): GroupedFEPIMM[] => {
-        const accGlobal = Object.values(
-            data.reduce(
-                (
-                    accGlobal: {
-                        [key: number]: {
-                            timestamp: number;
-                            FEPIMMs: FEPIMM[];
-                            overall: AccumulatedData;
-                        };
-                    },
-                    FEPIMM
-                ) => {
-                    // Convert timestamp to grouping unit
-                    const timestampKey = Math.floor(FEPIMM.timestamp / ms_agrupation);
+export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
+    const accumulationFEPIMMs: Record<number, ReducePIMMs> = {};
+    const accumulationMolds: Record<number, ReduceMolde> = {};
+    const groupedByPLC: Record<number, FEPIMM[]> = {};
 
-                    // Initialize group if not present
-                    if (!accGlobal[timestampKey]) {
-                        accGlobal[timestampKey] = {
-                            timestamp: timestampKey,
-                            FEPIMMs: [],
-                            overall: {
-                                acc_buenas: 0,
-                                acc_noConformes: 0,
-                                acc_defectoInicioTurno: 0,
-                                acc_inyecciones: 0,
-                                acc_ineficiencias: 0,
-                                acc_producidas: 0,
-                                acc_montaje: 0,
-                                acc_calidad: 0,
-                                acc_material: 0,
-                                acc_abandono: 0,
-                                acc_molde: 0,
-                                acc_maquina: 0,
-                                acc_noProg: 0,
-                                acc_motor: 0,
-                                moldes: {},
-                            },
-                        };
-                    }
+    const initReduceMolde = (): ReduceMolde => ({
+        acc_cav1: 0,
+        acc_cav2: 0,
+        acc_cav3: 0,
+        acc_cav4: 0,
+        acc_cav5: 0,
+        acc_cav6: 0,
+        acc_gramosgeneral: 0,
+    });
 
-                    // Add FEPIMM to the corresponding group
-                    accGlobal[timestampKey].FEPIMMs.push(FEPIMM);
+    const initReducePIMMs = (): ReducePIMMs => ({
+        acc_buenas: 0,
+        acc_noConformes: 0,
+        acc_defectoInicioTurno: 0,
+        acc_inyecciones: 0,
+        acc_ineficiencias: 0,
+        acc_producidas: 0,
+        acc_montaje: 0,
+        acc_calidad: 0,
+        acc_material: 0,
+        acc_abandono: 0,
+        acc_molde: 0,
+        acc_maquina: 0,
+        acc_noProg: 0,
+        acc_motor: 0,
+    });
 
-                    return accGlobal;
-                },
-                {}
-            )
-        );
-
-        return accGlobal;
+    const updateReducePIMMs = (acc: ReducePIMMs, fepimm: FEPIMM) => {
+        acc.acc_buenas += fepimm.buenas;
+        acc.acc_noConformes += getCounterValue(fepimm, 'Unidades No Conformes');
+        acc.acc_defectoInicioTurno += getCounterValue(fepimm, 'Unidades Defecto Inicio Turno');
+        acc.acc_inyecciones += getCounterValue(fepimm, 'Contador Inyecciones');
+        acc.acc_ineficiencias += fepimm.ineficiencias;
+        acc.acc_producidas += fepimm.producidas;
+        acc.acc_montaje += getCounterValue(fepimm, 'Minutos Montaje');
+        acc.acc_calidad += getCounterValue(fepimm, 'Minutos Calidad');
+        acc.acc_material += getCounterValue(fepimm, 'Minutos Por Material');
+        acc.acc_abandono += getCounterValue(fepimm, 'Minutos Sin Operario');
+        acc.acc_molde += getCounterValue(fepimm, 'Minutos Mantto Molde');
+        acc.acc_maquina += getCounterValue(fepimm, 'Minutos Mantto Maquina');
+        acc.acc_noProg += getCounterValue(fepimm, 'Minutos No Programada');
+        acc.acc_motor += getCounterValue(fepimm, 'KW Motor');
     };
 
-    const reduceGroupedFEPIMMs = (accGlobal: GroupedFEPIMM[]) => {
-        accGlobal.forEach((grouped) => {
+    for (const fepimm of filteredPIMMs) {
+        const moldeId = getStateValue(fepimm, 'Molde');
+        if (!accumulationMolds[moldeId]) {
+            accumulationMolds[moldeId] = initReduceMolde();
+        }
 
-            const reduceGroupedPIMMs = (grouped: GroupedFEPIMM): ReduceGroupedPIMMs => {
-                const reduceGroupedPIMMs = grouped.FEPIMMs.reduce(
-                    (acc, FEPIMM: FEPIMM): ReduceGroupedPIMMs => {
-                        return {
-                            acc_buenas: acc.acc_buenas + (FEPIMM.buenas || 0),
-                            acc_noConformes:
-                                acc.acc_noConformes +
-                                getCounterValue(FEPIMM, 'Unidades No Conformes'),
-                            acc_defectoInicioTurno:
-                                acc.acc_defectoInicioTurno +
-                                getCounterValue(FEPIMM, 'Unidades Defecto Inicio Turno'),
-                            acc_inyecciones:
-                                acc.acc_inyecciones +
-                                getCounterValue(FEPIMM, 'Contador Inyecciones'),
-                            acc_ineficiencias:
-                                acc.acc_ineficiencias + FEPIMM.ineficiencias,
-                            acc_producidas: acc.acc_producidas + FEPIMM.producidas,
-                            acc_montaje:
-                                acc.acc_montaje +
-                                getCounterValue(FEPIMM, 'Minutos Montaje'),
-                            acc_calidad:
-                                acc.acc_calidad +
-                                getCounterValue(FEPIMM, 'Minutos Calidad'),
-                            acc_material:
-                                acc.acc_material +
-                                getCounterValue(FEPIMM, 'Minutos Por Material'),
-                            acc_abandono:
-                                acc.acc_abandono +
-                                getCounterValue(FEPIMM, 'Minutos Sin Operario'),
-                            acc_molde:
-                                acc.acc_molde +
-                                getCounterValue(FEPIMM, 'Minutos Mantto Molde'),
-                            acc_maquina:
-                                acc.acc_maquina +
-                                getCounterValue(FEPIMM, 'Minutos Mantto Maquina'),
-                            acc_noProg:
-                                acc.acc_noProg +
-                                getCounterValue(FEPIMM, 'Minutos No Programada'),
-                            acc_motor:
-                                acc.acc_motor +
-                                getCounterValue(FEPIMM, 'KW Motor'),
-                        };
-                    },
-                    {
-                        acc_buenas: 0,
-                        acc_noConformes: 0,
-                        acc_defectoInicioTurno: 0,
-                        acc_inyecciones: 0,
-                        acc_ineficiencias: 0,
-                        acc_producidas: 0,
-                        acc_montaje: 0,
-                        acc_calidad: 0,
-                        acc_material: 0,
-                        acc_abandono: 0,
-                        acc_molde: 0,
-                        acc_maquina: 0,
-                        acc_noProg: 0,
-                        acc_motor: 0,
-                    }
-                );
+        const mold = accumulationMolds[moldeId];
+        mold.acc_cav1 += getCounterValue(fepimm, 'Gramos Cavidad 1');
+        mold.acc_cav2 += getCounterValue(fepimm, 'Gramos Cavidad 2');
+        mold.acc_cav3 += getCounterValue(fepimm, 'Gramos Cavidad 3');
+        mold.acc_cav4 += getCounterValue(fepimm, 'Gramos Cavidad 4');
+        mold.acc_cav5 += getCounterValue(fepimm, 'Gramos Cavidad 5');
+        mold.acc_cav6 += getCounterValue(fepimm, 'Gramos Cavidad 6');
+        mold.acc_gramosgeneral += getCounterValue(fepimm, 'Gramos Inyeccion');
 
-                return reduceGroupedPIMMs;
-            }
-            const reduceByMoldes = (grouped: GroupedFEPIMM): Record<string, ReduceMolde> => {
-                const reduceByMoldes = grouped.FEPIMMs.reduce(
-                    (acc, FEPIMM: FEPIMM): Record<string, ReduceMolde> => {
-                        const stateMap = new Map(FEPIMM.states.map((s) => [s.name, s]));
-                        const moldes: Record<string, ReduceMolde> = {};
+        // Accumulate per PLC ID
+        if (!accumulationFEPIMMs[fepimm.plcId]) {
+            accumulationFEPIMMs[fepimm.plcId] = initReducePIMMs();
+        }
+        updateReducePIMMs(accumulationFEPIMMs[fepimm.plcId], fepimm);
 
-                        if (!moldes[String(stateMap.get('Molde')?.value)]) {
-                            moldes[String(stateMap.get('Molde')?.value)] = {
-                                acc_cav1: 0,
-                                acc_cav2: 0,
-                                acc_cav3: 0,
-                                acc_cav4: 0,
-                                acc_cav5: 0,
-                                acc_cav6: 0,
-                                acc_gramosgeneral: 0,
-                            };
-                        }
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav1 += getCounterValue(FEPIMM, 'Gramos Cavidad 1');
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav2 += getCounterValue(FEPIMM, 'Gramos Cavidad 2');
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav3 += getCounterValue(FEPIMM, 'Gramos Cavidad 3');
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav4 += getCounterValue(FEPIMM, 'Gramos Cavidad 4');
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav5 += getCounterValue(FEPIMM, 'Gramos Cavidad 5');
-                        moldes[String(stateMap.get('Molde')?.value)].acc_cav6 += getCounterValue(FEPIMM, 'Gramos Cavidad 6');
-                        moldes[String(stateMap.get('Molde')?.value)].acc_gramosgeneral += getCounterValue(FEPIMM, 'Gramos Inyeccion');
+        // Group by PLC ID
+        if (!groupedByPLC[fepimm.plcId]) {
+            groupedByPLC[fepimm.plcId] = [];
+        }
+        groupedByPLC[fepimm.plcId].push(fepimm);
 
-                        return { ...acc, ...moldes };
-                    },
-                    {
 
-                    }
-                );
-
-                return reduceByMoldes;
-            }
-
-            grouped.overall = { ...reduceGroupedPIMMs(grouped), moldes: reduceByMoldes(grouped) };
-        });
-        return accGlobal;
+        // Accumulate overall under key 0
+        if (!accumulationFEPIMMs[0]) {
+            accumulationFEPIMMs[0] = initReducePIMMs();
+        }
+        updateReducePIMMs(accumulationFEPIMMs[0], fepimm);
     }
 
-    const calculateOEE = (groupedFEPIMM: GroupedFEPIMM) => {
-        let [performance, availability, quality, efficiency] = [0, 0, 0, 0];
-        if (groupedFEPIMM && groupedFEPIMM.FEPIMMs.length === 0) {
+    const timestamps = filteredPIMMs.map((f) => f.timestamp);
+    const minTimestamp = Math.min(...timestamps);
+    const maxTimestamp = Math.max(...timestamps);
+    const timeOverall = maxTimestamp - minTimestamp; // en milisegundos
+
+
+    // Indicadores
+    type OEE = {
+        rendimiento: number;
+        disponibilidad: number;
+        calidad: number;
+        eficiencia: number;
+    }
+    const acc0 = accumulationFEPIMMs[0]  || initReducePIMMs();
+    const amountPLCs = Object.keys(accumulationFEPIMMs).length - 1;
+
+    const timeTotal = timeOverall * amountPLCs;
+    const totalOperationalTime = timeTotal - acc0.acc_noProg;
+
+    const totalLosses =
+        acc0.acc_maquina +
+        acc0.acc_molde +
+        acc0.acc_abandono +
+        acc0.acc_material +
+        acc0.acc_calidad +
+        acc0.acc_montaje;
+
+    // Aseguramos que no haya división por cero
+    const safeDivide = (numerator: number, denominator: number) =>
+        denominator === 0 ? 0 : numerator / denominator;
+
+    const rendimiento = Math.round(
+        safeDivide(acc0.acc_inyecciones, acc0.acc_inyecciones + acc0.acc_ineficiencias) * 1000
+    ) / 10;
+
+    const disponibilidad = Math.round(
+        safeDivide(totalOperationalTime - totalLosses, totalOperationalTime) * 1000
+    ) / 10;
+
+    const calidad = Math.round(
+        safeDivide(
+            acc0.acc_buenas,
+            acc0.acc_buenas + acc0.acc_defectoInicioTurno + acc0.acc_noConformes
+        ) * 1000
+    ) / 10;
+
+    const eficiencia = (disponibilidad / 100) * rendimiento * calidad;
+
+    const OEE: OEE = {
+        rendimiento,
+        disponibilidad,
+        calidad,
+        eficiencia,
+    };
+    const createGrapStructure = (): GraphData => ({
+        indicadores: {},
+        calidad: {},
+        disponibilidad: {},
+        rendimiento: {},
+        montaje: {},
+        energia: {},
+        material: {},
+        molde: {},
+        ciclos: {},
+    });
+
+    const graphData: GraphData = createGrapStructure();
+    graphData.indicadores.Polar = [
+        { category: 'Rendimiento', value: OEE.rendimiento },
+        { category: 'Disponibilidad', value: OEE.disponibilidad },
+        { category: 'Calidad', value: OEE.calidad }];
+
+    graphData.indicadores.MultiLine = [
+        { name: 'Rendimiento', data: [] },
+        { name: 'Disponibilidad', data: [] },
+        { name: 'Calidad', data: [] },
+        { name: 'Eficiencia', data: [] }];
+
+
+    // Calidad
+    type QualityMetrics = Discrimination & {
+        buenas: number;
+        malas: {
+            arranque: number;
+            rechazo: number;
+        }
+    }
+
+    const initQualityMetrics = (groupedByPLC: Record<number, FEPIMM[]>): QualityMetrics[] => {
+
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
             return {
-                performance: performance,
-                availability: availability,
-                quality: quality,
-                efficiency: efficiency,
+                buenas: lastFepimm.buenas,
+                malas: {
+                    arranque: getCounterValue(lastFepimm, 'Unidades Defecto Inicio Turno'),
+                    rechazo: getCounterValue(lastFepimm, 'Unidades No Conformes'),
+                },
+                plcId: lastFepimm.plcId,
+                timestamp: lastFepimm.timestamp,
             };
+        });
+    }
+
+    const qualityMetricsAll: QualityMetrics[] = initQualityMetrics(groupedByPLC);
+
+    graphData.calidad.MultiPie =
+    {
+        name: 'Producción',
+        children: [
+            {
+                name: 'Buenas',
+                children: qualityMetricsAll.map((qualityMetrics) => ({
+                    name: 'PIMM ' + String(qualityMetrics.plcId),
+                    value: qualityMetrics.buenas,
+                })),
+            },
+            {
+                name: 'Malas',
+                children: [
+                    {
+                        name: 'Arranque',
+                        children: qualityMetricsAll.map((qualityMetrics) => ({
+                            name: 'PIMM ' + String(qualityMetrics.plcId),
+                            value: qualityMetrics.malas.arranque,
+                        })),
+                    },
+                    {
+                        name: 'Rechazo',
+                        children: qualityMetricsAll.map((qualityMetrics) => ({
+                            name: 'PIMM ' + String(qualityMetrics.plcId),
+                            value: qualityMetrics.malas.rechazo,
+                        })),
+                    },
+                ],
+            },
+        ],
+    };
+
+
+    graphData.calidad.MultiLine = [];
+
+    // Rendimiento
+    type PerformanceMetrics = Discrimination & {
+        producido: number;
+        ineficiencias: number;
+        plcId: number;
+    }
+
+    const initPerformanceMetrics = (groupedByPLC: Record<number, FEPIMM[]>): PerformanceMetrics[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            return {
+                producido: lastFepimm.producidas,
+                ineficiencias: lastFepimm.ineficiencias,
+                plcId: lastFepimm.plcId,
+                timestamp: lastFepimm.timestamp,
+            };
+        });
+    }
+
+    const performanceMetricsAll: PerformanceMetrics[] = initPerformanceMetrics(groupedByPLC);
+    graphData.rendimiento.MultiPie =
+    {
+        name: 'Capacidad',
+        children: [
+            {
+                name: 'Producido',
+                children: performanceMetricsAll.map((performanceMetrics) => ({
+                    name: 'PIMM ' + String(performanceMetrics.plcId),
+                    value: performanceMetrics.producido,
+                })),
+            },
+            {
+                name: 'Ineficiencias',
+                children: performanceMetricsAll.map((performanceMetrics) => ({
+                    name: 'PIMM ' + String(performanceMetrics.plcId),
+                    value: performanceMetrics.ineficiencias,
+                })),
+            },
+        ],
+    };
+
+    graphData.rendimiento.MultiLine = [];
+    // Disponibilidad
+    type AvailabilityMetrics = Discrimination & {
+        productivo: number;
+        paradas: {
+            maquina: number;
+            sinOperario: number;
+            calidad: number;
+            montaje: number;
+            molde: number;
+            material: number;
         }
+    }
 
-        const accInyecciones = groupedFEPIMM?.overall.acc_inyecciones ?? 0;
-        const accIneficiencias = groupedFEPIMM?.overall.acc_ineficiencias ?? 0;
-        const accBuenas = groupedFEPIMM?.overall.acc_buenas ?? 0;
-        const accDefectoInicioTurno =
-            groupedFEPIMM?.overall.acc_defectoInicioTurno ?? 0;
-        const accNoConformes = groupedFEPIMM?.overall.acc_noConformes ?? 0;
-        const accNoProg = groupedFEPIMM?.overall.acc_noProg ?? 0;
-        const accMaquina = groupedFEPIMM?.overall.acc_maquina ?? 0;
-        const accMolde = groupedFEPIMM?.overall.acc_molde ?? 0;
-        const accAbandono = groupedFEPIMM?.overall.acc_abandono ?? 0;
-        const accMaterial = groupedFEPIMM?.overall.acc_material ?? 0;
-        const accCalidad = groupedFEPIMM?.overall.acc_calidad ?? 0;
-        const accMontaje = groupedFEPIMM?.overall.acc_montaje ?? 0;
-        const timeTotal =
-            Math.round(
-                (filteredPIMMs[filteredPIMMs.length - 1]?.timestamp -
-                    filteredPIMMs[0]?.timestamp) /
-                MS_CONVERSION[stepRef.current]
-            ) * groupedFEPIMM?.FEPIMMs.length || 0;
-        const totalOperationalTime = timeTotal - accNoProg;
-        const totalLosses =
-            accMaquina +
-            accMolde +
-            accAbandono +
-            accMaterial +
-            accCalidad +
-            accMontaje;
+    const initAvailabilityMetrics = (groupedByPLC: Record<number, FEPIMM[]>): AvailabilityMetrics[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            return {
+                productivo: getCounterValue(lastFepimm, 'Minutos Motor Encendido'),
+                paradas: {
+                    maquina: getCounterValue(lastFepimm, 'Minutos Mantto Maquina'),
+                    sinOperario: getCounterValue(lastFepimm, 'Minutos Sin Operario'),
+                    calidad: getCounterValue(lastFepimm, 'Minutos Calidad'),
+                    montaje: getCounterValue(lastFepimm, 'Minutos Montaje'),
+                    molde: getCounterValue(lastFepimm, 'Minutos Mantto Molde'),
+                    material: getCounterValue(lastFepimm, 'Minutos Por Material'),
 
-        availability =
-            (totalOperationalTime - totalLosses) / (totalOperationalTime || 1);
-        performance = accInyecciones / (accIneficiencias + accInyecciones || 1);
-        quality =
-            accBuenas / (accBuenas + accDefectoInicioTurno + accNoConformes || 1);
+                },
+                timestamp: lastFepimm.timestamp,
+                plcId: lastFepimm.plcId,
+            };
+        });
+    }
 
-        // Redondeo final
-        performance = Math.round(performance * 1000) / 10;
-        availability = Math.round(availability * 1000) / 10;
-        quality = Math.round(quality * 1000) / 10;
-        efficiency =
-            (availability / 100) * (performance / 100) * (quality / 100);
-        efficiency = Math.round(efficiency * 1000) / 10;
+    const availabilityMetricsAll: AvailabilityMetrics[] = initAvailabilityMetrics(groupedByPLC);
+    graphData.disponibilidad.MultiPie =
+    {
+        name: 'Disponible',
+        children: [
+            {
+                name: 'Productivo',
+                children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                    name: 'PIMM ' + String(availabilityMetrics.plcId),
+                    value: availabilityMetrics.productivo,
+                })),
+            },
+            {
+                name: 'Paradas',
+                children: [
+                    {
+                        name: 'Maquina',
+                        children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                            name: 'PIMM ' + String(availabilityMetrics.plcId),
+                            value: availabilityMetrics.paradas.maquina,
+                        })),
+                    },
+                    {
+                        name: 'SinOperario',
+                        children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                            name: 'PIMM ' + String(availabilityMetrics.plcId),
+                            value: availabilityMetrics.paradas.sinOperario,
+                        })),
+                    },
+                    {
+                        name: 'Calidad',
+                        children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                            name: 'PIMM ' + String(availabilityMetrics.plcId),
+                            value: availabilityMetrics.paradas.calidad,
+                        })),
+                    },
+                    {
+                        name: 'Montaje',
+                        children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                            name: 'PIMM ' + String(availabilityMetrics.plcId),
+                            value: availabilityMetrics.paradas.montaje,
+                        })),
+                    },
+                    {
+                        name: 'Molde',
+                        children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                            name: 'PIMM ' + String(availabilityMetrics.plcId),
+                            value: availabilityMetrics.paradas.molde,
+                        })),
+                    },
+                    {
+                        name: 'Material',
+                        children: availabilityMetricsAll.map((availabilityMetrics) => ({
+                            name: 'PIMM ' + String(availabilityMetrics.plcId),
+                            value: availabilityMetrics.paradas.material,
+                        })),
+                    },
+                ],
+            },
+        ],
+    };
 
-        return {
-            performance: performance,
-            availability: availability,
-            quality: quality,
-            efficiency: efficiency,
+
+    graphData.disponibilidad.MultiLine = [
+        { name: 'Productivo', data: [] },
+        { name: 'Maquina', data: [] },
+        { name: 'SinOperario', data: [] },
+        { name: 'Calidad', data: [] },
+        { name: 'Montaje', data: [] },
+        { name: 'Molde', data: [] },
+        { name: 'Material', data: [] },
+    ];
+    // Energia
+    type EnergyMetrics = Discrimination & {
+        motor: number;
+        maquina: number;
+        plcId: number;
+    }
+
+    const initEnergyMetrics = (groupedByPLC: Record<number, FEPIMM[]>): EnergyMetrics[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            return {
+                motor: getCounterValue(lastFepimm, 'KW Motor'),
+                maquina: getCounterValue(lastFepimm, 'KW Total Maquina'),
+                plcId: lastFepimm.plcId,
+                timestamp: lastFepimm.timestamp,
+            };
+        });
+    }
+
+    const energyMetricsAll: EnergyMetrics[] = initEnergyMetrics(groupedByPLC);
+
+    graphData.energia.StackedBar = energyMetricsAll.map((energyMetrics) => ({
+        category: 'PIMM ' + String(energyMetrics.plcId),
+        motor: energyMetrics.motor,
+        maquina: energyMetrics.maquina,
+    }));
+
+    graphData.energia.MultiLine = [
+        { name: 'Motor', data: [] },
+        { name: 'Maquina', data: [] },
+    ];
+
+    // Montaje
+
+    const initMountingMetrics = (groupedByPLC: Record<number, FEPIMM[]>): FEPIMM[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            return {
+                ...lastFepimm,
+            };
+        });
+    }
+
+    const mountingMetricsAll: FEPIMM[] = initMountingMetrics(groupedByPLC);
+    graphData.montaje.Mounting = mountingMetricsAll;
+
+    // Material
+    type MaterialMetrics = Discrimination & {
+        cavidades: {
+            cav1: number;
+            cav2: number;
+            cav3: number;
+            cav4: number;
+            cav5: number;
+            cav6: number;
+            gramosGeneral: number;
+        }
+    }
+
+    const initMaterialMetrics = (groupedByPLC: Record<number, FEPIMM[]>): MaterialMetrics[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            return {
+                plcId: lastFepimm.plcId,
+                cavidades: {
+                    cav1: getCounterValue(lastFepimm, 'Gramos Cavidad 1'),
+                    cav2: getCounterValue(lastFepimm, 'Gramos Cavidad 2'),
+                    cav3: getCounterValue(lastFepimm, 'Gramos Cavidad 3'),
+                    cav4: getCounterValue(lastFepimm, 'Gramos Cavidad 4'),
+                    cav5: getCounterValue(lastFepimm, 'Gramos Cavidad 5'),
+                    cav6: getCounterValue(lastFepimm, 'Gramos Cavidad 6'),
+                    gramosGeneral: getCounterValue(lastFepimm, 'Gramos Inyeccion'),
+                },
+                timestamp: lastFepimm.timestamp,
+            };
+        });
+
+    }
+
+
+    const materialMetricsAll: MaterialMetrics[] = initMaterialMetrics(groupedByPLC);
+    graphData.material.MultiPie =
+    {
+        name: 'Total',
+        children: materialMetricsAll.map((materialMetrics) => ({
+            name: `PIMM ${materialMetrics.plcId}`,
+            children: [
+                { name: 'Cavidad 1', value: materialMetrics.cavidades.cav1 },
+                { name: 'Cavidad 2', value: materialMetrics.cavidades.cav2 },
+                { name: 'Cavidad 3', value: materialMetrics.cavidades.cav3 },
+                { name: 'Cavidad 4', value: materialMetrics.cavidades.cav4 },
+                { name: 'Cavidad 5', value: materialMetrics.cavidades.cav5 },
+                { name: 'Cavidad 6', value: materialMetrics.cavidades.cav6 },
+            ],
+        })),
+    };
+
+    // Molde
+
+    const initMoldMetrics = (groupedByPLC: Record<number, FEPIMM[]>): MaterialMetrics[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            const moldeId = getStateValue(lastFepimm, 'Molde');
+            return {
+                molde: moldeId,
+                cavidades: {
+                    cav1: getCounterValue(lastFepimm, 'Gramos Cavidad 1'),
+                    cav2: getCounterValue(lastFepimm, 'Gramos Cavidad 2'),
+                    cav3: getCounterValue(lastFepimm, 'Gramos Cavidad 3'),
+                    cav4: getCounterValue(lastFepimm, 'Gramos Cavidad 4'),
+                    cav5: getCounterValue(lastFepimm, 'Gramos Cavidad 5'),
+                    cav6: getCounterValue(lastFepimm, 'Gramos Cavidad 6'),
+                    gramosGeneral: getCounterValue(lastFepimm, 'Gramos Inyeccion'),
+                },
+                timestamp: lastFepimm.timestamp,
+            };
+        });
+    }
+    const moldMetricsAll: MaterialMetrics[] = initMoldMetrics(groupedByPLC);
+    graphData.molde.MultiPie =
+    {
+        name: 'Total',
+        children: moldMetricsAll.map((materialMetrics) => ({
+            name: `Molde ${materialMetrics.molde}`,
+            children: [
+                { name: 'Cavidad 1', value: materialMetrics.cavidades.cav1 },
+                { name: 'Cavidad 2', value: materialMetrics.cavidades.cav2 },
+                { name: 'Cavidad 3', value: materialMetrics.cavidades.cav3 },
+                { name: 'Cavidad 4', value: materialMetrics.cavidades.cav4 },
+                { name: 'Cavidad 5', value: materialMetrics.cavidades.cav5 },
+                { name: 'Cavidad 6', value: materialMetrics.cavidades.cav6 },
+            ],
+        })),
+    };
+
+
+    // Ciclos
+    type CycleMetrics = Discrimination & {
+        plcId: number;
+        maquina: number;
+        puerta: number;
+    }
+
+    const initCycleMetrics = (groupedByPLC: Record<number, FEPIMM[]>): CycleMetrics[] => {
+        return Object.keys(groupedByPLC).map((plcId) => {
+            const fepimms = groupedByPLC[Number(plcId)];
+            const lastFepimm = fepimms[fepimms.length - 1];
+            return {
+                plcId: lastFepimm.plcId,
+                maquina: getCounterValue(lastFepimm, 'Minutos Motor Encendido'),
+                puerta: getCounterValue(lastFepimm, 'Minutos Fin Produccion'),
+                timestamp: lastFepimm.timestamp,
+            };
+        });
+    }
+
+    const cycleMetricsAll: CycleMetrics[] = initCycleMetrics(groupedByPLC);
+
+    graphData.ciclos.MultiPie = {
+        name: 'Total',
+        children: cycleMetricsAll.map((cycleMetrics) => ({
+            name: `PIMM ${cycleMetrics.plcId}`,
+            children: [
+                { name: 'Maquina', value: cycleMetrics.maquina },
+                { name: 'Puerta', value: cycleMetrics.puerta },
+            ],
+        })),
+    };
+
+    graphData.ciclos.MultiLine = [];
+
+
+    //
+
+    type Discrimination =
+        (
+            | { plcId: number; molde?: never }
+            | { molde: number; plcId?: never }
+        ) & {
+            timestamp: number;
         };
-    };
-
-    const groupedFEPIMMs = reduceGroupedFEPIMMs(groupByUnitTime(
-        filteredPIMMs,
-        MS_CONVERSION[stepRef.current]
-    ));
-
-    const lastGroupPLC = groupedFEPIMMs[groupedFEPIMMs.length - 1];
-
-    const { performance, availability, quality, efficiency } =
-        calculateOEE(lastGroupPLC);
-
-    const calculatedGraphData: GraphData = {
-        indicadores: {
-            data: {
-                availability: availability,
-                performance: performance,
-                quality: quality,
-                efficiency: efficiency,
-            },
-            charts: {
-                SeriesLineChart: {
-                    data: [
-                        {
-                            name: 'Rendimiento',
-                            data: groupedFEPIMMs.map((groupedFEPIMM) => {
-                                const { performance } = calculateOEE(groupedFEPIMM);
-                                return {
-                                    timestamp: groupedFEPIMM.timestamp,
-                                    value: performance,
-                                };
-                            }),
-                        },
-                        {
-                            name: 'Disponibilidad',
-                            data: groupedFEPIMMs.map((groupedFEPIMM) => {
-                                const { availability } = calculateOEE(groupedFEPIMM);
-                                return {
-                                    timestamp: groupedFEPIMM.timestamp,
-                                    value: availability,
-                                };
-                            }),
-                        },
-                        {
-                            name: 'Calidad',
-                            data: groupedFEPIMMs.map((groupedFEPIMM) => {
-                                const { quality } = calculateOEE(groupedFEPIMM);
-                                return {
-                                    timestamp: groupedFEPIMM.timestamp,
-                                    value: quality,
-                                };
-                            }),
-                        },
-                        {
-                            name: 'Eficiencia',
-                            data: groupedFEPIMMs.map((groupedFEPIMM) => {
-                                const { efficiency } = calculateOEE(groupedFEPIMM);
-                                return {
-                                    timestamp: groupedFEPIMM.timestamp,
-                                    value: efficiency,
-                                };
-                            }),
-                        },
-                    ],
-                },
-                PolarChart: {
-                    data: [
-                        {
-                            category: 'Rendimiento',
-                            value: performance,
-                        },
-                        {
-                            category: 'Disponibilidad',
-                            value: availability,
-                        },
-                        {
-                            category: 'Calidad',
-                            value: quality,
-                        },
-                    ],
-                },
-            },
-        },
-        calidad: {
-            charts: {
-                MultiLayerPieChart: {
-                    data: {
-                        name: 'Producción',
-                        children: [
-                            {
-                                name: 'Buenas',
-                                children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                    name: 'PIMM ' + String(FEPIMM.plcId),
-                                    value: FEPIMM.buenas,
-                                })),
-                            },
-                            {
-                                name: 'Malas',
-                                children: [
-                                    {
-                                        name: 'Arranque',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Unidades No Conformes'),
-                                        })),
-                                    },
-                                    {
-                                        name: 'Rechazo',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Unidades Defecto Inicio Turno'),
-                                        })),
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-                SeriesLineChart: {
-                    data: [
-                        {
-                            name: 'Buenas',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_buenas,
-                            })),
-                        },
-                        {
-                            name: 'Malas',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value:
-                                    FEPIMM.overall.acc_defectoInicioTurno +
-                                    FEPIMM.overall.acc_noConformes,
-                            })),
-                        },
-                        {
-                            name: 'Arranque',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_noConformes,
-                            })),
-                        },
-                        {
-                            name: 'Rechazo',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_defectoInicioTurno,
-                            })),
-                        },
-                    ],
-                },
-            },
-        },
-        disponibilidad: {
-            charts: {
-                MultiLayerPieChart: {
-                    data: {
-                        name: 'Disponible',
-                        children: [
-                            {
-                                name: 'Productivo',
-                                children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                    name: 'PIMM ' + String(FEPIMM.plcId),
-                                    value: FEPIMM.producidas,
-                                })),
-                            },
-                            {
-                                name: 'Paradas',
-                                children: [
-                                    {
-                                        name: 'Maquina',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Minutos Mantto Maquina'),
-                                        })),
-                                    },
-                                    {
-                                        name: 'SinOperario',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Minutos Sin Operario'),
-                                        })),
-                                    },
-                                    {
-                                        name: 'Calidad',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Minutos Calidad'),
-                                        })),
-                                    },
-                                    {
-                                        name: 'Montaje',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Minutos Montaje'),
-                                        })),
-                                    },
-                                    {
-                                        name: 'Molde',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Minutos Mantto Molde'),
-                                        })),
-                                    },
-                                    {
-                                        name: 'Material',
-                                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                            name: 'PIMM ' + String(FEPIMM.plcId),
-                                            value: getCounterValue(FEPIMM, 'Minutos Por Material'),
-                                        })),
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-                SeriesLineChart: {
-                    data: [
-                        {
-                            name: 'Productivo',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_producidas,
-                            })),
-                        },
-                        {
-                            name: 'Maquina',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_maquina,
-                            })),
-                        },
-                        {
-                            name: 'SinOperario',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_abandono,
-                            })),
-                        },
-                        {
-                            name: 'Calidad',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_calidad,
-                            })),
-                        },
-                        {
-                            name: 'Montaje',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_montaje,
-                            })),
-                        },
-                        {
-                            name: 'Molde',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_molde,
-                            })),
-                        },
-                        {
-                            name: 'Material',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_material,
-                            })),
-                        },
-                    ],
-                },
-            },
-        },
-        rendimiento: {
-            charts: {
-                MultiLayerPieChart: {
-                    data: {
-                        name: 'Capacidad',
-                        children: [
-                            {
-                                name: 'Producido',
-                                children: lastGroupPLC?.FEPIMMs.map((FEPIMM: FEPIMM) => ({
-                                    name: 'PIMM ' + String(FEPIMM.plcId),
-                                    value: getCounterValue(FEPIMM, 'Gramos Inyeccion'),
-                                })),
-                            },
-                            {
-                                name: 'Ineficiencias',
-                                children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
-                                    name: 'PIMM ' + String(FEPIMM.plcId),
-                                    value: FEPIMM.ineficiencias
-                                })),
-                            },
-                        ],
-                    },
-                },
-                SeriesLineChart: {
-                    data: [
-                        {
-                            name: 'Producido',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_inyecciones,
-                            })),
-                        },
-                        {
-                            name: 'Ineficiencias',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_ineficiencias,
-                            })),
-                        },
-                    ],
-                },
-            },
-        },
-        montaje: {
-            charts: {
-                Table: { data: lastGroupPLC?.FEPIMMs },
-            },
-        },
-        energia: {
-            charts: {
-                StackedBarChart: {
-                    data: lastGroupPLC?.FEPIMMs.map((FEPIMM, index) => ({
-                        category: 'PIMM ' + FEPIMM.plcId,
-                        motor: getCounterValue(FEPIMM, 'KW Motor'),
-                        maquina: getCounterValue(FEPIMM, 'KW Total Maquina'),
-                    })),
-                },
-                SeriesLineChart: {
-                    data: [
-                        {
-                            name: 'Motor',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_motor,
-                            })),
-                        },
-                        {
-                            name: 'Maquina',
-                            data: groupedFEPIMMs.map((FEPIMM) => ({
-                                timestamp: FEPIMM.timestamp,
-                                value: FEPIMM.overall.acc_maquina,
-                            })),
-                        },
-                    ],
-                },
-            },
-        },
-        material: {
-            charts: {
-                MultiLayerPieChart: {
-                    data: {
-                        name: 'Total',
-                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => ({
-                            name: `PIMM ${FEPIMM.plcId}`,
-                            children: FEPIMM.counters
-                                .filter((counter) =>
-                                    counter.name?.toLowerCase().includes('cavidad')
-                                )
-                                .map((counter) => ({
-                                    name: counter.name,
-                                    value: Number(counter.value) || 0, // Prevent NaN issues
-                                })),
-                        })),
-                    },
-                },
-                SeriesLineChart: {
-                    data: Object.entries(
-                        groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                            groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
-                                if (!acc[FEPIMM.plcId]) {
-                                    acc[FEPIMM.plcId] = [];
-                                }
-                                const value = getCounterValue(FEPIMM, "Gramos Inyeccion");
-                                acc[FEPIMM.plcId].push({
-                                    timestamp: FEPIMM.timestamp,
-                                    value: value,
-                                });
-                            });
-
-                            return acc;
-                        }, {} as { [key: number]: { timestamp: number; value: number }[] })
-                    ).map(([plcId, data]) => ({
-                        name: `PIMM ${plcId}`,
-                        color: 'red',
-                        data: data.sort((a, b) => a.timestamp - b.timestamp), // Ordenar por timestamp
-                    })),
-                },
-            },
-        },
-        molde: {
-            charts: {
-                MultiLayerPieChart: {
-                    data: {
-                        name: 'Total',
-                        children: Object.entries(
-                            lastGroupPLC?.overall.moldes || {}
-                        ).map(([molde, cavidades]) => ({
-                            name: molde,
-                            children: Object.entries(cavidades || {})
-                                .filter(([key]) => key !== 'acc_gramosgeneral') // Excluir 'acc_gramosgeneral'
-                                .map(([cavidad, value]) => ({
-                                    name: cavidad,
-                                    value: Number(value) || 0, // Asegurar valores numéricos
-                                })),
-                        })),
-                    },
-                },
-                SeriesLineChart: {
-                    data: Object.entries(
-                        groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                            Object.entries(groupedFEPIMM.overall.moldes).forEach(
-                                ([molde, ReduceMoldes]) => {
-                                    const cavidades = ReduceMoldes as ReduceMolde;
-                                    if (!acc[molde]) {
-                                        acc[molde] = [];
-                                    }
-
-                                    acc[molde].push({
-                                        timestamp: groupedFEPIMM.timestamp,
-                                        value: cavidades.acc_gramosgeneral ?? 0,
-                                    });
-                                }
-                            );
-
-                            return acc;
-                        }, {} as { [key: string]: { timestamp: number; value: number }[] })
-                    ).map(([molde, data]) => ({
-                        name: `Molde ${molde}`, // Cambio para reflejar moldes en vez de PIMM
-                        color: 'red',
-                        data: data.sort((a, b) => a.timestamp - b.timestamp),
-                    })),
-                },
-            },
-        },
-        ciclos: {
-            charts: {
-                MultiLayerPieChart: {
-                    data: {
-                        name: 'Ciclos',
-                        children: lastGroupPLC?.FEPIMMs.map((FEPIMM) => {
-                            const puerta = getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Puerta');
-
-                            return {
-                                name: `PIMM ${FEPIMM.plcId}`,
-                                children: FEPIMM.counters
-                                    .filter(
-                                        (counter) =>
-                                            counter.name === 'Segundos Ultimo Ciclo Total' ||
-                                            counter.name === 'Segundos Ultimo Ciclo Puerta'
-                                    )
-                                    .map((counter) => ({
-                                        name:
-                                            counter.name === 'Segundos Ultimo Ciclo Total'
-                                                ? 'Maquina'
-                                                : 'Puerta',
-                                        value:
-                                            counter.name === 'Segundos Ultimo Ciclo Total'
-                                                ? Number(counter.value) - puerta
-                                                : Number(counter.value),
-                                    })),
-                            };
-                        }),
-                    },
-                },
-                SeriesLineChart: {
-                    data: Object.entries(
-                        groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                            groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
-                                if (!acc[FEPIMM.plcId]) {
-                                    acc[FEPIMM.plcId] = [];
-                                }
-
-                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
-                                    return (
-                                        acc +
-                                        Number(
-                                            getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Total')
-                                        ) -
-                                        Number(
-                                            getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Puerta')
-                                        )
-                                    );
-                                }, 0);
-
-                                acc[FEPIMM.plcId].push({
-                                    timestamp: FEPIMM.timestamp,
-                                    value: value,
-                                });
-                            });
-
-                            return acc;
-                        }, {} as { [key: number]: { timestamp: number; value: number }[] })
-                    ).map(([plcId, data]) => ({
-                        name: `PIMM ${plcId}`,
-                        color: 'red',
-                        data: data.sort((a, b) => a.timestamp - b.timestamp), // Ordenar por timestamp
-                    })),
-                    data2: Object.entries(
-                        groupedFEPIMMs.reduce((acc, groupedFEPIMM) => {
-                            groupedFEPIMM.FEPIMMs.forEach((FEPIMM) => {
-                                if (!acc[FEPIMM.plcId]) {
-                                    acc[FEPIMM.plcId] = [];
-                                }
-                                const value = groupedFEPIMM.FEPIMMs.reduce((acc, FEPIMM) => {
-                                    return (
-                                        acc +
-                                        Number(
-                                            getCounterValue(FEPIMM, 'Segundos Ultimo Ciclo Puerta')
-                                        )
-                                    );
-                                }, 0);
-
-                                acc[FEPIMM.plcId].push({
-                                    timestamp: FEPIMM.timestamp,
-                                    value: value,
-                                });
-                            });
-
-                            return acc;
-                        }, {} as { [key: number]: { timestamp: number; value: number }[] })
-                    ).map(([plcId, data]) => ({
-                        name: `PIMM ${plcId}`,
-                        color: 'red',
-                        data: data.sort((a, b) => a.timestamp - b.timestamp), // Ordenar por timestamp
-                    })),
-                },
-            },
-        },
-    };
-    return calculatedGraphData;
-};
-
-export const applyFilters = async (
-    filters: Filters,
-    PIMMs: PIMM[],
-    stepRef: RefObject<Parameters['step']>
-): Promise<FEPIMM[]> => {
-    if (PIMMs.length == 0) return [];
-
-    const filterPIMMsByState = (PIMMs: PIMM[], filters: Filters): PIMM[] => {
-        const filteredPIMMsByState: PIMM[] = [];
-        PIMMs.forEach((PIMM: PIMM, i: number) => {
-            if (filterSet(PIMM, filters.lotes, "Lote") &&
-                filterSet(PIMM, filters.materiales, "Material") &&
-                filterSet(PIMM, filters.moldes, "Molde") &&
-                filterSet(PIMM, filters.operarios, "Operario") &&
-                filterSet(PIMM, filters.ordenes, "Orden") &&
-                filterSet(PIMM, filters.equipos, "Numero Inyectora")) {
-
-                filteredPIMMsByState.push(JSON.parse(JSON.stringify(PIMM)));
-            }
-        });
-        const filterSet = (FEPIMM: FEPIMM | PIMM, map: Map<string, boolean>, name: string) => {
-            if (map.size == 0) {
-                return true;
-            }
-            return map.get(String(getStateValue(FEPIMM, name)))
-        }
-        return filteredPIMMsByState;
-    };
-
-    const offsetPIMMCounters = (PIMMs: PIMM[]): PIMM[] => {
-        const isOffset =
-            PIMMs?.length > 1 &&
-            new Date(PIMMs.at(0)?.timestamp ?? 0).getSeconds() ===
-            new Date(PIMMs.at(-1)?.timestamp ?? 0).getSeconds();
-
-        if (!isOffset) return PIMMs;
-
-        const offsets: Record<
-            string,
-            Record<
-                string,
-                { start: number; end: number; value: number; previousValue: number }
-            >
-        > = {};
-
-        PIMMs.forEach((PIMM: PIMM, i: number) => {
-            const stateMap = new Map(PIMM.states.map((s) => [s.name, s]));
-            const counterMap = new Map(PIMM.counters.map((c) => [c.name, c]));
-            const statePIMMNumber = stateMap.get(config.keyPIMMNumber)?.value;
-
-            if (!statePIMMNumber) return;
-
-            if (!offsets[statePIMMNumber]) {
-                offsets[statePIMMNumber] = {};
-            }
-
-            for (const offsetKey of config.offsetKeys) {
-                const counter = counterMap.get(offsetKey);
-                const counterValue = counter ? Number(counter.value) : 0;
-
-                if (!offsets[statePIMMNumber][offsetKey]) {
-                    offsets[statePIMMNumber][offsetKey] = {
-                        start: 0,
-                        end: 0,
-                        value: 0,
-                        previousValue: 0,
-                    };
-                }
-
-                const offsetEntry = offsets[statePIMMNumber][offsetKey];
-
-                if (i === 0 && offsetEntry.start > 0) {
-                    offsetEntry.start = counterValue;
-                    if (counter) counter.value = '0';
-                }
-
-                if (counterValue < offsetEntry.previousValue) {
-                    offsetEntry.end = offsetEntry.previousValue;
-                    offsetEntry.value += offsetEntry.end - offsetEntry.start;
-                    offsetEntry.start = 0;
-                    if (counter) counter.value = String(offsetEntry.value);
-                }
-
-                offsetEntry.previousValue = counterValue;
-            }
-        });
-        return PIMMs;
-    };
-
-    const computeDerivedCounterValues = (PIMMs: PIMM[]): FEPIMM[] => {
-        const FEPIMMs: FEPIMM[] = [];
-        PIMMs.forEach((PIMM: PIMM, i: number) => {
-            const diffDate =
-                (PIMMs.at(-1)?.timestamp ?? 0) -
-                (PIMMs.at(0)?.timestamp ?? 0);
-
-            FEPIMMs.push({
-                ...PIMM,
-                buenas:
-                    getCounterValue(PIMM, 'Contador Unidades') -
-                    getCounterValue(PIMM, 'Unidades Defecto Inicio Turno') -
-                    getCounterValue(PIMM, 'Unidades No Conformes'),
-                ineficiencias:
-                    (getCounterValue(PIMM, 'Minutos Motor Encendido') * 60) /
-                    getCounterValue(PIMM, 'Segundos Ciclo Estandar') -
-                    getCounterValue(PIMM, 'Contador Inyecciones'),
-                maquina:
-                    getCounterValue(PIMM, 'Segundos Ultimo Ciclo Total') -
-                    getCounterValue(PIMM, 'Segundos Ultimo Ciclo Puerta'),
-                producidas:
-                    diffDate / MS_CONVERSION[stepRef.current] -
-                    getCounterValue(PIMM, 'Minutos No Programada') -
-                    (getCounterValue(PIMM, 'Minutos Mantto Maquina') +
-                        getCounterValue(PIMM, 'Minutos Mantto Molde') +
-                        getCounterValue(PIMM, 'Minutos Sin Operario') +
-                        getCounterValue(PIMM, 'Minutos Por Material') +
-                        getCounterValue(PIMM, 'Minutos Calidad') +
-                        getCounterValue(PIMM, 'Minutos Montaje')),
-            });
-        });
-        return FEPIMMs;
-    };
-
-    return computeDerivedCounterValues(
-        offsetPIMMCounters(filterPIMMsByState(PIMMs, filters))
-    );
-};
 
 
+    return graphData;
 
 
+}

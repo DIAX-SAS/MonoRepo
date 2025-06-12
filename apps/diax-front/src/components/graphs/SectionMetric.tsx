@@ -13,21 +13,12 @@ import {
   StackedBarChart,
   TimeSeriesLineChart,
 } from '../graphs';
-import type { Graphs } from '../../app/dashboard/dashboard.types';
+import type { ChartDataByType } from '../../app/dashboard/dashboard.types';
 
 export interface Data {
-  linechart:
-    | Graphs['SeriesLineChart'][]
-    | Graphs['SeriesLineChart']
-    | undefined;
-  piechart?:
-    | Graphs['MultiLayerPieChart'][]
-    | Graphs['MultiLayerPieChart']
-    | undefined;
-  barchart?:
-    | Graphs['StackedBarChart'][]
-    | Graphs['StackedBarChart']
-    | undefined;
+  linechart?: ChartDataByType['MultiLine'] | (ChartDataByType['MultiLine']| undefined) [];
+  piechart?: ChartDataByType['MultiPie'] | (ChartDataByType['MultiPie'] | undefined)[];
+  barchart?: ChartDataByType['StackedBar'] | ChartDataByType['StackedBar'][];
   unit: string;
 }
 
@@ -40,35 +31,27 @@ export function SectionMetric({
   data: Data;
   options?: string[];
 }): React.JSX.Element {
-  const [selectedIndex, setSelectedIndex] = React.useState<number>(0);
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
 
-  // Normalize to arrays
-  const linechartArray = Array.isArray(data.linechart)
-    ? data.linechart
-    : data.linechart
-    ? [data.linechart]
-    : [];
+  const normalize = <T,>(input?: T | (T | undefined)[]): T[] =>
+    input
+      ? Array.isArray(input)
+        ? input.filter((item): item is T => item !== undefined)
+        : [input]
+      : [];
 
-  const piechartArray = Array.isArray(data.piechart)
-    ? data.piechart
-    : data.piechart
-    ? [data.piechart]
-    : [];
-
-  const barchartArray = Array.isArray(data.barchart)
-    ? data.barchart
-    : data.barchart
-    ? [data.barchart]
-    : [];
+  const linecharts = normalize<ChartDataByType['MultiLine']>(data.linechart);
+  const piecharts = normalize<ChartDataByType['MultiPie']>(data.piechart);
+  const barcharts = normalize<ChartDataByType['StackedBar']>(data.barchart);
 
   const pickerOptions = options.map((opt, index) => ({
     label: opt,
     value: index,
   }));
 
-  const selectedLineChart = linechartArray[selectedIndex];
-  const selectedPieChart = piechartArray[selectedIndex];
-  const selectedBarChart = barchartArray[selectedIndex];
+  const selectedLineChart = linecharts[selectedIndex];
+  const selectedPieChart = piecharts[selectedIndex];
+  const selectedBarChart = barcharts[selectedIndex];
 
   return (
     <Card sx={{ p: 2, mb: 3 }}>
@@ -78,20 +61,17 @@ export function SectionMetric({
           container
           spacing={2}
           mb={2}
-          direction="row"
-          sx={{
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          justifyContent="center"
+          alignItems="center"
         >
-          {pickerOptions.length > 0 && linechartArray.length > 1 && (
+          {pickerOptions.length > 0 && linecharts.length > 1 && (
             <Grid>
               <Box mb={2}>
                 <SelectPicker
                   data={pickerOptions}
                   value={selectedIndex}
-                  style={{ minWidth: '150px' }}
-                  onChange={(value) => setSelectedIndex(value ?? 0)}
+                  style={{ minWidth: 150 }}
+                  onChange={(val) => setSelectedIndex(val ?? 0)}
                   cleanable={false}
                   placeholder="Selecciona una opción"
                 />
@@ -100,18 +80,21 @@ export function SectionMetric({
           )}
 
           {selectedPieChart && (
-            <Grid>
-              <MultiLayerPieChart
-                data={selectedPieChart.data}
-                unit={data.unit}
-              />
-            </Grid>
+            <>
+              <Grid>
+                <MultiLayerPieChart data={selectedPieChart} unit={data.unit} />
+              </Grid>
+              <Grid>
+                <CollapsibleList data={selectedPieChart} unit={data.unit} />
+              </Grid>
+            </>
           )}
+
           {selectedBarChart && (
             <Grid>
               <StackedBarChart
                 keys={['motor', 'maquina']}
-                data={selectedBarChart.data}
+                data={selectedBarChart}
                 labelY={data.unit}
               />
             </Grid>
@@ -120,17 +103,8 @@ export function SectionMetric({
           {selectedLineChart && (
             <Grid>
               <TimeSeriesLineChart
-                series={selectedLineChart.data}
+                series={selectedLineChart}
                 labelY={data.unit}
-              />
-            </Grid>
-          )}
-
-          {selectedPieChart && (
-            <Grid>
-              <CollapsibleList
-                data={selectedPieChart.data}
-                unit={data.unit}
               />
             </Grid>
           )}

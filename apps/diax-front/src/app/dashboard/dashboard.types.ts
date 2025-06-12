@@ -1,4 +1,4 @@
-import { LineSeries, Category, CategoryPolar, ChartNode } from '../../components/graphs';
+import { LineSeries, CategoryPolar, ChartNode, Category } from '../../components/graphs';
 
 export enum PimmsStepUnit {
   SECOND = "second",
@@ -64,7 +64,7 @@ export interface ReduceMolde {
   acc_gramosgeneral: number;
 }
 
-export interface ReduceGroupedPIMMs {
+export interface ReducePIMMs {
   acc_buenas: number;
   acc_noConformes: number;
   acc_defectoInicioTurno: number;
@@ -81,15 +81,6 @@ export interface ReduceGroupedPIMMs {
   acc_motor: number;
 }
 
-export interface AccumulatedData extends ReduceGroupedPIMMs {
-  moldes: Record<string, ReduceMolde>;
-};
-export interface GroupedFEPIMM {
-  FEPIMMs: FEPIMM[];
-  timestamp: number;
-  overall: AccumulatedData;
-}
-
 export type GraphCategory =
   | 'indicadores'
   | 'calidad'
@@ -101,13 +92,26 @@ export type GraphCategory =
   | 'molde'
   | 'ciclos';
 
-export type Charts = "MultiLine" | "Polar" | "MultiPie" | "StackedBar";
-export type GraphData =
-  {
-    [key in GraphCategory]: {
-      [key in Charts]: FEPIMM[] | CategoryPolar[] | Category[] | ChartNode | LineSeries[] | Record<string, number | undefined>;
-    }
+export type ChartDataByType = {
+  MultiLine: LineSeries[];
+  Polar: CategoryPolar[];
+  MultiPie: ChartNode;
+  StackedBar: Category[];
+  OEE: {
+    availability: number;
+    performance: number;
+    quality: number;
+    efficiency: number;
   }
+  Mounting: FEPIMM[];
+};
+
+export type GraphData = {
+  [category in GraphCategory]: {
+    [chart in keyof ChartDataByType]?: ChartDataByType[chart];
+  };
+};
+
 
 export type ResponseToken = {
   token: {

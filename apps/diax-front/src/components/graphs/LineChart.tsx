@@ -28,6 +28,9 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ series, label
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  if(!Array.isArray(series)) {
+    series = series ? [series] : [];
+  }
   useEffect(() => {
     if (!containerRef.current || !svgRef.current || !series) return;
 
@@ -37,7 +40,6 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ series, label
     const chartHeight = height - margin.top - margin.bottom;
 
     if (chartWidth <= 0 || chartHeight <= 0) return;
-
     const allData = series.flatMap((s) => s.data);
     const xExtent = d3.extent(allData, (d) => new Date(d.timestamp * 1000)) as [Date, Date];
     const yMax = d3.max(allData, (d) => d.value) || 0;

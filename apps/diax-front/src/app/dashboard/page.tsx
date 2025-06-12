@@ -25,11 +25,7 @@ import {
   CardContent,
   Box,
 } from '../../components/core';
-import mqtt from 'mqtt';
-import {
-  fetchCredentialsCore,
-  fetchPIMMs,
-} from '../../data-access/diax-back/diax-back';
+import { fetchPIMMs } from '../../data-access/diax-back/diax-back';
 import {
   connectToMQTTBroker,
   closeConnectionToMQTTBroker,
@@ -56,14 +52,6 @@ export default function Page(): React.JSX.Element {
   const [filteredPIMMs, setFilteredPIMMs] = React.useState<FEPIMM[]>([]);
   const [graphData, setGraphData] = React.useState<GraphData | undefined>();
 
-
-
-
-  React.useEffect(() => {
-    // paint graph
-  }, [filteredPIMMs]);
-
-
   React.useEffect(() => {
     (async () => {
       const { calculateGraphData } = await import('./dashboard.functions');
@@ -71,10 +59,11 @@ export default function Page(): React.JSX.Element {
     })();
   }, [filteredPIMMs]);
 
-
   React.useEffect(() => {
     const updatedFilteredPIMMs: FEPIMM[] = [];
-    
+    const getCounterValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
+      Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;
+
     // renombrar casi todo
     const varMaps = {
       equipos: 'Numero Inyectora',
@@ -83,18 +72,115 @@ export default function Page(): React.JSX.Element {
       lotes: 'Lote',
       moldes: 'Molde',
       materiales: 'Material',
+    };
+    const config = {
+      offsetKeys: [
+        'Minutos Motor Encendido',
+        'Contador Inyecciones',
+        'Contador Unidades',
+        'KW Motor',
+        'KW Total Maquina',
+        'Minutos Mantto Maquina',
+        'Minutos Mantto Molde',
+        'Minutos Montaje',
+        'Minutos Sin Operario',
+        'Minutos No Programada',
+        'Minutos Fin Produccion',
+        'Minutos Por Material',
+        'Minutos Calidad',
+        'Minutos Fin Turno',
+        'Unidades Defecto Inicio Turno',
+        'Unidades No Conformes',
+      ],
+      keyPIMMNumber: 'Numero Inyectora',
+    };
+
+    function applyOffsets(pimms: PIMM[]): PIMM[] {
+      const isOffset =
+        pimms.length > 1 &&
+        new Date(pimms[0].timestamp).getSeconds() ===
+          new Date(pimms[pimms.length - 1].timestamp).getSeconds();
+
+      if (!isOffset) return pimms;
+
+      const offsets: Record<string, Record<string, number>> = {};
+
+      return pimms.map((pimm, i) => {
+        const stateNumber = pimm.states.find(
+          (s) => s.name === config.keyPIMMNumber
+        )?.value;
+        if (!stateNumber) return pimm;
+
+        const updatedCounters = pimm.counters.map((counter) => {
+          if (!config.offsetKeys.includes(counter.name)) return counter;
+
+          const value = Number(counter.value || 0);
+          const prev = offsets[stateNumber]?.[counter.name] ?? value;
+          const updatedOffset = value < prev ? prev : value;
+
+          offsets[stateNumber] = {
+            ...offsets[stateNumber],
+            [counter.name]: updatedOffset,
+          };
+
+          return {
+            ...counter,
+            value: value < prev ? String(updatedOffset - value) : counter.value,
+          };
+        });
+
+        return {
+          ...pimm,
+          counters: updatedCounters,
+        };
+      });
+    }
+
+    function computeDerived(
+      pimm: PIMM,
+      firstTimestamp: number,
+      lastTimestamp: number
+    ): FEPIMM {
+      const duration = (lastTimestamp - firstTimestamp) / (60 * 1000); // minutos
+
+      return {
+        ...pimm,
+        buenas:
+          getCounterValue(pimm, 'Contador Unidades') -
+          getCounterValue(pimm, 'Unidades Defecto Inicio Turno') -
+          getCounterValue(pimm, 'Unidades No Conformes'),
+        ineficiencias:
+          (getCounterValue(pimm, 'Minutos Motor Encendido') * 60) /
+            getCounterValue(pimm, 'Segundos Ciclo Estandar') -
+          getCounterValue(pimm, 'Contador Inyecciones'),
+        maquina:
+          getCounterValue(pimm, 'Segundos Ultimo Ciclo Total') -
+          getCounterValue(pimm, 'Segundos Ultimo Ciclo Puerta'),
+        producidas:
+          duration -
+          getCounterValue(pimm, 'Minutos No Programada') -
+          getCounterValue(pimm, 'Minutos Mantto Maquina') -
+          getCounterValue(pimm, 'Minutos Mantto Molde') -
+          getCounterValue(pimm, 'Minutos Sin Operario') -
+          getCounterValue(pimm, 'Minutos Por Material') -
+          getCounterValue(pimm, 'Minutos Calidad') -
+          getCounterValue(pimm, 'Minutos Montaje'),
+      };
     }
 
     for (const pimm of PIMMs) {
-      Object.keys(varMaps).forEach(filterVar =>{
-          filters[filterVar as keyof typeof filters].forEach((value, key) => {
-          if (value && pimm.states.some((state) => state.name === varMaps[filterVar as keyof typeof varMaps] && state.value === key))
-          {
+      Object.keys(varMaps).forEach((filterVar) => {
+        filters[filterVar as keyof typeof filters].forEach((value, key) => {
+          if (
+            value &&
+            pimm.states.some(
+              (state) =>
+                state.name === varMaps[filterVar as keyof typeof varMaps] &&
+                state.value === key
+            )
+          ) {
             const fepimm: FEPIMM = {
               ...pimm,
-              
-              // offset
-              // derived
               buenas: 0,
               ineficiencias: 0,
               producidas: 0,
@@ -103,55 +189,59 @@ export default function Page(): React.JSX.Element {
 
             updatedFilteredPIMMs.push(fepimm);
           }
-        });  
-      })
+        });
+      });
     }
 
-    setFilteredPIMMs(updatedFilteredPIMMs);
+    const withOffsets = applyOffsets(updatedFilteredPIMMs);
+
+    const first = withOffsets.at(0)?.timestamp ?? 0;
+    const last = withOffsets.at(-1)?.timestamp ?? 0;
+
+    setFilteredPIMMs(
+      withOffsets.map((pimm) => computeDerived(pimm, first, last))
+    );
   }, [PIMMs, filters]);
 
   React.useEffect(() => {
-    const updatedFilters = {
-      equipos: new Map(filters.equipos),
-      operarios: new Map(filters.operarios),
-      ordenes: new Map(filters.ordenes),
-      lotes: new Map(filters.lotes),
-      moldes: new Map(filters.moldes),
-      materiales: new Map(filters.materiales),
-    };
+    setFilters((prevFilters) => {
+      const updatedFilters = {
+        equipos: new Map(prevFilters.equipos),
+        operarios: new Map(prevFilters.operarios),
+        ordenes: new Map(prevFilters.ordenes),
+        lotes: new Map(prevFilters.lotes),
+        moldes: new Map(prevFilters.moldes),
+        materiales: new Map(prevFilters.materiales),
+      };
 
-    const filterSets = {
-      equipos: new Set(),
-      operarios: new Set(),
-      ordenes: new Set(),
-      lotes: new Set(),
-      moldes: new Set(),
-      materiales: new Set(),
-    };
+      const filterSets = {
+        equipos: new Set(),
+        operarios: new Set(),
+        ordenes: new Set(),
+        lotes: new Set(),
+        moldes: new Set(),
+        materiales: new Set(),
+      };
 
-    for (const pimm of PIMMs) {
-      for (const state of pimm.states) {
-        if (state.name === 'Operario') 
-          filterSets.operarios.add(state.value);
-        if (state.name === 'Molde') 
-          filterSets.moldes.add(state.value);
-        if (state.name === 'Material') 
-          filterSets.materiales.add(state.value);
-        if (state.name === 'Lote') 
-          filterSets.lotes.add(state.value);
-        if (state.name === 'Numero Inyectora') 
-          filterSets.equipos.add(state.value);
-        if (state.name === 'Orden') 
-          filterSets.ordenes.add(state.value);
+      for (const pimm of PIMMs) {
+        for (const state of pimm.states) {
+          if (state.name === 'Operario') filterSets.operarios.add(state.value);
+          if (state.name === 'Molde') filterSets.moldes.add(state.value);
+          if (state.name === 'Material') filterSets.materiales.add(state.value);
+          if (state.name === 'Lote') filterSets.lotes.add(state.value);
+          if (state.name === 'Numero Inyectora')
+            filterSets.equipos.add(state.value);
+          if (state.name === 'Orden') filterSets.ordenes.add(state.value);
+        }
       }
-    }
 
-    filterSets.equipos.forEach(equipo => {
-      if (!updatedFilters.equipos.has(equipo as string))
-        updatedFilters.equipos.set(equipo as string, true);
+      filterSets.equipos.forEach((equipo) => {
+        if (!updatedFilters.equipos.has(equipo as string))
+          updatedFilters.equipos.set(equipo as string, true);
+      });
+
+      return updatedFilters;
     });
-
-    setFilters(updatedFilters);
   }, [PIMMs]);
 
   React.useEffect(() => {
@@ -189,7 +279,7 @@ export default function Page(): React.JSX.Element {
             return [...prevPIMMs, pimmData];
           });
         });
-      } else {      
+      } else {
         closeConnectionToMQTTBroker('PIMMStateTopic');
       }
     })();
@@ -236,32 +326,31 @@ export default function Page(): React.JSX.Element {
                   gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
                   gap={2}
                 >
+                  ()
                   <CardFactor
-                    value={graphData?.indicadores?.data?.performance}
+                    value={graphData?.indicadores?.OEE?.performance}
                     title="Rendimiento"
                   />
                   <CardFactor
-                    value={graphData?.indicadores?.data?.availability}
+                    value={graphData?.indicadores?.OEE?.availability}
                     title="Disponibilidad"
                   />
                   <CardFactor
-                    value={graphData?.indicadores?.data?.quality}
+                    value={graphData?.indicadores?.OEE?.quality}
                     title="Calidad"
                   />
                   <CardFactor
-                    value={graphData?.indicadores?.data?.efficiency}
+                    value={graphData?.indicadores?.OEE?.efficiency}
                     title="Eficiencia"
                   />
                 </Box>
               </Grid>
               <Grid sx={{ xs: 6, md: 6 }}>
-                <PolarChart
-                  data={graphData?.indicadores.charts?.PolarChart?.data}
-                />
+                <PolarChart data={graphData?.indicadores.Polar} />
               </Grid>
               <Grid>
                 <TimeSeriesLineChart
-                  series={graphData?.indicadores.charts?.SeriesLineChart?.data}
+                  series={graphData?.indicadores.MultiLine}
                   labelY="OEE(%)"
                 />
               </Grid>
@@ -272,7 +361,7 @@ export default function Page(): React.JSX.Element {
         <Card>
           <CardHeader title="Montaje" sx={{ borderBottom: '1px solid #ddd' }} />
           <CardContent>
-            <Table data={graphData?.montaje.charts?.Table?.data} />
+            <Table data={graphData?.montaje.Mounting} />
           </CardContent>
         </Card>
       </Grid2>
@@ -282,8 +371,8 @@ export default function Page(): React.JSX.Element {
           <SectionMetric
             title="Disponibilidad"
             data={{
-              linechart: graphData?.disponibilidad.charts?.SeriesLineChart,
-              piechart: graphData?.disponibilidad.charts?.MultiLayerPieChart,
+              linechart: graphData?.disponibilidad.MultiLine,
+              piechart: graphData?.disponibilidad.MultiPie,
               unit: 'minutos',
             }}
           />
@@ -293,8 +382,8 @@ export default function Page(): React.JSX.Element {
           <SectionMetric
             title="Calidad"
             data={{
-              linechart: graphData?.calidad.charts?.SeriesLineChart,
-              piechart: graphData?.calidad.charts?.MultiLayerPieChart,
+              linechart: graphData?.calidad.MultiLine,
+              piechart: graphData?.calidad.MultiPie,
               unit: 'unidades',
             }}
           />
@@ -303,8 +392,8 @@ export default function Page(): React.JSX.Element {
           <SectionMetric
             title="Rendimiento"
             data={{
-              linechart: graphData?.rendimiento.charts?.SeriesLineChart,
-              piechart: graphData?.rendimiento.charts?.MultiLayerPieChart,
+              linechart: graphData?.rendimiento.MultiLine,
+              piechart: graphData?.rendimiento.MultiPie,
               unit: 'inyecciones',
             }}
           />
@@ -313,9 +402,9 @@ export default function Page(): React.JSX.Element {
           <SectionMetric
             title="Energía"
             data={{
-              linechart: graphData?.energia.charts?.SeriesLineChart,
-              piechart: graphData?.energia.charts?.MultiLayerPieChart,
-              barchart: graphData?.energia.charts?.StackedBarChart,
+              linechart: graphData?.energia.MultiLine,
+              piechart: graphData?.energia.MultiPie,
+              barchart: graphData?.energia.StackedBar,
               unit: 'kW',
             }}
           />
@@ -326,12 +415,12 @@ export default function Page(): React.JSX.Element {
             options={['PIMM', 'Molde']}
             data={{
               linechart: [
-                graphData?.material.charts?.SeriesLineChart,
-                graphData?.molde.charts?.SeriesLineChart,
+                graphData?.material.MultiLine,
+                graphData?.molde.MultiLine,
               ],
               piechart: [
-                graphData?.material.charts?.MultiLayerPieChart,
-                graphData?.molde.charts?.MultiLayerPieChart,
+                graphData?.material.MultiPie,
+                graphData?.molde.MultiPie,
               ],
               unit: 'gramos',
             }}
@@ -341,8 +430,8 @@ export default function Page(): React.JSX.Element {
           <SectionMetric
             title="Ciclos"
             data={{
-              linechart: graphData?.ciclos.charts?.SeriesLineChart,
-              piechart: graphData?.ciclos.charts?.MultiLayerPieChart,
+              linechart: graphData?.ciclos.MultiLine,
+              piechart: graphData?.ciclos.MultiPie,
               unit: 'segundos',
             }}
           />

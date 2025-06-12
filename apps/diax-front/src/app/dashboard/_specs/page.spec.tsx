@@ -105,7 +105,6 @@ describe('Dashboard page', () => {
       expect(screen.queryAllByText("Mocked TimeSeriesLineChart")).not.toHaveLength(0);
       expect(screen.queryAllByText("Mocked MultiLayerPieChart")).not.toHaveLength(0);
       expect(screen.getByText("Mocked PolarChart")).toBeDefined();
-      expect(screen.getByText("Mocked StackedBarChart")).toBeDefined();
       expect(screen.getByText("Mocked Table")).toBeDefined();
     });
   });
