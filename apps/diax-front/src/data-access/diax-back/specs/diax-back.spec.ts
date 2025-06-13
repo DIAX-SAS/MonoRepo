@@ -1,4 +1,5 @@
 // src/data-access/diax-back/diax-back.test.ts
+import { PimmsStepUnit } from '../../../app/dashboard/dashboard.types';
 import { fetchWrapper, fetchPIMMs, fetchCredentialsCore } from '../diax-back';
 import { getServerSession } from 'next-auth';
 
@@ -70,8 +71,8 @@ describe('fetchPIMMs', () => {
       json: async () => mockData,
     });
 
-    const input = { equipos: {}, initTime: 0, endTime: 1, step: 'minute' };
-    const result = await fetchPIMMs(input as any);
+    const input = { initTime: 0, endTime: 1, stepUnit: PimmsStepUnit.SECOND };
+    const result = await fetchPIMMs(input);
 
     expect(result).toEqual(mockData);
     expect(fetch).toHaveBeenCalledWith(

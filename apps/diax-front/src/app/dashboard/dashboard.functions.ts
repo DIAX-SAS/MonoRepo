@@ -103,7 +103,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         calidad: number;
         eficiencia: number;
     }
-    const acc0 = accumulationFEPIMMs[0]  || initReducePIMMs();
+    const acc0 = accumulationFEPIMMs[0] || initReducePIMMs();
     const amountPLCs = Object.keys(accumulationFEPIMMs).length - 1;
 
     const timeTotal = timeOverall * amountPLCs;
@@ -162,11 +162,6 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         { category: 'Disponibilidad', value: OEE.disponibilidad },
         { category: 'Calidad', value: OEE.calidad }];
 
-    graphData.indicadores.MultiLine = [
-        { name: 'Rendimiento', data: [] },
-        { name: 'Disponibilidad', data: [] },
-        { name: 'Calidad', data: [] },
-        { name: 'Eficiencia', data: [] }];
 
 
     // Calidad
@@ -179,18 +174,17 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     }
 
     const initQualityMetrics = (groupedByPLC: Record<number, FEPIMM[]>): QualityMetrics[] => {
-
         return Object.keys(groupedByPLC).map((plcId) => {
             const fepimms = groupedByPLC[Number(plcId)];
-            const lastFepimm = fepimms[fepimms.length - 1];
+            const selectedFEPIMM = fepimms[fepimms.length - 1]; // Get the last FEPIMM for each PLC
             return {
-                buenas: lastFepimm.buenas,
+                buenas: selectedFEPIMM.buenas,
                 malas: {
-                    arranque: getCounterValue(lastFepimm, 'Unidades Defecto Inicio Turno'),
-                    rechazo: getCounterValue(lastFepimm, 'Unidades No Conformes'),
+                    arranque: getCounterValue(selectedFEPIMM, 'Unidades Defecto Inicio Turno'),
+                    rechazo: getCounterValue(selectedFEPIMM, 'Unidades No Conformes'),
                 },
-                plcId: lastFepimm.plcId,
-                timestamp: lastFepimm.timestamp,
+                plcId: selectedFEPIMM.plcId,
+                timestamp: selectedFEPIMM.timestamp,
             };
         });
     }
@@ -231,7 +225,36 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     };
 
 
+
     graphData.calidad.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.calidad.MultiLine?.push({
+            name: 'Buenas PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: fepimm.buenas,
+            })),
+        });
+
+        graphData.calidad.MultiLine?.push({
+            name: 'Arranque PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Unidades Defecto Inicio Turno'),
+            })),
+        });
+
+        graphData.calidad.MultiLine?.push({
+            name: 'Rechazo PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Unidades No Conformes'),
+            })),
+        });
+    });
+
+
 
     // Rendimiento
     type PerformanceMetrics = Discrimination & {
@@ -276,6 +299,24 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     };
 
     graphData.rendimiento.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.rendimiento.MultiLine?.push({
+            name: 'Producido PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: fepimm.producidas,
+            })),
+        });
+
+        graphData.rendimiento.MultiLine?.push({
+            name: 'Ineficiencias PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: fepimm.ineficiencias,
+            })),
+        });
+    });
     // Disponibilidad
     type AvailabilityMetrics = Discrimination & {
         productivo: number;
@@ -373,15 +414,68 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     };
 
 
-    graphData.disponibilidad.MultiLine = [
-        { name: 'Productivo', data: [] },
-        { name: 'Maquina', data: [] },
-        { name: 'SinOperario', data: [] },
-        { name: 'Calidad', data: [] },
-        { name: 'Montaje', data: [] },
-        { name: 'Molde', data: [] },
-        { name: 'Material', data: [] },
-    ];
+
+
+    graphData.disponibilidad.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'Productivo PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Motor Encendido'),
+            })),
+        });
+
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'Maquina PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Mantto Maquina'),
+            })),
+        });
+
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'SinOperario PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Sin Operario'),
+            })),
+        });
+
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'Calidad PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Calidad'),
+            })),
+        });
+
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'Montaje PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Montaje'),
+            })),
+        });
+
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'Molde PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Mantto Molde'),
+            })),
+        });
+
+        graphData.disponibilidad.MultiLine?.push({
+            name: 'Material PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Por Material'),
+            })),
+        });
+    });
+
     // Energia
     type EnergyMetrics = Discrimination & {
         motor: number;
@@ -410,10 +504,25 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         maquina: energyMetrics.maquina,
     }));
 
-    graphData.energia.MultiLine = [
-        { name: 'Motor', data: [] },
-        { name: 'Maquina', data: [] },
-    ];
+    graphData.energia.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.energia.MultiLine?.push({
+            name: 'Motor PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'KW Motor'),
+            })),
+        });
+
+        graphData.energia.MultiLine?.push({
+            name: 'Maquina PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'KW Total Maquina'),
+            })),
+        });
+    });
 
     // Montaje
 
@@ -482,6 +591,59 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         })),
     };
 
+
+    graphData.material.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.material.MultiLine?.push({
+            name: 'Cavidad 1 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 1'),
+            })),
+        });
+
+        graphData.material.MultiLine?.push({
+            name: 'Cavidad 2 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 2'),
+            })),
+        });
+
+        graphData.material.MultiLine?.push({
+            name: 'Cavidad 3 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 3'),
+            })),
+        });
+
+        graphData.material.MultiLine?.push({
+            name: 'Cavidad 4 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 4'),
+            })),
+        });
+
+        graphData.material.MultiLine?.push({
+            name: 'Cavidad 5 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 5'),
+            })),
+        });
+
+        graphData.material.MultiLine?.push({
+            name: 'Cavidad 6 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 6'),
+            })),
+        });
+    });
+
     // Molde
 
     const initMoldMetrics = (groupedByPLC: Record<number, FEPIMM[]>): MaterialMetrics[] => {
@@ -522,6 +684,57 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     };
 
 
+    graphData.molde.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.molde.MultiLine?.push({
+            name: 'Cavidad 1 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 1'),
+            })),
+        });
+
+        graphData.molde.MultiLine?.push({
+            name: 'Cavidad 2 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 2'),
+            })),
+        });
+
+        graphData.molde.MultiLine?.push({
+            name: 'Cavidad 3 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 3'),
+            })),
+        });
+
+        graphData.molde.MultiLine?.push({
+            name: 'Cavidad 4 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 4'),
+            })),
+        });
+
+        graphData.molde.MultiLine?.push({
+            name: 'Cavidad 5 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 5'),
+            })),
+        });
+
+        graphData.molde.MultiLine?.push({
+            name: 'Cavidad 6 PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Gramos Cavidad 6'),
+            })),
+        });
+    });
     // Ciclos
     type CycleMetrics = Discrimination & {
         plcId: number;
@@ -556,6 +769,24 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     };
 
     graphData.ciclos.MultiLine = [];
+
+    Object.entries(groupedByPLC).forEach(([plcId, fepimms]) => {
+        graphData.ciclos.MultiLine?.push({
+            name: 'Maquina PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Motor Encendido'),
+            })),
+        });
+
+        graphData.ciclos.MultiLine?.push({
+            name: 'Puerta PIMM ' + plcId,
+            data: fepimms.map(fepimm => ({
+                timestamp: fepimm.timestamp,
+                value: getCounterValue(fepimm, 'Minutos Fin Produccion'),
+            })),
+        });
+    });
 
 
     //
