@@ -20,5 +20,11 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     }
-  ]
+  ],
+  timeout: 10000,
+  expect: {
+    timeout: 5000, // 5 seconds
+  },
+  fullyParallel: true,
+  retries: 3
 });
