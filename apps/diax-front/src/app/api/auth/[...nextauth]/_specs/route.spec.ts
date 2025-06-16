@@ -110,6 +110,7 @@ describe('authOptions callbacks', () => {
   
       expect(result).toEqual(session);
     });
+
   });
 
 });

@@ -1,8 +1,16 @@
-import boto3
-import json
-from datetime import datetime
-from boto3.dynamodb.conditions import Key
+"""Lambda function to process and store state changes in DynamoDB.
+This function is triggered by an event and processes data from a source DynamoDB table,
+storing unique state changes in a target DynamoDB table.
+It queries the source table for items within a specified time range,
+compares their state values, and writes unique items to the target table.
+The function ensures that only unique state changes are stored.
+"""
+from datetime import datetime,timedelta
 from itertools import islice
+import json
+import boto3
+from boto3.dynamodb.conditions import Key
+
 # AWS clients
 dynamodb = boto3.resource("dynamodb")
 
@@ -19,83 +27,65 @@ def batch_write_items(table, items):
         for item in items:
             batch.put_item(Item=item)
 
+def get_partitions(init_time, end_time):
+    """Generates a list of epoch days between two timestamps."""
 
-def check_partition_exists(table, pimm_number):
-    """Checks whether a partition exists in a table."""
-    response = table.query(
-        KeyConditionExpression="PLCNumber = :p",
-        ExpressionAttributeValues={":p": pimm_number},
-        Limit=1,  # Solo necesitamos saber si existe
-    )
-    return len(response.get("Items", [])) > 0
+    start = datetime.utcfromtimestamp(init_time / 1000)
+    start = start.replace(hour=0, minute=0, second=0, microsecond=0)
 
+    end = datetime.utcfromtimestamp(end_time / 1000)
+    end = end.replace(hour=0, minute=0, second=0, microsecond=0)
 
-def lambda_handler(event, context):   
-    
-    # Table names
-    SOURCE_TABLE_NAME = event["SOURCE_TABLE_NAME"]
-    TARGET_TABLE_NAME = event["TARGET_TABLE_NAME"]
-    MS_CONVERSION = event["MS_CONVERSION"]
-    TIME_EVENT = int(datetime.now().timestamp() * 1000)
+    total_days = ((end - start).days) + 1
 
-    source_table = dynamodb.Table(SOURCE_TABLE_NAME)
-    target_table = dynamodb.Table(TARGET_TABLE_NAME)
-    # Time configuration
-    now = TIME_EVENT  # Convert to milliseconds
-    start_time = now - MS_CONVERSION  # 1 minute ago in milliseconds
+    return [
+        int((start + timedelta(days=i)).timestamp() * 1000)
+        for i in range(total_days)
+    ]
 
-    pimm_number = 0
-    false_count = 0
-    partitions = []
+def lambda_handler(event):
+    """Lambda function to process and store state changes in DynamoDB."""
+    now = int(datetime.utcnow().timestamp() * 1000)
 
-    while false_count < 5 and partitions:
-        if check_partition_exists(source_table, pimm_number):
-            partitions.append(pimm_number)
-            false_count = 0  # Reset false counter since we found a valid partition
-        else:
-            false_count += 1  # Increment false counter
+    source_table = dynamodb.Table(event["SOURCE_TABLE_NAME"])
+    target_table = dynamodb.Table(event["TARGET_TABLE_NAME"])
 
-        pimm_number += 1  # Move to the next number
+    start_time = now - event["MS_CONVERSION"]
+
+    partitions = get_partitions(start_time, now)
     unique_items = []
 
     for partition in partitions:
-        # Query latest data
         response = source_table.query(
-            KeyConditionExpression=Key("PIMMNumber").eq(partition)
+            KeyConditionExpression=Key("epochDay").eq(partition)
             & Key("timestamp").between(start_time, now)
         )
         items = response.get("Items", [])
 
         if not items:
-            continue  # Skip if no data
+            continue
 
-        # Find state changes
-        before_item = items[0]  # First item
+        before_item = items[0]
         for item in items:
-            for i in range(len(item["payload"]["states"])):  # Correct dictionary access
+            for i in range(len(item["states"])):
                 if (
-                    item["payload"]["states"][i]["value"]
-                    != before_item["payload"]["states"][i]["value"]
+                    item["states"][i]["value"]
+                    != before_item["states"][i]["value"]
                 ):
                     unique_items.append(item)
-                    before_item = item  # Update previous item
-                    break  # Move to next item
+                    before_item = item
+                    break
 
-        # Save first and last if not added
         if items:
-            # Ensure at least the first and last item are added
             if not unique_items:
-                unique_items.extend([items[0], items[-1]])  # Add first & last item
+                unique_items.extend([items[0], items[-1]])
 
-            # Ensure first item is included only once
             if unique_items[0]["timestamp"] != items[0]["timestamp"]:
-                unique_items.insert(0, items[0])  # Insert at the beginning
+                unique_items.insert(0, items[0])
 
-            # Ensure last item is included only once
             if unique_items[-1]["timestamp"] != items[-1]["timestamp"]:
-                unique_items.append(items[-1])  # Append at the end
+                unique_items.append(items[-1])
 
-        # Batch write to DynamoDB
         for chunk in chunked_iterable(unique_items, 25):
             batch_write_items(target_table, chunk)
 

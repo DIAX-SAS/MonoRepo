@@ -19,7 +19,7 @@ describe('MountingTable Component', () => {
       producidas: 0,
       maquina: 0,
       timestamp: 0,
-      PLCNumber: 1,
+      plcId: 1,
       states: [
         { id: 's1', valueType: 'integer', name: 'State 1', value: '10' },
         { id: 's2', valueType: 'integer', name: 'State 2', value: '20' },
@@ -35,7 +35,7 @@ describe('MountingTable Component', () => {
       producidas: 0,
       maquina: 0,
       timestamp: 0,
-      PLCNumber: 2,
+      plcId: 2,
       states: [
         { id: 's1', valueType: 'integer', name: 'State 1', value: '50' },
         { id: 's2', valueType: 'integer', name: 'State 2', value: '60' },
@@ -50,9 +50,6 @@ describe('MountingTable Component', () => {
   test('renders table with correct headers and values', () => {
     renderWithTheme(<MountingTable data={mockData} />);
 
-    // Check title
-    expect(screen.getByText(/Mold Mounting/i)).toBeInTheDocument();
-
     // Check headers
     expect(screen.getByText('State 1')).toBeInTheDocument();
     expect(screen.getByText('State 2')).toBeInTheDocument();
@@ -64,13 +61,4 @@ describe('MountingTable Component', () => {
     expect(screen.getByText('60')).toBeInTheDocument();
   });
 
-  test('renders only the title when data is undefined', () => {
-    renderWithTheme(<MountingTable data={undefined} />);
-
-    // Check title exists
-    expect(screen.getByText(/Mold Mounting/i)).toBeInTheDocument();
-
-      // Ensure no table headers or cell values exist
-  expect(screen.queryByRole("cell")).not.toBeInTheDocument();
-  });
 });

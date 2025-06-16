@@ -1,73 +1,104 @@
-import { fetchData, fetchCredentialsCore } from "../diax-back"; // Adjust path as needed
+// src/data-access/diax-back/diax-back.test.ts
+import { PimmsStepUnit } from '../../../app/dashboard/dashboard.types';
+import { fetchWrapper, fetchPIMMs, fetchCredentialsCore } from '../diax-back';
+import { getServerSession } from 'next-auth';
 
-jest.mock("../../../config", () => ({
-  config: { backendURL: "https://mock-api.com" },
+// in diax-back.spec.ts
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(() => Promise.resolve({ accessToken: 'mocked-token' })),
 }));
 
-global.fetch = jest.fn();
+jest.mock('../../../app/api/auth/[...nextauth]/_lib/authOptions', () => ({
+  authOptions: {},
+}));
 
-describe("API Service Tests", () => {
-  const mockAuth = { accessToken: "mock-token" };
-  const mockInfoSettings = { key: "value" };
+const mockFetch = global.fetch = jest.fn();
 
-  afterEach(() => {
+describe('fetchWrapper', () => {
+  const mockToken = 'mocked-token';
+  const mockSession = { accessToken: mockToken };
+
+  beforeEach(() => {
     jest.clearAllMocks();
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
   });
 
-  it("fetchData should make a POST request and return data", async () => {
-    const mockResponse = { data: "mocked-data" };
-    (fetch as jest.Mock).mockResolvedValue({
+  it('sends a POST request and returns JSON', async () => {
+    const mockResponse = { data: 'hello' };
+    mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: jest.fn().mockResolvedValue(mockResponse),
+      json: async () => mockResponse,
     });
 
-    const result = await fetchData(mockAuth, mockInfoSettings);
-
-    expect(fetch).toHaveBeenCalledWith("https://mock-api.com/pimms", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer mock-token",
-      },
-      body: JSON.stringify(mockInfoSettings),
+    const result = await fetchWrapper('/example', {
+      method: 'POST',
+      body: { test: 123 },
     });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/example'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${mockToken}`,
+        }),
+        body: JSON.stringify({ test: 123 }),
+      }),
+    );
 
     expect(result).toEqual(mockResponse);
   });
 
-  it("fetchData should throw an error on HTTP failure", async () => {
-    (fetch as jest.Mock).mockResolvedValue({ ok: false, status: 500 });
+  it('throws an error on non-ok response', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => 'Unauthorized',
+    });
 
-    await expect(fetchData(mockAuth, mockInfoSettings)).rejects.toThrow(
-      "HTTP error! status: 500"
+    await expect(
+      fetchWrapper('/example', { method: 'GET' })
+    ).rejects.toThrow('Error 401: Unauthorized');
+  });
+});
+
+describe('fetchPIMMs', () => {
+  it('calls fetchWrapper with correct params', async () => {
+    const mockData = { result: 'success' };
+    (getServerSession as jest.Mock).mockResolvedValue({ accessToken: 'abc' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const input = { initTime: 0, endTime: 1, stepUnit: PimmsStepUnit.SECOND };
+    const result = await fetchPIMMs(input);
+
+    expect(result).toEqual(mockData);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/pimms'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
     );
   });
+});
 
-  it("fetchCredentialsCore should make a GET request and return credentials", async () => {
-    const mockCredentials = { username: "test-user", password: "test-pass" };
-    (fetch as jest.Mock).mockResolvedValue({
+describe('fetchCredentialsCore', () => {
+  it('calls fetchWrapper with correct path', async () => {
+    const mockToken = { token: 'iot-token' };
+    (getServerSession as jest.Mock).mockResolvedValue({ accessToken: 'abc' });
+    mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: jest.fn().mockResolvedValue(mockCredentials),
+      json: async () => mockToken,
     });
 
-    const result = await fetchCredentialsCore(mockAuth);
-
-    expect(fetch).toHaveBeenCalledWith("https://mock-api.com/pimms/credentials", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer mock-token",
-      },
-    });
-
-    expect(result).toEqual(mockCredentials);
-  });
-
-  it("fetchCredentialsCore should throw an error on HTTP failure", async () => {
-    (fetch as jest.Mock).mockResolvedValue({ ok: false, status: 403 });
-
-    await expect(fetchCredentialsCore(mockAuth)).rejects.toThrow(
-      "HTTP error! status: 403"
+    const result = await fetchCredentialsCore();
+    expect(result).toEqual(mockToken);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/pimms/iot/credentials'),
+      expect.objectContaining({ method: 'GET' })
     );
   });
 });

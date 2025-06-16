@@ -44,6 +44,7 @@ out
 jest.config.js
 # Playwright
 /.playwright
+.auth
 # Environment files
 .env
 .env.local
@@ -52,3 +53,23 @@ jest.config.js
 .env.production.local
 # build output
 build
+
+# Test results
+test-results/
+test-results/**/*.xml
+test-results/**/*.json
+test-results/**/*.log
+
+# virtual environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+
+# Certificates
+*.pem
+*.crt
+*.key
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md

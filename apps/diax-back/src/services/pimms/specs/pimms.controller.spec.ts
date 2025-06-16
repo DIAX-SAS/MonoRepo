@@ -1,36 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PIMMController } from '../pimms.controller';
-import { PIMMService } from '../pimms.service';
-import { InfoSettingsDto } from '../pimms.dto';
+import { PIMMSController } from '../pimms.controller';
+import { PimmsService } from '../pimms.service';
+import { PimmsFilterDto, GetPimmsDTO, PimmsStepUnit } from '../pimms.interface';
 
-// Mock the PIMMService
 const mockPIMMService = {
   getPIMMS: jest.fn(),
-  getPIMMSCredentials: jest.fn(),
+  getPimmsIotCredentials: jest.fn(),
 };
 
-// Mock the Authentication decorator
 jest.mock('@nestjs-cognito/auth', () => ({
   Authentication: () => jest.fn(),
 }));
 
 describe('PIMMController', () => {
-  let controller: PIMMController;
-  let service: PIMMService;
+  let controller: PIMMSController;
+  let service: PimmsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [PIMMController],
+      controllers: [PIMMSController],
       providers: [
         {
-          provide: PIMMService,
+          provide: PimmsService,
           useValue: mockPIMMService,
         },
       ],
     }).compile();
 
-    controller = module.get<PIMMController>(PIMMController);
-    service = module.get<PIMMService>(PIMMService);
+    controller = module.get<PIMMSController>(PIMMSController);
+    service = module.get<PimmsService>(PimmsService);
   });
 
   afterEach(() => {
@@ -39,23 +37,17 @@ describe('PIMMController', () => {
 
   describe('getPIMMS', () => {
     it('should call PIMMService.getPIMMS with the correct parameters', async () => {
-      const infoSettings: InfoSettingsDto = {
-        filters: {
+      const infoSettings: PimmsFilterDto = {      
           initTime: 70000000,
           endTime: 70000001,
-          accUnit: 'second',
-        },
+          stepUnit: PimmsStepUnit.SECOND,
       };
 
-      const expectedResult = {
-        timestamp: 70000000,
-        PLCNumber: 3,
-        payload: {
-          PLCNumber: 3,
+      const expectedResult: GetPimmsDTO = {       
+          plcId: 3,
           timestamp: 70000000,
           counters: [],
           states: [],
-        },
       };
 
       mockPIMMService.getPIMMS.mockResolvedValue(expectedResult);
@@ -68,14 +60,15 @@ describe('PIMMController', () => {
   });
 
   describe('getPIMMSCredentials', () => {
-    it('should call PIMMService.getPIMMSCredentials', async () => {
+    it('should call PIMMService.getPimmsIotCredentials', async () => {
       const expectedResult = {
         token:
           '7192164a1615db76fbb014fdd766b339607e9bd3cde5d85dd7be97a9cdaf99aa',
+          expiration:"mock-date"
       };
-      mockPIMMService.getPIMMSCredentials.mockResolvedValue(expectedResult);
-      const result = await controller.getPIMMSCredentials();
-      expect(service.getPIMMSCredentials).toHaveBeenCalled();
+      mockPIMMService.getPimmsIotCredentials.mockResolvedValue(expectedResult);
+      const result = await controller.getPimmsIotCredentials();
+      expect(service.getPimmsIotCredentials).toHaveBeenCalled();
       expect(result).toEqual(expectedResult);
     });
   });

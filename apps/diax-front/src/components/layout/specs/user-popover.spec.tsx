@@ -11,20 +11,15 @@ jest.mock("next-auth/react", () => ({
   signOut: jest.fn(),
 }));
 
-jest.mock("@/config", () => ({
-  config: {
-    auth: {
-      cognitoDomain: "https://example-cognito.com",
-      clientId: "mock-client-id",
-      logoutUri: "https://example.com/logout",
-      redirectUri: "https://example.com/redirect",
-      response_type: "code",
-    },
-  },
-}));
-
 describe("UserPopover Component", () => {
   let setOpenMock: jest.Mock;
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_COGNITO_DOMAIN = 'https://mock-cognito-domain.com';
+    process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID = 'mock-client-id';
+    process.env.NEXT_PUBLIC_FRONT_URI = 'https://mock-front-uri.com';
+  }
+  );
 
   beforeEach(() => {
     setOpenMock = jest.fn();
@@ -32,6 +27,8 @@ describe("UserPopover Component", () => {
       writable: true,
       value: { href: "" },
     }); // Mock window.location.href
+
+    window.location.replace = jest.fn(); // Mock window.location.replace
   });
 
   it("renders user information", () => {
@@ -47,6 +44,6 @@ describe("UserPopover Component", () => {
     // Click the sign-out button
     const signOutButton = screen.getByText("Sign out");
     fireEvent.click(signOutButton);
-    await waitFor(() => expect(signOut).toHaveBeenCalledWith({ redirect: false }));
+    await waitFor(() => expect(signOut).toHaveBeenCalledWith({ redirect: true, callbackUrl: "https://mock-cognito-domain.com/logout?client_id=mock-client-id&logout_uri=https%3A%2F%2Fmock-front-uri.com"}));
   });
 });
