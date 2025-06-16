@@ -76,7 +76,7 @@ jobs:
           - name: Install dependencies
             run: |
              yarn install --frozen-lockfile 
-             yarn playwright install-deps
+             yarn playwright install --with-deps
 
           - name: Run diax-front lint
             run: yarn nx run diax-front:lint
