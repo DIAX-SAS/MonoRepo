@@ -19,8 +19,20 @@
       ],
       "configurations": {
         "ci": {
-          "workers": 2
+          "workers": 1
         }
+      },
+      "dependsOn": [
+        {
+          "target": "pretest",
+          "projects": "self"
+        }
+      ]
+    },
+    "pretest": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ts-node apps/diax-front-e2e/src/utils/setup-auth.ts"
       }
     }
   }
