@@ -156,15 +156,16 @@ export default function Page(): React.JSX.Element {
         maquina:
           getCounterValue(pimm, 'Segundos Ultimo Ciclo Total') -
           getCounterValue(pimm, 'Segundos Ultimo Ciclo Puerta'),
-        producidas:
-          duration -
-          getCounterValue(pimm, 'Minutos No Programada') -
-          getCounterValue(pimm, 'Minutos Mantto Maquina') -
-          getCounterValue(pimm, 'Minutos Mantto Molde') -
-          getCounterValue(pimm, 'Minutos Sin Operario') -
-          getCounterValue(pimm, 'Minutos Por Material') -
-          getCounterValue(pimm, 'Minutos Calidad') -
-          getCounterValue(pimm, 'Minutos Montaje'),
+        producidas: Math.abs(
+          duration - (
+            getCounterValue(pimm, 'Minutos No Programada') +
+            getCounterValue(pimm, 'Minutos Mantto Maquina') +
+            getCounterValue(pimm, 'Minutos Mantto Molde') +
+            getCounterValue(pimm, 'Minutos Sin Operario') +
+            getCounterValue(pimm, 'Minutos Por Material') +
+            getCounterValue(pimm, 'Minutos Calidad') +
+            getCounterValue(pimm, 'Minutos Montaje'))
+        ),
       };
     }
 
@@ -240,9 +241,40 @@ export default function Page(): React.JSX.Element {
           updatedFilters.equipos.set(equipo as string, true);
       });
 
+      filterSets.operarios.forEach((operario) => {
+        if (!updatedFilters.operarios.has(operario as string))
+          updatedFilters.operarios.set(operario as string, true);
+      });
+      filterSets.ordenes.forEach((orden) => {
+        if (!updatedFilters.ordenes.has(orden as string))
+          updatedFilters.ordenes.set(orden as string, true);
+      });
+      filterSets.lotes.forEach((lote) => {
+        if (!updatedFilters.lotes.has(lote as string))
+          updatedFilters.lotes.set(lote as string, true);
+      });
+      filterSets.moldes.forEach((molde) => {
+        if (!updatedFilters.moldes.has(molde as string))
+          updatedFilters.moldes.set(molde as string, true);
+      });
+      filterSets.materiales.forEach((material) => {
+        if (!updatedFilters.materiales.has(material as string))
+          updatedFilters.materiales.set(material as string, true);
+      });
+
       return updatedFilters;
     });
   }, [PIMMs]);
+
+  React.useEffect(() => {
+    if (parameters.live) {
+      setParameters((prevParameters) => ({
+        ...prevParameters,
+        startDate: new Date().getTime() - 120 * 60 * 1000, // 2 hours ago,
+        endDate: new Date().getTime() 
+      }));
+    }
+  }, [parameters.live]);
 
   React.useEffect(() => {
     setPIMMs([]);
@@ -255,28 +287,28 @@ export default function Page(): React.JSX.Element {
       materiales: new Map<string, boolean>(),
     });
 
-    const lastDate = parameters.startDate;
-    for (
-      let currDate = parameters.startDate;
-      currDate <= parameters.endDate;
-      currDate += 6 * 60 * 1000
-    ) {
-      fetchPIMMs({
-        initTime: lastDate,
-        endTime: currDate,
-        stepUnit: parameters.step,
-        lastID: null,
-      }).then(async (data) => {
-        setPIMMs((prevPIMMs) => [...prevPIMMs, ...data.pimms]);
+    fetchPIMMs({
+      initTime: parameters.startDate,
+      endTime: parameters.endDate,
+      stepUnit: parameters.step,
+      lastID: null,
+    }).then((response) => {
+      setPIMMs((prevPIMMs) => {
+        const newPIMMs = [...prevPIMMs, ...response.pimms].sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+        return newPIMMs;
       });
-    }
+    });
 
     (async () => {
       if (parameters.live) {
         connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
           const pimmData = JSON.parse(payload.toString());
           setPIMMs((prevPIMMs) => {
-            return [...prevPIMMs, pimmData];
+            return [...prevPIMMs, pimmData].sort(
+              (a, b) => a.timestamp - b.timestamp
+            );
           });
         });
       } else {
@@ -326,7 +358,6 @@ export default function Page(): React.JSX.Element {
                   gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
                   gap={2}
                 >
-                  ()
                   <CardFactor
                     value={graphData?.indicadores?.OEE?.performance}
                     title="Rendimiento"
