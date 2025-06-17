@@ -64,6 +64,7 @@
       "ref": "ac9a11dd6d51b969c71cc9002b54137258331dd6",
       "subject": "refactor(diax-front): structural changes to OEE cards"
     },
-    "targetVersion": "latest"
+    "targetVersion": "latest",
+    "confirmedPackageUpdates": true
   }
 }
