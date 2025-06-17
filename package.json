@@ -45,7 +45,8 @@
     "react-oidc-context": "^latest",
     "react-router-dom": "^latest",
     "reflect-metadata": "^0.2.2",
-    "rsuite": "^latest"
+    "rsuite": "^latest",
+    "wait-on": "^8.0.3"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.39.0",
