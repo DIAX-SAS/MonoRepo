@@ -79,6 +79,7 @@ export interface ReducePIMMs {
   acc_maquina: number;
   acc_noProg: number;
   acc_motor: number;
+  acc_timestamp: number;
 }
 
 export type GraphCategory =

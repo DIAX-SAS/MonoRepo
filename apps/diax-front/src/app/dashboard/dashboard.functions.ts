@@ -1,7 +1,6 @@
 import {
   GraphData,
   PIMM,
-  ReduceMolde,
   ReducePIMMs,
   type FEPIMM,
 } from './dashboard.types';
@@ -12,19 +11,7 @@ const getStateValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
   Number(FEPIMM.states.find((c) => c.name === counterName)?.value) || 0;
 
 export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
-  const accumulationFEPIMMs: Record<number, ReducePIMMs> = {};
-  const accumulationMolds: Record<number, ReduceMolde> = {};
   const groupedByPLC: Record<number, FEPIMM[]> = {};
-
-  const initReduceMolde = (): ReduceMolde => ({
-    acc_cav1: 0,
-    acc_cav2: 0,
-    acc_cav3: 0,
-    acc_cav4: 0,
-    acc_cav5: 0,
-    acc_cav6: 0,
-    acc_gramosgeneral: 0,
-  });
 
   const initReducePIMMs = (): ReducePIMMs => ({
     acc_buenas: 0,
@@ -41,60 +28,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     acc_maquina: 0,
     acc_noProg: 0,
     acc_motor: 0,
+    acc_timestamp: 0
   });
 
-  const updateReducePIMMs = (acc: ReducePIMMs, fepimm: FEPIMM) => {
-    acc.acc_buenas += fepimm.buenas;
-    acc.acc_noConformes += getCounterValue(fepimm, 'Unidades No Conformes');
-    acc.acc_defectoInicioTurno += getCounterValue(
-      fepimm,
-      'Unidades Defecto Inicio Turno'
-    );
-    acc.acc_inyecciones += getCounterValue(fepimm, 'Contador Inyecciones');
-    acc.acc_ineficiencias += fepimm.ineficiencias;
-    acc.acc_producidas += fepimm.producidas;
-    acc.acc_montaje += getCounterValue(fepimm, 'Minutos Montaje');
-    acc.acc_calidad += getCounterValue(fepimm, 'Minutos Calidad');
-    acc.acc_material += getCounterValue(fepimm, 'Minutos Por Material');
-    acc.acc_abandono += getCounterValue(fepimm, 'Minutos Sin Operario');
-    acc.acc_molde += getCounterValue(fepimm, 'Minutos Mantto Molde');
-    acc.acc_maquina += getCounterValue(fepimm, 'Minutos Mantto Maquina');
-    acc.acc_noProg += getCounterValue(fepimm, 'Minutos No Programada');
-    acc.acc_motor += getCounterValue(fepimm, 'KW Motor');
-  };
-
   for (const fepimm of filteredPIMMs) {
-    const moldeId = getStateValue(fepimm, 'Molde');
-    if (!accumulationMolds[moldeId]) {
-      accumulationMolds[moldeId] = initReduceMolde();
-    }
-
-    const mold = accumulationMolds[moldeId];
-    mold.acc_cav1 += getCounterValue(fepimm, 'Gramos Cavidad 1');
-    mold.acc_cav2 += getCounterValue(fepimm, 'Gramos Cavidad 2');
-    mold.acc_cav3 += getCounterValue(fepimm, 'Gramos Cavidad 3');
-    mold.acc_cav4 += getCounterValue(fepimm, 'Gramos Cavidad 4');
-    mold.acc_cav5 += getCounterValue(fepimm, 'Gramos Cavidad 5');
-    mold.acc_cav6 += getCounterValue(fepimm, 'Gramos Cavidad 6');
-    mold.acc_gramosgeneral += getCounterValue(fepimm, 'Gramos Inyeccion');
-
-    // Accumulate per PLC ID
-    if (!accumulationFEPIMMs[fepimm.plcId]) {
-      accumulationFEPIMMs[fepimm.plcId] = initReducePIMMs();
-    }
-    updateReducePIMMs(accumulationFEPIMMs[fepimm.plcId], fepimm);
-
-    // Group by PLC ID
     if (!groupedByPLC[fepimm.plcId]) {
       groupedByPLC[fepimm.plcId] = [];
     }
     groupedByPLC[fepimm.plcId].push(fepimm);
-
-    // Accumulate overall under key 0
-    if (!accumulationFEPIMMs[0]) {
-      accumulationFEPIMMs[0] = initReducePIMMs();
-    }
-    updateReducePIMMs(accumulationFEPIMMs[0], fepimm);
   }
 
   const timestamps = filteredPIMMs.map((f) => f.timestamp);
@@ -123,14 +64,17 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     acc_buenas: number;
     acc_defectoInicioTurno: number;
     acc_noConformes: number;
+    acc_timestamp: number;
   };
 
   const initOEEMetrics = (
-    groupedByPLC: Record<number, FEPIMM[]>
+    groupedByPLC: Record<number, FEPIMM[]>,
+    index?: number
   ): OEEMetrics => {
     return Object.entries(groupedByPLC)
       .map(([plcId, fepimms]) => {
-        const lastFEPIMM = fepimms[fepimms.length - 1];
+        if (!index || index > fepimms.length - 1) index = fepimms.length - 1;
+        const lastFEPIMM = fepimms[index];
         return {
           acc_inyecciones: getCounterValue(lastFEPIMM, 'Contador Inyecciones'),
           acc_ineficiencias: lastFEPIMM.ineficiencias,
@@ -147,6 +91,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
             'Unidades Defecto Inicio Turno'
           ),
           acc_noConformes: getCounterValue(lastFEPIMM, 'Unidades No Conformes'),
+          acc_timestamp: lastFEPIMM.timestamp,
         };
       })
       .reduce((acc, curr) => {
@@ -162,65 +107,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         acc.acc_buenas += curr.acc_buenas;
         acc.acc_defectoInicioTurno += curr.acc_defectoInicioTurno;
         acc.acc_noConformes += curr.acc_noConformes;
+        acc.acc_timestamp += curr.acc_timestamp;
         return acc;
       }, initReducePIMMs());
   };
-  const OEEMetrics: OEEMetrics =
-    initOEEMetrics(groupedByPLC) || initReducePIMMs();
 
-  const amountPLCs = Object.keys(accumulationFEPIMMs).length - 1;
-
+  const amountPLCs = Object.keys(groupedByPLC).length;
   const timeTotal = timeOverall * amountPLCs;
-  const totalOperationalTime = timeTotal - OEEMetrics.acc_noProg;
-  const totalLosses =
-    OEEMetrics.acc_maquina +
-    OEEMetrics.acc_molde +
-    OEEMetrics.acc_abandono +
-    OEEMetrics.acc_material +
-    OEEMetrics.acc_calidad +
-    OEEMetrics.acc_montaje;
 
-  // Aseguramos que no haya división por cero
-  const safeDivide = (numerator: number, denominator: number) =>
-    denominator === 0 ? 0 : numerator / denominator;
-
-  const performance =
-    Math.round(
-      safeDivide(
-        OEEMetrics.acc_inyecciones,
-        OEEMetrics.acc_inyecciones + OEEMetrics.acc_ineficiencias
-      ) * 1000
-    ) / 10;
-
-  const availability =
-    Math.round(
-      safeDivide(totalOperationalTime - totalLosses, totalOperationalTime) *
-        1000
-    ) / 10;
-
-  const quality =
-    Math.round(
-      safeDivide(
-        OEEMetrics.acc_buenas,
-        OEEMetrics.acc_buenas +
-          OEEMetrics.acc_defectoInicioTurno +
-          OEEMetrics.acc_noConformes
-      ) * 1000
-    ) / 10;
-
-  const efficiency = (
-    (availability / 100) *
-    (performance / 100) *
-    (quality / 100) *
-    100
-  ).toFixed(1);
-
-  const OEE: OEE = {
-    performance,
-    availability,
-    quality,
-    efficiency,
-  };
   const createGrapStructure = (): GraphData => ({
     indicadores: {},
     calidad: {},
@@ -235,7 +129,109 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
 
   const graphData: GraphData = createGrapStructure();
 
+  let maxFEPIMMsAmount = 0;
+  Object.values(groupedByPLC).forEach((FEPIMMs) => {
+    if (FEPIMMs.length > maxFEPIMMsAmount) {
+      maxFEPIMMsAmount = FEPIMMs.length;
+    }
+  });
+
+  let OEE: OEE = {
+    performance: 0,
+    availability: 0,
+    quality: 0,
+    efficiency: 0,
+  };
+
+  graphData.calidad.MultiLine = [];
+
+  const performanceData = []
+  const availabilityData = []
+  const qualityData = []
+  const efficiencyData = []
+
+  for (let i = 0; i < maxFEPIMMsAmount; i++) {
+    const OEEMetrics: OEEMetrics = initOEEMetrics(groupedByPLC, i);
+
+    const totalOperationalTime = timeTotal - OEEMetrics.acc_noProg;
+    const totalLosses =
+      OEEMetrics.acc_maquina +
+      OEEMetrics.acc_molde +
+      OEEMetrics.acc_abandono +
+      OEEMetrics.acc_material +
+      OEEMetrics.acc_calidad +
+      OEEMetrics.acc_montaje;
+
+    // Aseguramos que no haya división por cero
+    const safeDivide = (numerator: number, denominator: number) =>
+      denominator === 0 ? 0 : numerator / denominator;
+
+    const performance =
+      Math.round(
+        safeDivide(
+          OEEMetrics.acc_inyecciones,
+          OEEMetrics.acc_inyecciones + OEEMetrics.acc_ineficiencias
+        ) * 1000
+      ) / 10;
+
+    const availability =
+      Math.round(
+        safeDivide(totalOperationalTime - totalLosses, totalOperationalTime) *
+          1000
+      ) / 10;
+
+    const quality =
+      Math.round(
+        safeDivide(
+          OEEMetrics.acc_buenas,
+          OEEMetrics.acc_buenas +
+            OEEMetrics.acc_defectoInicioTurno +
+            OEEMetrics.acc_noConformes
+        ) * 1000
+      ) / 10;
+
+    const efficiency = Number((
+      (availability / 100) *
+      (performance / 100) *
+      (quality / 100) *
+      100
+    ).toFixed(1));
+
+    OEE = {
+      performance,
+      availability,
+      quality,
+      efficiency,
+    };
+
+    performanceData.push({
+      value: performance,
+      timestamp: OEEMetrics.acc_timestamp / amountPLCs,
+    });
+    availabilityData.push({
+      value: availability,
+      timestamp: OEEMetrics.acc_timestamp / amountPLCs,
+    });
+    qualityData.push({
+      value: quality,
+      timestamp: OEEMetrics.acc_timestamp / amountPLCs,
+    });
+
+    efficiencyData.push({
+      value: efficiency,
+      timestamp: OEEMetrics.acc_timestamp / amountPLCs,
+    });
+  }
+
+  graphData.indicadores.MultiLine = [
+    { name: 'Rendimiento', data: performanceData },
+    { name: 'Availability', data: availabilityData },
+    { name: 'Quality', data: qualityData },
+    { name: 'Efficiency', data: efficiencyData },
+  ];
+
   graphData.indicadores.OEE = OEE;
+
   graphData.indicadores.Polar = [
     { category: 'Rendimiento', value: OEE.performance },
     { category: 'Disponibilidad', value: OEE.availability },
