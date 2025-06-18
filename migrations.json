@@ -65,6 +65,64 @@
       "subject": "refactor(diax-front): structural changes to OEE cards"
     },
     "targetVersion": "latest",
-    "confirmedPackageUpdates": true
+    "confirmedPackageUpdates": true,
+    "completedMigrations": {
+      "remove-legacy-cache": {
+        "type": "successful",
+        "name": "remove-legacy-cache",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "remove-custom-tasks-runner": {
+        "type": "successful",
+        "name": "remove-custom-tasks-runner",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "release-version-config-changes": {
+        "type": "successful",
+        "name": "release-version-config-changes",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "release-changelog-config-changes": {
+        "type": "successful",
+        "name": "release-changelog-config-changes",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "21-1-0-add-ignore-entries-for-nx-rule-files": {
+        "type": "successful",
+        "name": "21-1-0-add-ignore-entries-for-nx-rule-files",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "replace-getJestProjects-with-getJestProjectsAsync-v21": {
+        "type": "successful",
+        "name": "replace-getJestProjects-with-getJestProjectsAsync-v21",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "remove-tsconfig-option-from-jest-executor": {
+        "type": "successful",
+        "name": "remove-tsconfig-option-from-jest-executor",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      },
+      "update-21-0-0-remove-isolated-config": {
+        "type": "successful",
+        "name": "update-21-0-0-remove-isolated-config",
+        "changedFiles": [],
+        "ref": "7083acdd04eb64ac5bdef1e19d396bac77ae55a3",
+        "nextSteps": []
+      }
+    }
   }
 }
