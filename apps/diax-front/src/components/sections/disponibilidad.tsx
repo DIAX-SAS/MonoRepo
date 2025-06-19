@@ -1,6 +1,11 @@
 import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
+import type { GraphData } from '../../app/dashboard-new/dashboard.types';
+import {CollapsibleList} from "../core/CollapsibleList"
+interface DisponibilidadProps {
+  data: GraphData['disponibilidad'];
+}
 
-const Disponibilidad = (): React.FC => {
+const Disponibilidad: React.FC<DisponibilidadProps> = ({data}) => {
   return (
     <div className="cube_container" id="Disponibilidad">
       <div className="title_container">
@@ -15,7 +20,8 @@ const Disponibilidad = (): React.FC => {
         <ul className="legend" id="legendDisponibilidad"></ul>
         <div id="lineDisponibilidadContainer" className="lineContainer">
           <div id="lineDisponibilidad">
-            <TimeSeriesLineChart />
+            <TimeSeriesLineChart labelY="minutos" series={data?.MultiLine} />
+            <CollapsibleList data={data?.MultiPie} unit="minutos"/>
           </div>
         </div>
         <div className="rows center full_width ">
@@ -23,7 +29,7 @@ const Disponibilidad = (): React.FC => {
             id="pieDisponibilidadContainer"
             className="pieContainer margin_gd"
           >
-            <MultiLayerPieChart />
+            <MultiLayerPieChart unit="minutos" data={data?.MultiPie} />
             <div id="pieDisponibilidad"></div>
           </div>
         </div>

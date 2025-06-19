@@ -1,6 +1,41 @@
-import React from 'react';
+import * as React from 'react';
+import {
+  type Filters,
+  type Parameters,
+} from '../../app/dashboard/dashboard.types';
+import { DateRangePicker } from '../core';
 
-const Configuration: React.FC = () => {
+interface ConfigurationProps {
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  parameters: Parameters;
+  setParameters: React.Dispatch<React.SetStateAction<Parameters>>;
+}
+
+const Configuration: React.FC<ConfigurationProps> = ({
+  filters,
+  setFilters,
+  parameters,
+  setParameters,
+}) => {
+  const [openStates, setOpenStates] = React.useState<Record<string, boolean>>(
+    {}
+  );
+
+  const toggleSection = (stateName: string) => {
+    setOpenStates((prev) => ({
+      ...prev,
+      [stateName]: !prev[stateName],
+    }));
+  };
+
+  const handleChangeParameters = <T extends keyof Parameters>(
+    key: T,
+    value: Parameters[T]
+  ) => {
+    setParameters((prev) => ({ ...prev, [key]: value }));
+  };
+
   return (
     <div className="cube_container" id="config">
       <div className="tab_container columns">
@@ -44,688 +79,145 @@ const Configuration: React.FC = () => {
         </div>
       </div>
 
-      {/* Subconfig and filter sections would be extracted as subcomponents later */}
       <div id="sub_config">
         <div className="columns center margin_gd rows">
           <div className="left_rows rows" id="rangoCont">
             <div id="inicio_fin">Rango</div>
-            <input
-              id="datetimes"
-              type="text"
-              name="datetimes"
-              disabled
-              style={{ backgroundColor: 'gray', color: 'white' }}
+            <DateRangePicker
+              data-testid="dateRangePicker"
+              format="dd MMM yyyy hh:mm:ss aa"
+              showMeridiem
+              onChange={(value) => {
+                const [initTime, endTime] = value ?? [];
+                handleChangeParameters(
+                  'startDate',
+                  initTime ? new Date(initTime).getTime() : Date.now()
+                );
+                handleChangeParameters(
+                  'endDate',
+                  endTime ? new Date(endTime).getTime() : Date.now()
+                );
+              }}
+              readOnly={parameters.live}
+              value={
+                parameters.startDate && parameters.endDate
+                  ? [
+                      new Date(parameters.startDate),
+                      new Date(parameters.endDate),
+                    ]
+                  : null
+              }
             />
-            <div id="configError" style={{ display: 'none' }}></div>
           </div>
 
           <div id="liveContainer" className="rows padding_pq">
             <div className="columns noselect center">
               <label htmlFor="live">Live</label>
-              <input id="live" name="live" type="checkbox" />
-              <div className="interrogation">?</div>
-            </div>
-
-            <div id="offsetCont" className="columns noselect center">
-              <label htmlFor="offset">Offset</label>
-              <input id="offset" name="offset" type="checkbox" defaultChecked />
+              <input
+                id="live"
+                name="live"
+                type="checkbox"
+                checked={parameters.live}
+                onChange={(e) =>
+                  handleChangeParameters('live', e.target.checked)
+                }
+              />
               <div className="interrogation">?</div>
             </div>
 
             <div id="minCont" className="columns noselect center">
-              <label htmlFor="minForce">Minutos</label>
-              <input
-                id="minForce"
-                name="offset"
-                type="checkbox"
-                defaultChecked
-              />
+              <label htmlFor="stepUnit">Unidad</label>
+              <select
+                id="stepUnit"
+                name="step"
+                value={parameters.step}
+                onChange={(e) =>
+                  setParameters((prev) => ({ ...prev, step: e.target.value }))
+                }
+              >
+                <option value="second">Segundo</option>
+                <option value="minute">Minuto</option>
+                <option value="hour">Hora</option>
+              </select>
               <div className="interrogation">?</div>
             </div>
           </div>
         </div>
+
         <div id="subSubConfig">
-          <div className="selected_form" id="maquinas_config">
-            <div className="selected_head center">
-              <h3>Equipo (Estado)</h3>
-              <div className="columns">
-                <div className="button_arrow_down">
-                  <div />
+          {Object.entries(filters).map(([stateName, valuesMap]) => {
+            const isOpen = openStates[stateName];
+            const allChecked = Array.from(valuesMap.values()).every(Boolean);
+
+            return (
+              <div
+                key={stateName}
+                className="selected_form"
+                id={`${stateName}_config`}
+              >
+                <div
+                  className="selected_head center"
+                  onClick={() => toggleSection(stateName)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <h3>{stateName}</h3>
+                  <div className="columns">
+                    <div className="button_arrow_down">
+                      <div />
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="search_section"
+                  style={{ display: isOpen ? 'block' : 'none' }}
+                >
+                  <div>
+                    <input
+                      type="checkbox"
+                      className="toggle_all"
+                      checked={allChecked}
+                      onChange={(e) => {
+                        const newMap = new Map<string, boolean>();
+                        for (const [key] of valuesMap) {
+                          newMap.set(key, e.target.checked);
+                        }
+                        setFilters((prev) => ({
+                          ...prev,
+                          [stateName]: newMap,
+                        }));
+                      }}
+                    />
+                    <label>Todos</label>
+                  </div>
+
+                  <div className="rows">
+                    {Array.from(valuesMap).map(([value, checked]) => (
+                      <div key={value}>
+                        <input
+                          type="checkbox"
+                          id={`${stateName}_${value}`}
+                          name={value}
+                          value={value}
+                          checked={checked}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              [stateName]: new Map(prev[stateName]).set(
+                                value,
+                                e.target.checked
+                              ),
+                            }));
+                          }}
+                        />
+                        <label htmlFor={`${stateName}_${value}`}>{value}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            {/*Search de Select*/}
-            <div className="search_section" style={{ display: 'none' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  className="toggle_all"
-                  defaultChecked=""
-                />
-                <label>Todos</label>
-                {/*<input type="text">*/}
-              </div>
-              <div className="rows">
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny2"
-                    defaultValue="Iny2"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny2">
-                    Iny2 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny3"
-                    defaultValue="Iny3"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny3">
-                    Iny3 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny4"
-                    defaultValue="Iny4"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny4">
-                    Iny4 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny6"
-                    defaultValue="Iny6"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny6">
-                    Iny6 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny7"
-                    defaultValue="Iny7"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny7">
-                    Iny7 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny8"
-                    defaultValue="Iny8"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny8">
-                    Iny8 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny10"
-                    defaultValue="Iny10"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny10">
-                    Iny10 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny11"
-                    defaultValue="Iny11"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny11">
-                    Iny11 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny12"
-                    defaultValue="Iny12"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny12">
-                    Iny12 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name="Iny13"
-                    defaultValue="Iny13"
-                    defaultChecked=""
-                  />
-                  <label htmlFor="Iny13">
-                    Iny13 (<span style={{ color: 'green' }}>On</span>)
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="selected_form" id="operarios_config">
-            <div className="selected_head center">
-              <h3>Operario</h3>
-              <div className="columns">
-                <div className="button_arrow_down">
-                  <div />
-                </div>
-              </div>
-            </div>
-            {/*Search de Select*/}
-            <div className="search_section" style={{ display: 'none' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  className="toggle_all"
-                  defaultChecked=""
-                />
-                <label>Todos</label>
-                {/*<input type="text">*/}
-              </div>
-              <div className="rows">
-                <div>
-                  <input
-                    type="checkbox"
-                    name={0}
-                    defaultValue={0}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={0}>0 (Iny: 3, 4, 6, 7, 8, 11, 12)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={184}
-                    defaultValue={184}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={184}>184 (Iny: 12)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={186}
-                    defaultValue={186}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={186}>186 (Iny: 3)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={189}
-                    defaultValue={189}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={189}>189 (Iny: 13)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={626}
-                    defaultValue={626}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={626}>626 (Iny: 7)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={652}
-                    defaultValue={652}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={652}>652 (Iny: 11)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={653}
-                    defaultValue={653}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={653}>653 (Iny: 6, 10)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={654}
-                    defaultValue={654}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={654}>654 (Iny: 13)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={661}
-                    defaultValue={661}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={661}>661 (Iny: 8)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={664}
-                    defaultValue={664}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={664}>664 (Iny: 2)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={668}
-                    defaultValue={668}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={668}>668 (Iny: 4)</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="selected_form" id="ordenes_config">
-            <div className="selected_head center">
-              <h3>Orden</h3>
-              <div className="columns">
-                <div className="button_arrow_down">
-                  <div />
-                </div>
-              </div>
-            </div>
-            {/*Search de Select*/}
-            <div className="search_section" style={{ display: 'none' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  className="toggle_all"
-                  defaultChecked=""
-                />
-                <label>Todos</label>
-                {/*<input type="text">*/}
-              </div>
-              <div className="rows">
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18360}
-                    defaultValue={18360}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18360}>18360 (Iny: 11)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18542}
-                    defaultValue={18542}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18542}>18542 (Iny: 13)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18621}
-                    defaultValue={18621}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18621}>18621 (Iny: 7)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18622}
-                    defaultValue={18622}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18622}>18622 (Iny: 12)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18623}
-                    defaultValue={18623}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18623}>18623 (Iny: 2)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18630}
-                    defaultValue={18630}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18630}>18630 (Iny: 6)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18631}
-                    defaultValue={18631}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18631}>18631 (Iny: 4)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18683}
-                    defaultValue={18683}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18683}>18683 (Iny: 10)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18709}
-                    defaultValue={18709}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18709}>18709 (Iny: 3)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={18713}
-                    defaultValue={18713}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={18713}>18713 (Iny: 8)</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="selected_form" id="lotes_config">
-            <div className="selected_head center">
-              <h3>Lote</h3>
-              <div className="columns">
-                <div className="button_arrow_down">
-                  <div />
-                </div>
-              </div>
-            </div>
-            {/*Search de Select*/}
-            <div className="search_section" style={{ display: 'none' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  className="toggle_all"
-                  defaultChecked=""
-                />
-                <label>Todos</label>
-                {/*<input type="text">*/}
-              </div>
-              <div className="rows">
-                <div>
-                  <input
-                    type="checkbox"
-                    name={4914}
-                    defaultValue={4914}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={4914}>4914 (Iny: 11)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={4988}
-                    defaultValue={4988}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={4988}>4988 (Iny: 13)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={5011}
-                    defaultValue={5011}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={5011}>5011 (Iny: 2, 7, 8, 12)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={5015}
-                    defaultValue={5015}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={5015}>5015 (Iny: 4, 6)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={5035}
-                    defaultValue={5035}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={5035}>5035 (Iny: 10)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={5045}
-                    defaultValue={5045}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={5045}>5045 (Iny: 3)</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="selected_form" id="colores_config">
-            <div className="selected_head center">
-              <h3>Molde</h3>
-              <div className="columns">
-                <div className="button_arrow_down">
-                  <div />
-                </div>
-              </div>
-            </div>
-            {/*Search de Select*/}
-            <div className="search_section" style={{ display: 'none' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  className="toggle_all"
-                  defaultChecked=""
-                />
-                <label>Todos</label>
-                {/*<input type="text">*/}
-              </div>
-              <div className="rows">
-                <div>
-                  <input
-                    type="checkbox"
-                    name={6630}
-                    defaultValue={6630}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={6630}>6630 (Iny: 10)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8511}
-                    defaultValue={8511}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8511}>8511 (Iny: 6)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8513}
-                    defaultValue={8513}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8513}>8513 (Iny: 4)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8572}
-                    defaultValue={8572}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8572}>8572 (Iny: 12)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8584}
-                    defaultValue={8584}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8584}>8584 (Iny: 8)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8586}
-                    defaultValue={8586}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8586}>8586 (Iny: 7)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8587}
-                    defaultValue={8587}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8587}>8587 (Iny: 2)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8611}
-                    defaultValue={8611}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8611}>8611 (Iny: 3)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={8930}
-                    defaultValue={8930}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={8930}>8930 (Iny: 11)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={9401}
-                    defaultValue={9401}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={9401}>9401 (Iny: 13)</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="selected_form" id="materiales_config">
-            <div className="selected_head center">
-              <h3>Material</h3>
-              <div className="columns">
-                <div className="button_arrow_down">
-                  <div />
-                </div>
-              </div>
-            </div>
-            {/*Search de Select*/}
-            <div className="search_section" style={{ display: 'none' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  className="toggle_all"
-                  defaultChecked=""
-                />
-                <label>Todos</label>
-                {/*<input type="text">*/}
-              </div>
-              <div className="rows">
-                <div>
-                  <input
-                    type="checkbox"
-                    name={5}
-                    defaultValue={5}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={5}>5 (Iny: 10)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={10}
-                    defaultValue={10}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={10}>10 (Iny: 13)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={16}
-                    defaultValue={16}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={16}>16 (Iny: 2, 3, 4, 8)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={22}
-                    defaultValue={22}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={22}>22 (Iny: 7)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={30}
-                    defaultValue={30}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={30}>30 (Iny: 6, 12)</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    name={44}
-                    defaultValue={44}
-                    defaultChecked=""
-                  />
-                  <label htmlFor={44}>44 (Iny: 11)</label>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

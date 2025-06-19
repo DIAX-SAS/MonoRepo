@@ -1,6 +1,11 @@
 import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
+import type { GraphData } from "../../app/dashboard-new/dashboard.types";
+import {CollapsibleList} from "../core/CollapsibleList"
 
-const Calidad = (): React.FC => {
+interface CalidadProps {
+  data: GraphData["indicadores"];
+}
+const Calidad:React.FC<CalidadProps> = ({data}) => {
   return (
     <div className="cube_container" id="Calidad">
       <div className="title_container">
@@ -15,13 +20,14 @@ const Calidad = (): React.FC => {
         <ul className="legend" id="legendCalidad"></ul>
         <div id="lineCalidadContainer" className="lineContainer">
           <div id="lineCalidad" className="js-plotly-plot">
-            <TimeSeriesLineChart />
+            <TimeSeriesLineChart labelY="unidades" series={data?.MultiLine}/>
+            <CollapsibleList data={data?.MultiPie} unit="unidades"/>
           </div>
         </div>
         <div className="rows center full_width ">
           <div id="pieCalidadContainer" className="pieContainer margin_gd">
             <div id="pieCalidad" className="js-plotly-plot">
-              <MultiLayerPieChart />
+              <MultiLayerPieChart unit="unidades" data={data?.MultiPie}/>
             </div>
           </div>
         </div>

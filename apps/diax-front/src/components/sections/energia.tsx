@@ -1,6 +1,11 @@
-import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
+import { MultiLayerPieChart, TimeSeriesLineChart, StackedBarChart } from '../graphs/index';
+import type { GraphData } from "../../app/dashboard-new/dashboard.types";
+import {CollapsibleList} from "../core/CollapsibleList"
 
-const Energia = (): React.FC => {
+interface EnergiaProps {
+  data: GraphData["energia"];
+}
+const Energia:React.FC<EnergiaProps> = ({data}) => {
   return (
     <div className="cube_container" id="Energia">
       <div className="title_container">
@@ -15,13 +20,14 @@ const Energia = (): React.FC => {
         <div className="columns center full_width ">
           <div id="pieEnergiaContainer" className="pieContainer">
             <div id="pieEnergia">
-              <MultiLayerPieChart />
+              <StackedBarChart  keys={['motor', 'maquina']} labelY="KW" data={data?.StackedBar} />
             </div>
           </div>
         </div>
         <div id="lineEnergiaContainer" className="lineContainer">
           <div id="lineEnergia">
-            <TimeSeriesLineChart />
+            <TimeSeriesLineChart labelY="KW" series={data?.MultiLine} />
+            <CollapsibleList data={data?.MultiPie} unit="KW" />
           </div>
         </div>
         <ul className="legend" id="legendEnergia"></ul>
