@@ -43,8 +43,8 @@ const getColor = (d: d3.HierarchyRectangularNode<ChartNode>) => {
 };
 
 const MultiLayerPieChart: React.FC<PieChartProps> = ({
-  width = 400,
-  height = 400,
+  width = 300,
+  height = 300,
   data,
   unit,
 }) => {

@@ -20,7 +20,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   height = 400,
   keys,
   data,
-  labelY
+  labelY,
 }) => {
   const ref = useRef<SVGSVGElement | null>(null);
 
@@ -106,7 +106,12 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     // X Axis
     g.append('g')
       .attr('transform', `translate(0,${chartHeight})`)
-      .call(d3.axisBottom(xScale));
+      .call(d3.axisBottom(xScale))
+      .selectAll('text')
+      .style('text-anchor', 'end')
+      .attr('dx', '-0.6em')
+      .attr('dy', '0.15em')
+      .attr('transform', 'rotate(-45)');
 
     // Y Axis
     g.append('g').call(d3.axisLeft(yScale));
@@ -121,9 +126,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       .text(labelY); // Change to your desired label
 
     // Legend
-    const legend = svg
+    // Legend inside top-right corner of the chart area
+    const legend = g
       .append('g')
-      .attr('transform', `translate(${chartWidth + margin.left + 10}, 20)`);
+      .attr('transform', `translate(${chartWidth - 80}, 0)`); // Adjust position as needed
 
     keys.forEach((key, i) => {
       const legendRow = legend
