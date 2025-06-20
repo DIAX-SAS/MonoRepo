@@ -1,9 +1,4 @@
-import {
-  GraphData,
-  PIMM,
-  ReducePIMMs,
-  type FEPIMM,
-} from './dashboard.types';
+import { GraphData, PIMM, ReducePIMMs, type FEPIMM } from './dashboard.types';
 
 const getCounterValue = (FEPIMM: FEPIMM | PIMM, counterName: string) =>
   Number(FEPIMM.counters.find((c) => c.name === counterName)?.value) || 0;
@@ -28,7 +23,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
     acc_maquina: 0,
     acc_noProg: 0,
     acc_motor: 0,
-    acc_timestamp: 0
+    acc_timestamp: 0,
   });
 
   for (const fepimm of filteredPIMMs) {
@@ -42,8 +37,6 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
   const minTimestamp = Math.min(...timestamps);
   const maxTimestamp = Math.max(...timestamps);
   const timeOverall = (maxTimestamp - minTimestamp) / 1000; // en minutos
-
-
 
   // Indicadores
   type OEE = {
@@ -147,10 +140,10 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
 
   graphData.calidad.MultiLine = [];
 
-  const performanceData = []
-  const availabilityData = []
-  const qualityData = []
-  const efficiencyData = []
+  const performanceData = [];
+  const availabilityData = [];
+  const qualityData = [];
+  const efficiencyData = [];
 
   for (let i = 0; i < maxFEPIMMsAmount; i++) {
     const OEEMetrics: OEEMetrics = initOEEMetrics(groupedByPLC, i);
@@ -164,10 +157,9 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
       OEEMetrics.acc_calidad +
       OEEMetrics.acc_montaje;
 
-    if(totalOperationalTime <= totalLosses){
-      totalOperationalTime = 2 * 60 * 60 - OEEMetrics.acc_noProg;
+    if (totalOperationalTime <= totalLosses) {
+      totalOperationalTime = 2 * 60 * 60 * amountPLCs - OEEMetrics.acc_noProg;
     }
-
     // Aseguramos que no haya división por cero
     const safeDivide = (numerator: number, denominator: number) =>
       denominator === 0 ? 0 : numerator / denominator;
@@ -186,8 +178,6 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
           1000
       ) / 10;
 
-      console.log("availability:", availability," TotalOperationTime:", totalOperationalTime, " TotalLosses:", totalLosses)
-
     const quality =
       Math.round(
         safeDivide(
@@ -198,12 +188,14 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         ) * 1000
       ) / 10;
 
-    const efficiency = Number((
-      (availability / 100) *
-      (performance / 100) *
-      (quality / 100) *
-      100
-    ).toFixed(1));
+    const efficiency = Number(
+      (
+        (availability / 100) *
+        (performance / 100) *
+        (quality / 100) *
+        100
+      ).toFixed(1)
+    );
 
     OEE = {
       performance,
@@ -871,6 +863,28 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
       data: fepimms.map((fepimm) => ({
         timestamp: fepimm.timestamp,
         value: getCounterValue(fepimm, 'Minutos Fin Produccion'),
+      })),
+    });
+
+    graphData.ciclos.MultiLine?.push({
+      name: 'min PIMM ' + plcId,
+      data: fepimms.map((fepimm) => ({
+        timestamp: fepimm.timestamp,
+        value: getCounterValue(fepimm, 'Segundos Ciclo Estandar -'),
+      })),
+    });
+    graphData.ciclos.MultiLine?.push({
+      name: 'max PIMM ' + plcId,
+      data: fepimms.map((fepimm) => ({
+        timestamp: fepimm.timestamp,
+        value: getCounterValue(fepimm, 'Segundos Ciclo Estandar +'),
+      })),
+    });
+    graphData.ciclos.MultiLine?.push({
+      name: 'mean PIMM ' + plcId,
+      data: fepimms.map((fepimm) => ({
+        timestamp: fepimm.timestamp,
+        value: getCounterValue(fepimm, 'Segundos Ciclo Estandar'),
       })),
     });
   });

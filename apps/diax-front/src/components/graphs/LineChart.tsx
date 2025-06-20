@@ -74,7 +74,7 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({
       .attr('transform', 'rotate(-45)')
       .style('text-anchor', 'end');
 
-    const yAxis = svg.append('g').call(d3.axisLeft(yScale));
+    svg.append('g').call(d3.axisLeft(yScale));
 
     svg
       .append('text')
@@ -129,7 +129,7 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({
       idleTimeout = null;
     }
 
-    function updateChart(event: any) {
+    function updateChart(event: never) {
       const extent = event.selection;
       if (!extent) {
         if (!idleTimeout) {

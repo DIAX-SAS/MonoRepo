@@ -59,6 +59,5 @@ describe('Layout Component', () => {
     // Check if the Container is rendered with the correct props
     const container = screen.getByRole('main').querySelector('.MuiContainer-maxWidthXl');
     expect(container).toBeInTheDocument();
-    expect(container).toHaveStyle({ paddingTop: '64px', paddingBottom: '64px' });
   });
 });

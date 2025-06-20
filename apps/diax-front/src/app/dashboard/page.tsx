@@ -1,14 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import {
-  PolarChart,
-  TimeSeriesLineChart,
-  FilterForm,
-  CardFactor,
-  Table,
-  SectionMetric,
-} from '../../components/graphs';
+import Header from '../../components/sections/header';
+import Configuration from '../../components/sections/configuracion';
+import Indicadores from '../../components/sections/indicadores';
+import Calidad from '../../components/sections/calidad';
+import Disponibilidad from '../../components/sections/disponibilidad';
+import Rendimiento from '../../components/sections/rendimiento';
+import Ciclos from '../../components/sections/ciclos';
+import Montaje from '../../components/sections/montaje';
+import Material from '../../components/sections/material';
+import Energia from '../../components/sections/energia';
 import {
   GraphData,
   PimmsStepUnit,
@@ -17,20 +19,13 @@ import {
   type Parameters,
   PIMM,
 } from './dashboard.types';
-import {
-  Grid2,
-  Grid,
-  Card,
-  CardHeader,
-  CardContent,
-  Box,
-} from '../../components/core';
 import { fetchPIMMs } from '../../data-access/diax-back/diax-back';
 import {
   connectToMQTTBroker,
   closeConnectionToMQTTBroker,
 } from '../../data-access/mqtt-broker/mqtt-broker';
 
+import styles from './styles.module.scss';
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
     equipos: new Map<string, boolean>(),
@@ -42,7 +37,7 @@ export default function Page(): React.JSX.Element {
   });
 
   const [parameters, setParameters] = React.useState<Parameters>({
-    live: false,
+    live: true,
     startDate: new Date().getTime(),
     endDate: new Date().getTime(),
     step: PimmsStepUnit.SECOND,
@@ -157,14 +152,14 @@ export default function Page(): React.JSX.Element {
           getCounterValue(pimm, 'Segundos Ultimo Ciclo Total') -
           getCounterValue(pimm, 'Segundos Ultimo Ciclo Puerta'),
         producidas: Math.abs(
-          duration - (
-            getCounterValue(pimm, 'Minutos No Programada') +
-            getCounterValue(pimm, 'Minutos Mantto Maquina') +
-            getCounterValue(pimm, 'Minutos Mantto Molde') +
-            getCounterValue(pimm, 'Minutos Sin Operario') +
-            getCounterValue(pimm, 'Minutos Por Material') +
-            getCounterValue(pimm, 'Minutos Calidad') +
-            getCounterValue(pimm, 'Minutos Montaje'))
+          duration -
+            (getCounterValue(pimm, 'Minutos No Programada') +
+              getCounterValue(pimm, 'Minutos Mantto Maquina') +
+              getCounterValue(pimm, 'Minutos Mantto Molde') +
+              getCounterValue(pimm, 'Minutos Sin Operario') +
+              getCounterValue(pimm, 'Minutos Por Material') +
+              getCounterValue(pimm, 'Minutos Calidad') +
+              getCounterValue(pimm, 'Minutos Montaje'))
         ),
       };
     }
@@ -271,7 +266,7 @@ export default function Page(): React.JSX.Element {
       setParameters((prevParameters) => ({
         ...prevParameters,
         startDate: new Date().getTime() - 120 * 60 * 1000, // 2 hours ago,
-        endDate: new Date().getTime() 
+        endDate: new Date().getTime(),
       }));
     }
   }, [parameters.live]);
@@ -301,174 +296,41 @@ export default function Page(): React.JSX.Element {
       });
     });
 
-    (async () => {
-      if (parameters.live) {
-        connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
-          const pimmData = JSON.parse(payload.toString());
-          setPIMMs((prevPIMMs) => {
-            return [...prevPIMMs, pimmData].sort(
-              (a, b) => a.timestamp - b.timestamp
-            );
-          });
+    if (parameters.live) {
+      connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
+        const pimmData = JSON.parse(payload.toString());
+        setPIMMs((prevPIMMs) => {
+          return [...prevPIMMs, pimmData].sort(
+            (a, b) => a.timestamp - b.timestamp
+          );
         });
-      } else {
-        closeConnectionToMQTTBroker('PIMMStateTopic');
-      }
-    })();
+      });
+    } else {
+      closeConnectionToMQTTBroker('PIMMStateTopic');
+    }
   }, [parameters]);
 
   return (
-    <Grid2 container spacing={3}>
-      {/* Settings Section */}
-      <Grid2 size={{ xs: 12, sm: 12 }}>
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader
-            title="Configuración"
-            sx={{ borderBottom: '1px solid #ddd' }}
-          />
-          <CardContent>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <FilterForm
-                filters={filters}
-                setFilters={setFilters}
-                parameters={parameters}
-                setParameters={setParameters}
-              />
-            </Box>
-          </CardContent>
-        </Card>
-        {/* Indicadores Section */}
-        <Card sx={{ p: 2, mb: 3 }}>
-          <CardHeader
-            title="Indicadores"
-            sx={{ borderBottom: '1px solid #ddd' }}
-          />
-          <CardContent>
-            <Grid
-              container
-              direction="row"
-              sx={{
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Grid sx={{ xs: 6, md: 6 }}>
-                <Box
-                  display="grid"
-                  gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
-                  gap={2}
-                >
-                  <CardFactor
-                    value={graphData?.indicadores?.OEE?.performance}
-                    title="Rendimiento"
-                  />
-                  <CardFactor
-                    value={graphData?.indicadores?.OEE?.availability}
-                    title="Disponibilidad"
-                  />
-                  <CardFactor
-                    value={graphData?.indicadores?.OEE?.quality}
-                    title="Calidad"
-                  />
-                  <CardFactor
-                    value={graphData?.indicadores?.OEE?.efficiency}
-                    title="Eficiencia"
-                  />
-                </Box>
-              </Grid>
-              <Grid sx={{ xs: 6, md: 6 }}>
-                <PolarChart data={graphData?.indicadores.Polar} />
-              </Grid>
-              <Grid>
-                <TimeSeriesLineChart
-                  series={graphData?.indicadores.MultiLine}
-                  labelY="OEE(%)"
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-        {/* Montaje Section */}
-        <Card>
-          <CardHeader title="Montaje" sx={{ borderBottom: '1px solid #ddd' }} />
-          <CardContent>
-            <Table data={graphData?.montaje.Mounting} />
-          </CardContent>
-        </Card>
-      </Grid2>
-
-      <Grid container spacing={3} columns={{ xs: 4, sm: 8, md: 12 }}>
-        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
-          <SectionMetric
-            title="Disponibilidad"
-            data={{
-              linechart: graphData?.disponibilidad.MultiLine,
-              piechart: graphData?.disponibilidad.MultiPie,
-              unit: 'minutos',
-            }}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
-          <SectionMetric
-            title="Calidad"
-            data={{
-              linechart: graphData?.calidad.MultiLine,
-              piechart: graphData?.calidad.MultiPie,
-              unit: 'unidades',
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
-          <SectionMetric
-            title="Rendimiento"
-            data={{
-              linechart: graphData?.rendimiento.MultiLine,
-              piechart: graphData?.rendimiento.MultiPie,
-              unit: 'inyecciones',
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
-          <SectionMetric
-            title="Energía"
-            data={{
-              linechart: graphData?.energia.MultiLine,
-              piechart: graphData?.energia.MultiPie,
-              barchart: graphData?.energia.StackedBar,
-              unit: 'kW',
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
-          <SectionMetric
-            title="Material"
-            options={['PIMM', 'Molde']}
-            data={{
-              linechart: [
-                graphData?.material.MultiLine,
-                graphData?.molde.MultiLine,
-              ],
-              piechart: [
-                graphData?.material.MultiPie,
-                graphData?.molde.MultiPie,
-              ],
-              unit: 'gramos',
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 2, sm: 4, md: 4 }}>
-          <SectionMetric
-            title="Ciclos"
-            data={{
-              linechart: graphData?.ciclos.MultiLine,
-              piechart: graphData?.ciclos.MultiPie,
-              unit: 'segundos',
-            }}
-          />
-        </Grid>
-        <Grid></Grid>
-      </Grid>
-    </Grid2>
+    <div className={`${styles.noselect} ${styles.dashboard}`}>
+      <Header />
+      <Configuration
+        filters={filters}
+        setFilters={setFilters}
+        parameters={parameters}
+        setParameters={setParameters}
+      />
+      <Indicadores data={graphData?.indicadores} />
+      <div className={styles.subdashboard}>
+        <Calidad data={graphData?.calidad} />
+        <Disponibilidad data={graphData?.disponibilidad} />
+        <Rendimiento data={graphData?.rendimiento} />
+        <Energia data={graphData?.energia} />
+        <div>
+          <Ciclos data={graphData?.ciclos} />
+          <Montaje data={graphData?.montaje} />
+        </div>
+        <Material data={[graphData?.material, graphData?.molde]} />
+      </div>
+    </div>
   );
 }
