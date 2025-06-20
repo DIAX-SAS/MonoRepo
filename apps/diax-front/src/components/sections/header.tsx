@@ -1,16 +1,17 @@
 import React from 'react';
 import Image from 'next/image';
+import styles from "../../app/dashboard-new/styles.module.scss"
 
 const Header: React.FC = () => {
   return (
-    <div className="cube_container" id="title">
+    <div className={`${styles.cube_container} ${styles.title}`}>
       <Image src="/assets/logo.svg" alt="Company Logo" width={100} height={100} />
-      <h1>Equipos de Inyeccion</h1>
-      <div className="rows">
-        <h2>
+      <h1 className={`${styles.h1}`}>Equipos de Inyeccion</h1>
+      <div className={styles.rows}>
+        <h2 className={`${styles.h2}`}>
           Live<span>Dash</span>
         </h2>
-        <h2 id="version">2.0.2.2</h2>
+        <h2 className={`${styles.legend} ${styles.h2}`}>2.0.2.2</h2>
       </div>
     </div>
   );

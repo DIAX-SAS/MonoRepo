@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { GraphData } from '../../app/dashboard-new/dashboard.types';
+import styles from "../../app/dashboard-new/styles.module.scss"
 
 interface MontajeProps {
   data: GraphData['montaje'] | undefined;
@@ -13,42 +14,51 @@ const Montaje: React.FC<MontajeProps> = ({ data }) => {
     setSelectedPlcId(e.target.value);
   };
 
-  // Extract all unique PLC IDs from data
   const plcIds = Array.from(
     new Set(
-      data?.Mounting?.map((item) =>
-        item.states.find((state) => state.name === 'Numero Inyectora')?.value
+      data?.Mounting?.map(
+        (item) =>
+          item.states.find((state) => state.name === 'Numero Inyectora')?.value
       ).filter(Boolean)
     )
   );
 
-  // Find selected machine
-  const selectedMachine = data?.Mounting?.find((item) =>
-    item.states.find((state) => state.name === 'Numero Inyectora')?.value?.toString() === selectedPlcId
+  const selectedMachine = data?.Mounting?.find(
+    (item) =>
+      item.states
+        .find((state) => state.name === 'Numero Inyectora')
+        ?.value?.toString() === selectedPlcId
   );
 
-  // Utility to get a value by state name
   const getStateValue = (name: string) =>
     selectedMachine?.states.find((state) => state.name === name)?.value ?? '-';
 
   return (
-    <div className="cube_container" id="Montaje">
-      <div className="title_container">
-        <h2>Montaje</h2>
-        <div className="columns">
-          <div className="button_minimize_down button_main center">
+    <div className={`${styles.cube_container} ${styles.Montaje}`}>
+      <div className={styles.title_container}>
+        <h2 className={`${styles.h2}`}>Montaje</h2>
+        <div className={styles.columns}>
+          <div
+            className={`${styles.button_minimize_down} ${styles.button_main} ${styles.center}`}
+          >
             <div />
           </div>
         </div>
       </div>
 
-      <div className="center full_width rows">
-        <div id="MontajePlcCont" className="rows center">
-          <h2>Máquina</h2>
-          <select id="MontajePlc" onChange={handleChange} value={selectedPlcId}>
-            <option value="">Seleccione una máquina</option>
+      <div className={`${styles.center} ${styles.full_width} ${styles.rows}`}>
+        <div
+          className={`${styles.rows} ${styles.center} ${styles.MontajePlcCont}`}
+        >
+          <h2 className={`${styles.h2}`}>Máquina</h2>
+          <select
+            className={`${styles.MontajePlc} ${styles.select}`}
+            onChange={handleChange}
+            value={selectedPlcId}
+          >
+            <option className={`${styles.option}`} value="">Seleccione una máquina</option>
             {plcIds.map((plcId) => (
-              <option key={plcId} value={String(plcId)}>
+              <option className={`${styles.option}`} key={plcId} value={String(plcId)}>
                 Iny {plcId}
               </option>
             ))}
@@ -62,21 +72,21 @@ const Montaje: React.FC<MontajeProps> = ({ data }) => {
           height={200}
         />
 
-        <div id="montajeLabels">
-          <div id="montajeOrden">
-            Orden: <span>{getStateValue('Orden')}</span>
+        <div className={styles.montajeLabels}>
+          <div className={styles.montajeOrden}>
+            Orden: <span className={`${styles.span}`}>{getStateValue('Orden')}</span>
           </div>
-          <div id="montajeOperario">
-            Operario: <span>{getStateValue('Operario')}</span>
+          <div className={styles.montajeOperario}>
+            Operario: <span className={`${styles.span}`}>{getStateValue('Operario')}</span>
           </div>
-          <div id="montajeLote">
-            Lote: <span>{getStateValue('Lote')}</span>
+          <div className={styles.montajeLote}>
+            Lote: <span className={`${styles.span}`}>{getStateValue('Lote')}</span>
           </div>
-          <div id="montajeMolde">
-            Molde: <span>{getStateValue('Molde')}</span>
+          <div className={styles.montajeMolde}>
+            Molde: <span className={`${styles.span}`}>{getStateValue('Molde')}</span>
           </div>
-          <div id="montajeMaterial">
-            Material: <span>{getStateValue('Material')}</span>
+          <div className={styles.montajeMaterial}>
+            Material: <span className={`${styles.span}`}>{getStateValue('Material')}</span>
           </div>
         </div>
       </div>

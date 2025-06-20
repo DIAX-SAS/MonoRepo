@@ -10,7 +10,7 @@ import Rendimiento from '../../components/sections/rendimiento';
 import Ciclos from '../../components/sections/ciclos';
 import Montaje from '../../components/sections/montaje';
 import Material from '../../components/sections/material';
-import Energia from "../../components/sections/energia";
+import Energia from '../../components/sections/energia';
 import {
   GraphData,
   PimmsStepUnit,
@@ -25,7 +25,7 @@ import {
   closeConnectionToMQTTBroker,
 } from '../../data-access/mqtt-broker/mqtt-broker';
 
-import './style.css';
+import styles from './styles.module.scss';
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
     equipos: new Map<string, boolean>(),
@@ -296,24 +296,22 @@ export default function Page(): React.JSX.Element {
       });
     });
 
-    (async () => {
-      if (parameters.live) {
-        connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
-          const pimmData = JSON.parse(payload.toString());
-          setPIMMs((prevPIMMs) => {
-            return [...prevPIMMs, pimmData].sort(
-              (a, b) => a.timestamp - b.timestamp
-            );
-          });
+    if (parameters.live) {
+      connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
+        const pimmData = JSON.parse(payload.toString());
+        setPIMMs((prevPIMMs) => {
+          return [...prevPIMMs, pimmData].sort(
+            (a, b) => a.timestamp - b.timestamp
+          );
         });
-      } else {
-        closeConnectionToMQTTBroker('PIMMStateTopic');
-      }
-    })();
+      });
+    } else {
+      closeConnectionToMQTTBroker('PIMMStateTopic');
+    }
   }, [parameters]);
 
   return (
-    <div id="dashboard" className="noselect">
+    <div className={`${styles.noselect} ${styles.dashboard}`}>
       <Header />
       <Configuration
         filters={filters}
@@ -322,11 +320,11 @@ export default function Page(): React.JSX.Element {
         setParameters={setParameters}
       />
       <Indicadores data={graphData?.indicadores} />
-      <div id="subdashboard">
+      <div className={styles.subdashboard}>
         <Calidad data={graphData?.calidad} />
         <Disponibilidad data={graphData?.disponibilidad} />
         <Rendimiento data={graphData?.rendimiento} />
-        <Energia data={graphData?.energia}/>
+        <Energia data={graphData?.energia} />
         <div>
           <Ciclos data={graphData?.ciclos} />
           <Montaje data={graphData?.montaje} />

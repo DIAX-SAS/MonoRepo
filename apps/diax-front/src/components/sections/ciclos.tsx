@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
 import type { GraphData } from '../../app/dashboard-new/dashboard.types';
 import {CollapsibleList} from "../core/CollapsibleList"
-
+import styles from "../../app/dashboard-new/styles.module.scss"
 interface CiclosProps {
   data: GraphData['ciclos'];
 }
@@ -43,19 +43,19 @@ const Ciclos: React.FC<CiclosProps> = ({ data }) => {
   const currentData = selectedPlcId ? infoByPlcId[selectedPlcId] : undefined;
 
   return (
-    <div className="cube_container" id="Ciclos">
-      <div className="title_container">
-        <h2>Ciclos</h2>
-        <div className="columns">
-          <div className="button_minimize_down button_main center">
+    <div className={`${styles.cube_container} ${styles.Ciclos}`}>
+      <div className={`${styles.title_container}`}>
+        <h2 className={`${styles.h2}`}>Ciclos</h2>
+        <div className={`${styles.columns}`}>
+          <div className={`${styles.button_minimize_down} ${styles.button_main} ${styles.center}`}>
             <div />
           </div>
         </div>
       </div>
-      <div className="center full_width rows">
-        <div className="columns center full_width">
-          <div id="pieCiclosContainer" className="pieContainer">
-            <div id="pieCiclos">
+      <div className={`${styles.center} ${styles.full_width} ${styles.rows}`}>
+        <div className={`${styles.columns} ${styles.center} ${styles.full_width}`}>
+          <div  className={`${styles.pieContainer} ${styles.pieCiclosContainer}`}>
+            <div className={`${styles.pieCiclos}`}>
               {currentData && (
                 <MultiLayerPieChart
                   unit="segundos"
@@ -64,10 +64,10 @@ const Ciclos: React.FC<CiclosProps> = ({ data }) => {
               )}
             </div>
           </div>
-          <ul className="legend" id="legendCiclos"></ul>
+          <ul className={`${styles.legend} ${styles.legendCiclos} ${styles.ul}`}></ul>
         </div>
-        <div id="lineCiclosContainer" className="lineContainer">
-          <div id="lineCiclos">
+        <div className={`${styles.lineContainer} ${styles.lineCiclosContainer}`}>
+          <div className={`${styles.lineCiclos}`}>
             {currentData && (
               <>
                 <TimeSeriesLineChart
@@ -79,18 +79,18 @@ const Ciclos: React.FC<CiclosProps> = ({ data }) => {
             )}
           </div>
         </div>
-        <div id="ciclePlcCont" className="rows center">
-          <h2>Maquina</h2>
+        <div  className={`${styles.rows} ${styles.center} ${styles.ciclePlcCont}`}>
+          <h2 className={`${styles.h2}`}>Maquina</h2>
           <select
-            id="ciclePlc"
+            className={`${styles.ciclePlc} ${styles.select}`}
             onChange={(e) => setSelectedPlcId(e.target.value)}
             defaultValue=""
           >
-            <option disabled value="">
+            <option className={`${styles.option}`} disabled value="">
               Selecciona una Inyectora
             </option>
             {Object.keys(infoByPlcId).map((plcId) => (
-              <option key={plcId} value={plcId}>
+              <option className={`${styles.option}`} key={plcId} value={plcId}>
                 Iny {plcId}
               </option>
             ))}

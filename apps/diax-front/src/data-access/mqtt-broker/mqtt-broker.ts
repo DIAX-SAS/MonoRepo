@@ -45,7 +45,7 @@ export const connectToMQTTBroker = async (
   return client;
 };
 
-export const closeConnectionToMQTTBroker = (
+export const closeConnectionToMQTTBroker = async (
   topics: string[] | string
 ): void => {
   if (!clientMQTT) return;
