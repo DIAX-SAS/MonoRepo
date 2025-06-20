@@ -148,7 +148,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
   for (let i = 0; i < maxFEPIMMsAmount; i++) {
     const OEEMetrics: OEEMetrics = initOEEMetrics(groupedByPLC, i);
 
-    const totalOperationalTime = timeTotal - OEEMetrics.acc_noProg;
+    let totalOperationalTime = timeTotal - OEEMetrics.acc_noProg;
     const totalLosses =
       OEEMetrics.acc_maquina +
       OEEMetrics.acc_molde +
@@ -157,6 +157,9 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
       OEEMetrics.acc_calidad +
       OEEMetrics.acc_montaje;
 
+    if (totalOperationalTime <= totalLosses) {
+      totalOperationalTime = 2 * 60 * 60 * amountPLCs - OEEMetrics.acc_noProg;
+    }
     // Aseguramos que no haya división por cero
     const safeDivide = (numerator: number, denominator: number) =>
       denominator === 0 ? 0 : numerator / denominator;

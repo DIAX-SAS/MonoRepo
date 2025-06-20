@@ -43,6 +43,8 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
   const maxTimestamp = Math.max(...timestamps);
   const timeOverall = (maxTimestamp - minTimestamp) / 1000; // en minutos
 
+
+
   // Indicadores
   type OEE = {
     performance: number;
@@ -153,7 +155,7 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
   for (let i = 0; i < maxFEPIMMsAmount; i++) {
     const OEEMetrics: OEEMetrics = initOEEMetrics(groupedByPLC, i);
 
-    const totalOperationalTime = timeTotal - OEEMetrics.acc_noProg;
+    let totalOperationalTime = timeTotal - OEEMetrics.acc_noProg;
     const totalLosses =
       OEEMetrics.acc_maquina +
       OEEMetrics.acc_molde +
@@ -161,6 +163,10 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
       OEEMetrics.acc_material +
       OEEMetrics.acc_calidad +
       OEEMetrics.acc_montaje;
+
+    if(totalOperationalTime <= totalLosses){
+      totalOperationalTime = 2 * 60 * 60 - OEEMetrics.acc_noProg;
+    }
 
     // Aseguramos que no haya división por cero
     const safeDivide = (numerator: number, denominator: number) =>
@@ -179,6 +185,8 @@ export const calculateGraphData = async (filteredPIMMs: FEPIMM[]) => {
         safeDivide(totalOperationalTime - totalLosses, totalOperationalTime) *
           1000
       ) / 10;
+
+      console.log("availability:", availability," TotalOperationTime:", totalOperationalTime, " TotalLosses:", totalLosses)
 
     const quality =
       Math.round(
