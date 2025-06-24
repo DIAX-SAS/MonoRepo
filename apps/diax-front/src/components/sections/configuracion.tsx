@@ -1,10 +1,11 @@
 import * as React from 'react';
 import {
+  PimmsStepUnit,
   type Filters,
   type Parameters,
 } from '../../app/dashboard/dashboard.types';
 import { DateRangePicker } from '../core';
-import styles from "../../app/dashboard-new/styles.module.scss"
+import styles from '../../app/dashboard/styles.module.scss';
 
 interface ConfigurationProps {
   filters: Filters;
@@ -38,52 +39,45 @@ const Configuration: React.FC<ConfigurationProps> = ({
   };
 
   return (
-    <div className={`${styles.cube_container} ${styles.config}`}>
-      <div className={`${styles.tab_container} ${styles.columns}`}>
-        <div className={`${styles.tab_subcontainer} ${styles.columns}`}>
-          <div className={`${styles.columns} ${styles.center}`}>
-            <span className={`${styles.span}`}>1 Reporte</span>
-            <span className={`${styles.span}`}>&nbsp;&nbsp;✖</span>
-          </div>
-        </div>
-        <div className={styles.center}>
-          <span className={`${styles.span}`}>+</span>
-        </div>
-      </div>
-
-      <div
-        className={styles.title_container}
-        style={{ borderBottom: '2px solid var(--color-negro)' }}
-      >
-        <h2 className={`${styles.titleContainer} ${styles.h2}`}>
-          Configuración <div className={styles.reportTitle}>Live</div>
-        </h2>
+    <div className={`${styles['cube-container']} ${styles.config}`}>
+      <div className={styles['title-container']}>
+        <h2 className={`${styles.h2}`}>Configuración</h2>
         <div className={styles.columns}>
-          <div className={`${styles.relative} ${styles.button_download_parent}`}>
-            <div className={`${styles.button_download_id} ${styles.button_main} ${styles.center}`}>
-              <div className={styles.button_download} />
+          <div
+            className={`${styles.relative} ${styles['button-download-parent']}`}
+          >
+            <div
+              className={`${styles['button-download-id']} ${styles['button-main']} ${styles.center}`}
+            >
+              <div className={styles['button-download']} />
             </div>
-            <div className={`${styles.menu_download} ${styles.noselect}`}>
+            <div className={`${styles['menu-download']} ${styles.noselect}`}>
               <div className={`${styles.columns} ${styles.center}`}>
-                <div className={styles.button_download} />
+                <div className={styles['button-download']} />
                 PDF
               </div>
               <div className={`${styles.columns} ${styles.center}`}>
-                <div className={styles.button_download} />
+                <div className={styles['button-download']} />
                 XLSX
               </div>
             </div>
           </div>
-          <div className={`${styles.button_minimize_down} ${styles.button_main} ${styles.center}`}>
+          <div
+            className={`${styles['button-minimize-down']} ${styles['button-main']} ${styles.center}`}
+          >
             <div />
           </div>
         </div>
       </div>
 
-      <div className={styles.sub_config}>
-        <div className={`${styles.columns} ${styles.center} ${styles.margin_gd} ${styles.rows}`}>
-          <div className={`${styles.left_rows} ${styles.rows} ${styles.rangoCont}`}>
-            <div className={styles.inicio_fin}>Rango</div>
+      <div className={styles['sub-config']}>
+        <div
+          className={`${styles.columns} ${styles.center} ${styles['margin-gd']} ${styles.rows}`}
+        >
+          <div
+            className={`${styles['left-rows']} ${styles.rows} ${styles['rango-cont']}`}
+          >
+            <div className={styles['inicio_fin']}>Rango</div>
             <DateRangePicker
               data-testid="dateRangePicker"
               format="dd MMM yyyy hh:mm:ss aa"
@@ -111,9 +105,15 @@ const Configuration: React.FC<ConfigurationProps> = ({
             />
           </div>
 
-          <div className={`${styles.liveContainer} ${styles.rows} ${styles.padding_pq}`}>
-            <div className={`${styles.columns} ${styles.noselect} ${styles.center}`}>
-              <label className={`${styles.label}`} htmlFor="live">Live</label>
+          <div
+            className={`${styles['live-container']} ${styles.rows} ${styles['padding-pq']}`}
+          >
+            <div
+              className={`${styles['min-cont']} ${styles.columns} ${styles.noselect} ${styles.center}`}
+            >
+              <label className={`${styles.label}`} htmlFor="live">
+                Live
+              </label>
               <input
                 id="live"
                 name="live"
@@ -124,60 +124,63 @@ const Configuration: React.FC<ConfigurationProps> = ({
                   handleChangeParameters('live', e.target.checked)
                 }
               />
-              <div className={styles.interrogation}>?</div>
-            </div>
-
-            <div className={`${styles.minCont} ${styles.columns} ${styles.noselect} ${styles.center}`}>
-              <label className={`${styles.label}`} htmlFor="stepUnit">Unidad</label>
+              <label className={`${styles.label}`} htmlFor="stepUnit">
+                Unidad
+              </label>
               <select
                 id="stepUnit"
                 className={`${styles.select}`}
                 name="step"
                 value={parameters.step}
                 onChange={(e) =>
-                  setParameters((prev) => ({ ...prev, step: e.target.value }))
+                  setParameters((prev) => ({
+                    ...prev,
+                    step: e.target.value as PimmsStepUnit,
+                  }))
                 }
               >
-                <option className={`${styles.option}`} value="second">Segundo</option>
-                <option className={`${styles.option}`} value="minute">Minuto</option>
-                <option className={`${styles.option}`} value="hour">Hora</option>
+                <option className={`${styles.option}`} value="second">
+                  Segundo
+                </option>
+                <option className={`${styles.option}`} value="minute">
+                  Minuto
+                </option>
+                <option className={`${styles.option}`} value="hour">
+                  Hora
+                </option>
               </select>
-              <div className={styles.interrogation}>?</div>
             </div>
           </div>
         </div>
 
-        <div className={styles.subSubConfig}>
+        <div className={styles['sub-sub-config']}>
           {Object.entries(filters).map(([stateName, valuesMap]) => {
             const isOpen = openStates[stateName];
             const allChecked = Array.from(valuesMap.values()).every(Boolean);
 
             return (
-              <div
-                key={stateName}
-                className={styles.selected_form}
-              >
+              <div key={stateName} className={styles['selected-form']}>
                 <div
-                  className={`${styles.selected_head} ${styles.center}`}
+                  className={`${styles['selected-head']} ${styles.center}`}
                   onClick={() => toggleSection(stateName)}
                   style={{ cursor: 'pointer' }}
                 >
                   <h3 className={`${styles.h3}`}>{stateName}</h3>
                   <div className={styles.columns}>
-                    <div className={styles.button_arrow_down}>
+                    <div className={styles['button-arrow-down']}>
                       <div />
                     </div>
                   </div>
                 </div>
 
                 <div
-                  className={styles.search_section}
+                  className={styles['search-section']}
                   style={{ display: isOpen ? 'block' : 'none' }}
                 >
                   <div>
                     <input
                       type="checkbox"
-                      className={`${styles.toggle_all} ${styles.input}`}
+                      className={`${styles['toggle-all']} ${styles.input}`}
                       checked={allChecked}
                       onChange={(e) => {
                         const newMap = new Map<string, boolean>();
@@ -206,14 +209,18 @@ const Configuration: React.FC<ConfigurationProps> = ({
                           onChange={(e) => {
                             setFilters((prev) => ({
                               ...prev,
-                              [stateName]: new Map(prev[stateName]).set(
-                                value,
-                                e.target.checked
-                              ),
+                              [stateName]: new Map(
+                                prev[stateName as keyof Filters]
+                              ).set(value, e.target.checked),
                             }));
                           }}
                         />
-                        <label className={`${styles.label}`} htmlFor={`${stateName}_${value}`}>{value}</label>
+                        <label
+                          className={`${styles.label}`}
+                          htmlFor={`${stateName}_${value}`}
+                        >
+                          {value}
+                        </label>
                       </div>
                     ))}
                   </div>

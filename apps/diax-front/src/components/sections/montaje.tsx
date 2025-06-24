@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
-import type { GraphData } from '../../app/dashboard-new/dashboard.types';
-import styles from "../../app/dashboard-new/styles.module.scss"
+import type { GraphData } from '../../app/dashboard/dashboard.types';
+import styles from "../../app/dashboard/styles.module.scss"
 
 interface MontajeProps {
   data: GraphData['montaje'] | undefined;
@@ -34,25 +34,25 @@ const Montaje: React.FC<MontajeProps> = ({ data }) => {
     selectedMachine?.states.find((state) => state.name === name)?.value ?? '-';
 
   return (
-    <div className={`${styles.cube_container} ${styles.Montaje}`}>
-      <div className={styles.title_container}>
+    <div className={`${styles["cube-container"]} ${styles.Montaje}`}>
+      <div className={styles["title-container"]}>
         <h2 className={`${styles.h2}`}>Montaje</h2>
         <div className={styles.columns}>
           <div
-            className={`${styles.button_minimize_down} ${styles.button_main} ${styles.center}`}
+            className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}
           >
             <div />
           </div>
         </div>
       </div>
 
-      <div className={`${styles.center} ${styles.full_width} ${styles.rows}`}>
+      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows}`}>
         <div
-          className={`${styles.rows} ${styles.center} ${styles.MontajePlcCont}`}
+          className={`${styles.rows} ${styles.center} ${styles["montaje-plc-cont"]}`}
         >
           <h2 className={`${styles.h2}`}>Máquina</h2>
           <select
-            className={`${styles.MontajePlc} ${styles.select}`}
+            className={`${styles["montaje-plc"]} ${styles.select}`}
             onChange={handleChange}
             value={selectedPlcId}
           >
@@ -66,26 +66,26 @@ const Montaje: React.FC<MontajeProps> = ({ data }) => {
         </div>
 
         <Image
-          src="/assets/img_machine.png"
+          src="/assets/img-machine.png"
           alt="Machine image"
           width={200}
           height={200}
         />
 
-        <div className={styles.montajeLabels}>
-          <div className={styles.montajeOrden}>
+        <div className={styles["montaje-labels"]}>
+          <div className={styles["montaje-div"]}>
             Orden: <span className={`${styles.span}`}>{getStateValue('Orden')}</span>
           </div>
-          <div className={styles.montajeOperario}>
+          <div className={styles["montaje-div"]}>
             Operario: <span className={`${styles.span}`}>{getStateValue('Operario')}</span>
           </div>
-          <div className={styles.montajeLote}>
+          <div className={styles["montaje-div"]}>
             Lote: <span className={`${styles.span}`}>{getStateValue('Lote')}</span>
           </div>
-          <div className={styles.montajeMolde}>
+          <div className={styles["montaje-div"]}>
             Molde: <span className={`${styles.span}`}>{getStateValue('Molde')}</span>
           </div>
-          <div className={styles.montajeMaterial}>
+          <div className={styles["montaje-div"]}>
             Material: <span className={`${styles.span}`}>{getStateValue('Material')}</span>
           </div>
         </div>

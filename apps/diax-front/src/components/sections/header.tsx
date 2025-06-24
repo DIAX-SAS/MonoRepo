@@ -1,10 +1,10 @@
 import React from 'react';
 import Image from 'next/image';
-import styles from "../../app/dashboard-new/styles.module.scss"
+import styles from "../../app/dashboard/styles.module.scss"
 
 const Header: React.FC = () => {
   return (
-    <div className={`${styles.cube_container} ${styles.title}`}>
+    <div className={`${styles["cube-container"]} ${styles.title}`}>
       <Image src="/assets/logo.svg" alt="Company Logo" width={100} height={100} />
       <h1 className={`${styles.h1}`}>Equipos de Inyeccion</h1>
       <div className={styles.rows}>

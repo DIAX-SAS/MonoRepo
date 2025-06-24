@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
-import type { GraphData } from '../../app/dashboard-new/dashboard.types';
+import type { GraphData } from '../../app/dashboard/dashboard.types';
 import { CollapsibleList } from "../core/CollapsibleList";
-import styles from "../../app/dashboard-new/styles.module.scss"
+import styles from "../../app/dashboard/styles.module.scss"
 
 interface MaterialProps {
-  data: GraphData['material'][] | undefined;
+  data: (GraphData['material']|undefined)[];
 }
 
 const Material: React.FC<MaterialProps> = ({ data }) => {
@@ -13,21 +13,21 @@ const Material: React.FC<MaterialProps> = ({ data }) => {
   const selectedData = data?.[groupBy];
 
   return (
-    <div className={`${styles.cube_container} ${styles.Material}`}>
-      <div className={styles.title_container}>
+    <div className={`${styles["cube-container"]} ${styles.Material}`}>
+      <div className={styles["title-container"]}>
         <h2 className={`${styles.h2}`}>Material</h2>
         <div className={styles.columns}>
-          <div className={`${styles.button_minimize_down} ${styles.button_main} ${styles.center}`}>
+          <div className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}>
             <div />
           </div>
         </div>
       </div>
 
-      <div className={`${styles.center} ${styles.full_width} ${styles.rows}`}>
+      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows}`}>
         <ul className={`${styles.legend} ${styles.ul}`}></ul>
 
-        <div className={styles.lineContainer}>
-          <div className={styles.lineMaterial}>
+        <div className={styles["line-container"]}>
+          <div className={styles["line-material"]}>
             {selectedData?.MultiLine ? (
               <>
                 <TimeSeriesLineChart series={selectedData.MultiLine} labelY="gramos" />
@@ -39,9 +39,9 @@ const Material: React.FC<MaterialProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className={`${styles.rows} ${styles.center} ${styles.full_width}`}>
-          <div className={`${styles.pieContainer} ${styles.margin_gd}`}>
-            <div className={styles.pieMaterial}>
+        <div className={`${styles.rows} ${styles.center} ${styles["full-width"]}`}>
+          <div className={`${styles["pie-container"]} ${styles["margin-gd"]}`}>
+            <div className={styles["pie-material"]}>
               {selectedData?.MultiPie ? (
                 <MultiLayerPieChart data={selectedData.MultiPie} unit="gramos" />
               ) : (
@@ -51,10 +51,10 @@ const Material: React.FC<MaterialProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className={`${styles.rows} ${styles.center} ${styles.MaterialPlcCont}`}>
+        <div className={`${styles.rows} ${styles.center} ${styles["material-plc-cont"]}`}>
           <h2 className={`${styles.h2}`}>Agrupación</h2>
           <select
-            className={`${styles.MaterialPlc} ${styles.select}`}
+            className={`${styles["material-plc"]} ${styles.select}`}
             value={groupBy}
             onChange={(e) => setGroupBy(Number(e.target.value))}
           >

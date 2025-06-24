@@ -47,7 +47,7 @@ export const connectToMQTTBroker = async (
 
 export const closeConnectionToMQTTBroker = async (
   topics: string[] | string
-): void => {
+): Promise<void> => {
   if (!clientMQTT) return;
 
   const topicList = Array.isArray(topics) ? topics : [topics];

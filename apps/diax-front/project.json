@@ -5,6 +5,12 @@
   "projectType": "application",
   "tags": [],
   "targets": {
+    "lint:scss": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stylelint apps/diax-front/**/*.scss"
+      }
+    },
     "build": {
       "executor": "@nx/next:build",
       "defaultConfiguration": "development",
