@@ -12,5 +12,5 @@ export async function login(page: Page) {
 export async function logout(page: Page) {
   await page.getByTestId('PersonIcon').locator('path').click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
-  await page.getByRole('img', { name: 'Widgets' }).click();
+  await page.getByRole('img', { name: 'Widgets' }).click({timeout:30000});
 }

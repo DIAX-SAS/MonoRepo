@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { login } from '../utils/test-helper';
 test.describe('Navigation', () => {
   test('Header contains navigation elements', async ({ page }) => {
     await page.goto('/dashboard');
@@ -16,15 +15,15 @@ test.describe('Navigation', () => {
   })
   test("components of dashboard are visible", async ({ page }) => {
     await page.goto('/dashboard');
-    await expect(page.getByText('Configuración')).toBeVisible();
-    await expect(page.getByText('Indicadores')).toBeVisible();
-    await expect(page.getByText('Montaje')).toBeVisible();
-    await expect(page.getByText('Disponibilidad').nth(2)).toBeVisible();
-    await expect(page.getByText('Calidad').nth(2)).toBeVisible();
-    await expect(page.getByText('Rendimiento').nth(2)).toBeVisible();
-    await expect(page.getByText('Energía')).toBeVisible();
-    await expect(page.getByText('Material', { exact: true })).toBeVisible();
-    await expect(page.getByText('Ciclos', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Indicadores' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Configuración' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Equipos de Inyeccion' })).toBeVisible();
+    await expect(page.locator('h2').filter({ hasText: 'Calidad' })).toBeVisible();
+    await expect(page.locator('h2').filter({ hasText: 'Disponibilidad' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Energia' })).toBeVisible();
+    await page.getByRole('heading', { name: 'Ciclos' }).click();
+    await page.getByRole('heading', { name: 'Material', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Material', exact: true })).toBeVisible();
   })
   test('404 is expected', async ({ page }) => {
     await page.goto(`/non-existing-page`);

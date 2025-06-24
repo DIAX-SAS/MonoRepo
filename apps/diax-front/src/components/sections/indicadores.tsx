@@ -25,7 +25,7 @@ const Indicadores: React.FC<IndicadoresProps> = ({ data }) => {
               <div className={`${styles["campo-ind"]} ${styles.rows}`}>
                 <h3 className={`${styles.h3}`}>Disponibilidad</h3>
                 <p className={`${styles.indicador} ${styles.p}`}>
-                  <span className={`${styles["indicador-disponibilidad"]} ${styles.span}`}>{data?.OEE?.availability}</span>%
+                  <span data-testid="indicador-availability" className={`${styles["indicador-disponibilidad"]} ${styles.span}`}>{data?.OEE?.availability}</span>%
                 </p>
                 <div className={`${styles["underline-ind"]} ${styles["underline-disponibilidad"]}`} />
                 <h2 className={`${styles.h2}`}>Tiempo activo</h2>
@@ -34,7 +34,7 @@ const Indicadores: React.FC<IndicadoresProps> = ({ data }) => {
               <div className={`${styles["campo-ind"]} ${styles.rows}`}>
                 <h3 className={`${styles.h3}`}>Rendimiento</h3>
                 <p className={`${styles.indicador} ${styles.p}`}>
-                  <span className={`${styles["indicador-rendimiento"]} ${styles.span}`}>{data?.OEE?.performance}</span>%
+                  <span data-testid="indicador-rendimiento" className={`${styles["indicador-rendimiento"]} ${styles.span}`}>{data?.OEE?.performance}</span>%
                 </p>
                 <div className={`${styles["underline-ind"]} ${styles["underline-rendimiento"]}`} />
                 <h2 className={`${styles.h2}`}>Produccion realizada</h2>
@@ -45,7 +45,7 @@ const Indicadores: React.FC<IndicadoresProps> = ({ data }) => {
               <div className={`${styles["campo-ind"]} ${styles.rows}`}>
                 <h3 className={`${styles.h3}`}>Calidad</h3>
                 <p className={`${styles.indicador} ${styles.p}`}>
-                  <span className={`${styles["indicador-calidad"]} ${styles.span}`}>{data?.OEE?.quality}</span>%
+                  <span data-testid="indicador-calidad" className={`${styles["indicador-calidad"]} ${styles.span}`}>{data?.OEE?.quality}</span>%
                 </p>
                 <div className={`${styles["underline-ind"]} ${styles["underline-calidad"]}`} />
                 <h2 className={`${styles.h2}`}>Unidades buenas</h2>
@@ -54,7 +54,7 @@ const Indicadores: React.FC<IndicadoresProps> = ({ data }) => {
               <div className={`${styles["campo-ind"]} ${styles.rows} ${styles["eficiencia-indicador"]}`}>
                 <h3 className={`${styles.h3}`}>Eficiencia</h3>
                 <p className={`${styles.indicador} ${styles.p}`}>
-                  <span className={`${styles["indicador-eficiencia"]} ${styles.span}`}>{data?.OEE?.efficiency}</span>%
+                  <span data-testid="indicador-eficiencia" className={`${styles["indicador-eficiencia"]} ${styles.span}`}>{data?.OEE?.efficiency}</span>%
                 </p>
                 <div className={`${styles["underline-ind"]} ${styles["underline-eficiencia"]}`} />
                 <h2 className={`${styles.h2}`}>Utilidad de recursos</h2>

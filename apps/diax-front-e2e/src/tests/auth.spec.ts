@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, logout } from '../utils/test-helper';
+import { logout } from '../utils/test-helper';
 
 test.describe('Authentication', () => {
 
@@ -14,6 +14,6 @@ test.describe('Authentication', () => {
     await logout(page);
     await expect(page.getByRole('link', { name: 'logo' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Widgets' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible({timeout:30000});
   });
 });

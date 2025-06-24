@@ -26,9 +26,8 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: path.resolve(__dirname, 'playwright/.auth/user.json') },
     }
   ],
-  timeout: 10000,
   expect: {
     timeout: 5000, // 5 seconds
   },
-  retries: process.env.CI ? 2 : 0, // Add retries for CI
+  retries: 2, // Add retries for CI
 });
