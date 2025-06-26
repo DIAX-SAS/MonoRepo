@@ -4,6 +4,7 @@ import { PimmsService } from './pimms.service';
 import { DynamooseModule } from 'nestjs-dynamoose';
 import { ConfigService } from '@nestjs/config';
 import { PIMMSchema } from './pimms.schema';
+import { EmailService } from '../email/email.service';
 
 @Module({
   imports: [  
@@ -46,7 +47,7 @@ import { PIMMSchema } from './pimms.schema';
       },
     ]),],
   controllers: [PIMMSController],
-  providers: [PimmsService],
+  providers: [PimmsService, EmailService],
   exports: [PimmsService],
 })
 

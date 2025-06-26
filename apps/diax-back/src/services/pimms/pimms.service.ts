@@ -7,6 +7,7 @@ import {
   GetSecretValueCommand,
 } from '@aws-sdk/client-secrets-manager';
 import { InjectModel, Model } from 'nestjs-dynamoose';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class PimmsService {
@@ -16,6 +17,7 @@ export class PimmsService {
   endPointSecrets: string;
   constructor(
     private readonly config: ConfigService,
+    private readonly email: EmailService,
     @InjectModel("PIMM") private PIMMModel: Model<GetPimmsDTO, PIMMDocumentKey>,
     @InjectModel("PIMMMinute") private PIMMMinuteModel: Model<GetPimmsDTO, PIMMDocumentKey>,
     @InjectModel("PIMMHour") private PIMMHourModel: Model<GetPimmsDTO, PIMMDocumentKey>
@@ -122,5 +124,11 @@ export class PimmsService {
       lastID: pimms.at(-1)?.timestamp ?? null,
       totalProcessed: pimms.length,
     };
+  }
+
+  async sendPimmReport(address: string){   
+    const subject = "REPORTE EMPLEADOS OEE";
+    const content = "test";
+    return this.email.sendEmail(address, content, subject)
   }
 }

@@ -1,16 +1,11 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Get,
-} from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { PimmsService } from './pimms.service';
 import { Authentication } from '@nestjs-cognito/auth';
 import {
   GetPimmsResponseDTO,
   PimmsFilterDto,
-  IotCredentialsDto, // <- Create this DTO if not yet
-} from './pimms.interface'; // Or .dto.ts if you prefer separating interfaces
+  IotCredentialsDto, 
+} from './pimms.interface'; 
 import {
   ApiTags,
   ApiOperation,
@@ -44,7 +39,9 @@ export class PIMMSController {
     description: 'Successfully retrieved filtered PIMMS data',
     type: GetPimmsResponseDTO,
   })
-  getPIMMS(@Body() pimmsFilterDto: PimmsFilterDto): Promise<GetPimmsResponseDTO> {
+  getPIMMS(
+    @Body() pimmsFilterDto: PimmsFilterDto
+  ): Promise<GetPimmsResponseDTO> {
     return this.PimmsService.getPIMMS(pimmsFilterDto);
   }
 
@@ -57,5 +54,12 @@ export class PIMMSController {
   })
   getPimmsIotCredentials(): Promise<IotCredentialsDto> {
     return this.PimmsService.getPimmsIotCredentials();
+  }
+
+  @Get('email')
+  @ApiOperation({ summary: 'Sends report OEE of each employee.' })
+  @ApiResponse({ status: 200, description: 'Successfully sent report.' })
+  sendPimmReport(@Query('address') address: string) {
+    return this.PimmsService.sendPimmReport(address);
   }
 }

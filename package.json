@@ -9,6 +9,7 @@
     "@aws-sdk/client-dynamodb": "^latest",
     "@aws-sdk/client-s3": "^latest",
     "@aws-sdk/client-secrets-manager": "^latest",
+    "@aws-sdk/client-ses": "^3.835.0",
     "@aws-sdk/util-dynamodb": "^latest",
     "@emotion/cache": "^latest",
     "@emotion/react": "^11.14.0",
