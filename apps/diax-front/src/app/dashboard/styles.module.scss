@@ -9,7 +9,7 @@ $color-dash2: #f63700;
 $color-dash3: #004853;
 $color-dash4: #00b9bd;
 $color-dash5: #aaa;
-$ggs: 50;
+$ggs: 0.8;
 
 .h3 {
   font-size: 16px;
@@ -657,3 +657,88 @@ $ggs: 50;
   justify-content: center;
   background-color: gray;
 }
+
+
+.button-minimize-down>div {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(0.8);
+  width: 22px;
+  height: 22px;
+  border: 2px solid transparent;
+  border-radius: 100px;
+  margin-right: 8px;
+  top: -1px;
+}
+
+.button-minimize-down>div::after,
+.button-minimize-down>div::before {
+  content: "";
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  border-bottom: 2px solid $color-negro
+}
+
+.button-minimize-down>div::before {
+  bottom: 0;
+  width: 14px;
+  height: 2px;
+  left: 2px
+}
+
+.button-minimize-down>div::after {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid $color-negro;
+  transform: rotate(45deg);
+  left: 4px;
+  top: 2px
+}
+
+.download-icon {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+/* Arrow shaft */
+.download-icon::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 12px;
+  background-color: #000;
+}
+
+/* Arrow head */
+.download-icon::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 3px solid #000;
+  border-bottom: 3px solid #000;
+}
+
+/* Bottom line (base) */
+.download-icon::marker {
+  display: none;
+}
+.download-icon span {
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 4px;
+  width: 16px;
+  height: 2px;
+  background: #000;
+}
+

@@ -43,24 +43,9 @@ const Configuration: React.FC<ConfigurationProps> = ({
       <div className={styles['title-container']}>
         <h2 className={`${styles.h2}`}>Configuración</h2>
         <div className={styles.columns}>
-          <div
-            className={`${styles.relative} ${styles['button-download-parent']}`}
-          >
-            <div
-              className={`${styles['button-download-id']} ${styles['button-main']} ${styles.center}`}
-            >
-              <div className={styles['button-download']} />
-            </div>
-            <div className={`${styles['menu-download']} ${styles.noselect}`}>
-              <div className={`${styles.columns} ${styles.center}`}>
-                <div className={styles['button-download']} />
-                PDF
-              </div>
-              <div className={`${styles.columns} ${styles.center}`}>
-                <div className={styles['button-download']} />
-                XLSX
-              </div>
-            </div>
+          <div className={`${styles['download-icon']} ${styles['button-main']}`}>
+            <div />
+         
           </div>
           <div
             className={`${styles['button-minimize-down']} ${styles['button-main']} ${styles.center}`}
@@ -167,7 +152,7 @@ const Configuration: React.FC<ConfigurationProps> = ({
                 >
                   <h3 className={`${styles.h3}`}>{stateName}</h3>
                   <div className={styles.columns}>
-                    <div className={styles['button-arrow-down']}>
+                    <div className={styles['button-minimize-down']}>
                       <div />
                     </div>
                   </div>
