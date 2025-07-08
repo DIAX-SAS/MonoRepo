@@ -113,67 +113,6 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({
         .attr('d', line);
     });
 
-    // Brushing logic
-    const brush = d3
-      .brushX() // Add the brush feature using the d3.brush function
-      .extent([
-        [0, 0],
-        [width, height],
-      ]) // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
-      .on('end', updateChart);
-
-    chartArea.append('g').attr('class', 'brush').call(brush);
-
-    let idleTimeout: number | null = null;
-    function idled() {
-      idleTimeout = null;
-    }
-
-    function updateChart(event: d3.D3BrushEvent<unknown>) {
-      const extent = event.selection;
-      if (!extent) {
-        if (!idleTimeout) {
-          idleTimeout = window.setTimeout(idled, 350);
-          return;
-        }
-        xScale.domain(xExtent);
-      } else {
-        const value = Array.isArray(extent[0]) ? extent[0][0] : extent[0];
-        const secondValue = Array.isArray(extent[1]) ? extent[1][1] : extent[1];
-        xScale.domain([xScale.invert(value), xScale.invert(secondValue)]);
-        chartArea.select<SVGGElement>('.brush').call(brush.move, null); // remove brush overlay
-      }
-
-      xAxis.transition().duration(1000).call(d3.axisBottom(xScale));
-
-      series?.forEach((s, i) => {
-        chartArea
-          .select(`.line-${i}`)
-          .transition()
-          .duration(1000)
-          .attr(
-            'd',
-            line(series[i].data)
-          );
-      });
-    }
-
-    // Double click to reset
-    svg.on('dblclick', () => {
-      xScale.domain(xExtent);
-      xAxis.transition().duration(1000).call(d3.axisBottom(xScale));
-
-      series.forEach((s, i) => {
-        chartArea
-          .select(`.line-${i}`)
-          .transition()
-          .duration(1000)
-          .attr(
-            'd',
-            line(series[i].data)
-          );
-      });
-    });
   }, [series, labelY]);
 
   return (
