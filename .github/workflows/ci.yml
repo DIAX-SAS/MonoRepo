@@ -149,7 +149,7 @@ jobs:
 
       - name: Setup SES local
         run: |
-          aws --endpoint-url=http://localhost:4566 ses create-email-identity --verify-email-identity "test@example.com.co" --region us-east-1
+           aws --endpoint-url=http://localhost:4566 ses verify-email-identity --email-address "test@example.com.co"
 
       - name: Copy enviromental variables
         run: |
