@@ -1,64 +1,46 @@
 name: CD
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
   workflow_dispatch:
 
 jobs:
+  build-and-push-diax-front-staging:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      tag: staging
+      service: diax-front-staging
+      project: diax-front
+
   build-and-push-diax-front:
-    env:
-      ECR_IMAGE: diax-registry/diax-front
-      AWS_DEFAULT_REGION: us-east-1
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    needs: build-and-push-diax-front-staging
+    with:
+      tag: latest
+      service: diax-front
+      project: diax-front
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 009160061988.dkr.ecr.us-east-1.amazonaws.com
-
-      - name: Build and push Docker image
-        run: |
-          sudo docker build -f apps/diax-front/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/diax-front:latest --push .
-
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster diax-main --service diax-front --force-new-deployment --no-cli-pager
+  build-and-push-diax-back-staging:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      tag: staging
+      service: diax-back-staging
+      project: diax-back
 
   build-and-push-diax-back:
-    env:
-      ECR_IMAGE: diax-registry/diax-back
-      AWS_DEFAULT_REGION: us-east-1
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 009160061988.dkr.ecr.us-east-1.amazonaws.com
-
-      - name: Build and push Docker image
-        run: |
-          sudo docker build -f apps/diax-back/Dockerfile -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/diax-back:latest --push .
-
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster diax-main --service diax-back --force-new-deployment --no-cli-pager
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      tag: latest
+      service: diax-back
+      project: diax-back
 
   build-and-push-certificates-iot:
     runs-on: self-hosted
@@ -105,4 +87,3 @@ jobs:
             --restart always \
             -v iot-certs:/raspberryPI/certificates \
             009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest
-        
