@@ -47,6 +47,10 @@ export const CollapsibleList: React.FC<ChartTreeProps> = ({
   };
 
   const resolvedValue = getNodeValue(data);
+  const cutNumber = (value: number): string => {
+    const formattedValue = Number(value).toFixed(2);
+    return isNaN(Number(formattedValue)) ? "" : formattedValue;
+  };
 
   return (
     <List disablePadding>
@@ -63,10 +67,10 @@ export const CollapsibleList: React.FC<ChartTreeProps> = ({
         </ListItemIcon>
 
         <ListItemText
-          primary={<Typography fontSize={14}>{`${data.name} ${unit}`}</Typography>}
+          primary={<Typography fontSize={14}>{`${data.name}`}</Typography>}
           secondary={
             <Typography fontSize={12} color="text.secondary">
-              {`${resolvedValue} ${unit}`}
+              {`${cutNumber(resolvedValue)} ${unit}`}
             </Typography>
           }
         />

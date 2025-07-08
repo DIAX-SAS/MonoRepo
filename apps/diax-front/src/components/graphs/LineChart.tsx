@@ -58,7 +58,7 @@ const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({
       Date,
       Date
     ];
-    const yMax = d3.max(allData, (d) => d.value) ?? 0;
+    const yMax = d3.max(allData, (d) => Number(d.value?.toFixed(2))) ?? 0;
 
     const xScale = d3.scaleTime().domain(xExtent).range([0, width]);
     const yScale = d3.scaleLinear().domain([0, yMax]).range([height, 0]);

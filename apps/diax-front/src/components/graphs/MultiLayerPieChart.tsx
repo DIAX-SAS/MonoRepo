@@ -134,7 +134,7 @@ const MultiLayerPieChart: React.FC<PieChartProps> = ({
         );
         tooltip
           .html(
-            `${d.data.name}: ${d.value || 0} (${(
+            `${d.data.name}: ${d.value?.toFixed(2) || 0} (${(
               ((d.value || 0) / totalValue) *
               100
             ).toFixed(1)}%)`
