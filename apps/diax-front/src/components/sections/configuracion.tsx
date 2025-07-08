@@ -57,7 +57,7 @@ const Configuration: React.FC<ConfigurationProps> = ({
 
       <div className={styles['sub-config']}>
         <div
-          className={`${styles.columns} ${styles.center} ${styles['margin-gd']} ${styles.rows}`}
+          className={`${styles.columns} ${styles.center} ${styles['margin-gd']} ${styles.settings}`}
         >
           <div
             className={`${styles['left-rows']} ${styles.rows} ${styles['rango-cont']}`}

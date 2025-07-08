@@ -7,7 +7,7 @@ const Header: React.FC = () => {
     <div className={`${styles["cube-container"]} ${styles.title}`}>
       <Image src="/assets/logo.svg" alt="Company Logo" width={100} height={100} />
       <h1 className={`${styles.h1}`}>Equipos de Inyeccion</h1>
-      <div className={styles.rows}>
+      <div className={styles.settings}>
         <h2 className={`${styles.h2}`}>
           Live<span>Dash</span>
         </h2>
