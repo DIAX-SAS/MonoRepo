@@ -259,11 +259,7 @@ $ggs: 0.8;
   cursor: pointer;
 }
 
-.disponibilidad > div:nth-child(2),
-.calidad > div:nth-child(2),
-.rendimiento > div:nth-child(2) {
-  flex-direction: column-reverse !important;
-}
+
 
 @media (width >= 740px) and (width <= 1100px) {
   .indicadores-sub-cont {
@@ -477,6 +473,7 @@ $ggs: 0.8;
 
 .select {
   margin: 5px;
+  width: 100%;
 }
 
 .legend {
@@ -554,10 +551,7 @@ $ggs: 0.8;
   max-width: 800px;
 }
 
-.material > div:nth-child(2),
-.ciclos > div:nth-child(2) {
-  flex-direction: column-reverse !important;
-}
+
 
 .material-plc {
   width: 120px;
@@ -721,6 +715,7 @@ $ggs: 0.8;
 .download-icon::marker {
   display: none;
 }
+
 .download-icon span {
   display: block;
   position: absolute;
@@ -731,10 +726,6 @@ $ggs: 0.8;
   background: $color-negro;
 }
 
-.select {
-  width: 100%;
-}
-
 .settings {
   display: flex;
   flex-direction: column;
@@ -742,4 +733,15 @@ $ggs: 0.8;
 
 .hide {
   display: none;
+}
+
+.disponibilidad > div:nth-child(2),
+.calidad > div:nth-child(2),
+.rendimiento > div:nth-child(2) {
+  flex-direction: column-reverse !important;
+}
+
+.material > div:nth-child(2),
+.ciclos > div:nth-child(2) {
+  flex-direction: column-reverse !important;
 }

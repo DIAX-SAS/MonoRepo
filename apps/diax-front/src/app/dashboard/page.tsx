@@ -23,7 +23,6 @@ import { fetchPIMMs } from '../../data-access/diax-back/diax-back';
 import {
   connectToMQTTBroker,
   closeConnectionToMQTTBroker,
-  clientMQTT,
 } from '../../data-access/mqtt-broker/mqtt-broker';
 
 import styles from './styles.module.scss';
