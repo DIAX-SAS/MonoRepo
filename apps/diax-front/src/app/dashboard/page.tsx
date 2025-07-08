@@ -23,9 +23,11 @@ import { fetchPIMMs } from '../../data-access/diax-back/diax-back';
 import {
   connectToMQTTBroker,
   closeConnectionToMQTTBroker,
+  clientMQTT,
 } from '../../data-access/mqtt-broker/mqtt-broker';
 
 import styles from './styles.module.scss';
+import { MqttClient } from 'mqtt';
 export default function Page(): React.JSX.Element {
   const [filters, setFilters] = React.useState<Filters>({
     equipos: new Map<string, boolean>(),
@@ -272,6 +274,7 @@ export default function Page(): React.JSX.Element {
   }, [parameters.live]);
 
   React.useEffect(() => {
+    let connectionPromise: Promise<MqttClient> | undefined;
     setPIMMs([]);
     setFilters({
       equipos: new Map<string, boolean>(),
@@ -297,7 +300,7 @@ export default function Page(): React.JSX.Element {
     });
 
     if (parameters.live) {
-      connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
+      connectionPromise = connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
         const pimmData = JSON.parse(payload.toString());
         setPIMMs((prevPIMMs) => {
           return [...prevPIMMs, pimmData].sort(
@@ -306,8 +309,16 @@ export default function Page(): React.JSX.Element {
         });
       });
     } else {
-      closeConnectionToMQTTBroker('PIMMStateTopic');
+      closeConnectionToMQTTBroker();
     }
+
+    return () => {
+      if (connectionPromise) {
+        connectionPromise.then((client) => {
+          closeConnectionToMQTTBroker(client);
+        });
+      }
+    };
   }, [parameters]);
 
   return (

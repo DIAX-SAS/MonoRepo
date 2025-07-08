@@ -46,18 +46,11 @@ export const connectToMQTTBroker = async (
 };
 
 export const closeConnectionToMQTTBroker = async (
-  topics: string[] | string
+  mqttClient: MqttClient | undefined = clientMQTT
 ): Promise<void> => {
-  if (!clientMQTT) return;
+  if (!mqttClient) return;
 
-  const topicList = Array.isArray(topics) ? topics : [topics];
-  for (const topic of topicList) {
-    clientMQTT.unsubscribe(topic, (err) => {
-      if (err) console.error(`Failed to unsubscribe from ${topic}`, err);
-    });
-  }
-
-  clientMQTT.end(true, () => {
+  mqttClient.end(true, () => {
     console.log('MQTT connection closed');
   });
 
