@@ -707,7 +707,7 @@ $ggs: 0.8;
   transform: translateX(-50%);
   width: 4px;
   height: 12px;
-  background-color: #000;
+  background-color: $color-negro;
 }
 
 /* Arrow head */
@@ -719,8 +719,8 @@ $ggs: 0.8;
   transform: translateX(-50%) rotate(45deg);
   width: 8px;
   height: 8px;
-  border-right: 3px solid #000;
-  border-bottom: 3px solid #000;
+  border-right: 3px solid $color-negro;
+  border-bottom: 3px solid $color-negro;
 }
 
 /* Bottom line (base) */
@@ -734,7 +734,7 @@ $ggs: 0.8;
   left: 4px;
   width: 16px;
   height: 2px;
-  background: #000;
+  background: $color-negro;
 }
 
 .select {
