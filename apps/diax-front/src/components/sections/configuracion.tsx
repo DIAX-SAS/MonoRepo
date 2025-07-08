@@ -24,6 +24,7 @@ const Configuration: React.FC<ConfigurationProps> = ({
     {}
   );
 
+  const [active, setActive] = React.useState(true);
   const toggleSection = (stateName: string) => {
     setOpenStates((prev) => ({
       ...prev,
@@ -48,6 +49,7 @@ const Configuration: React.FC<ConfigurationProps> = ({
          
           </div>
           <div
+            onClick={() => setActive(prev => !prev)} 
             className={`${styles['button-minimize-down']} ${styles['button-main']} ${styles.center}`}
           >
             <div />
@@ -55,7 +57,7 @@ const Configuration: React.FC<ConfigurationProps> = ({
         </div>
       </div>
 
-      <div className={styles['sub-config']}>
+      <div className={`${styles['sub-config']} ${active ? '' : styles.hide}`}>
         <div
           className={`${styles.columns} ${styles.center} ${styles['margin-gd']} ${styles.settings}`}
         >

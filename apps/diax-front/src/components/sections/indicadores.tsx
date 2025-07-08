@@ -1,23 +1,25 @@
 import { PolarChart, TimeSeriesLineChart } from '../graphs/index';
 import type { GraphData } from "../../app/dashboard/dashboard.types";
 import styles from "../../app/dashboard/styles.module.scss"
+import React from 'react';
 
 interface IndicadoresProps {
   data: GraphData["indicadores"] | undefined;
 }
 
 const Indicadores: React.FC<IndicadoresProps> = ({ data }) => {
+  const [active, setActive] = React.useState(true);
   return (
     <div className={`${styles["cube-container"]} ${styles.indicadores}`}>
       <div className={styles["title-container"]}>
         <h2 className={`${styles.h2}`}>Indicadores</h2>
         <div className={styles.columns}>
-          <div className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}>
+          <div  onClick={() => setActive(prev => !prev)}  className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}>
             <div />
           </div>
         </div>
       </div>
-      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows}`}>
+      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows} ${active ? "" : styles.hide}`}>
         <div className={styles["indicadores-sub-cont"]}>
           <div className={styles["master-indicadores"]}>
             <div className={styles.columns}>

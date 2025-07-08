@@ -67,12 +67,6 @@ $ggs: 0.8;
   padding-right: 6px;
 }
 
-.disponibilidad,
-.calidad,
-.rendimiento {
-  min-height: 450px;
-}
-
 .columns {
   display: flex;
   flex-direction: row;
@@ -744,4 +738,8 @@ $ggs: 0.8;
 .settings {
   display: flex;
   flex-direction: column;
+}
+
+.hide {
+  display: none;
 }

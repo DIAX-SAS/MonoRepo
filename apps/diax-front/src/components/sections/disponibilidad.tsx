@@ -2,23 +2,25 @@ import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
 import type { GraphData } from '../../app/dashboard/dashboard.types';
 import { CollapsibleList } from "../core/CollapsibleList";
 import styles from "../../app/dashboard/styles.module.scss"
+import React from 'react';
 
 interface DisponibilidadProps {
   data: GraphData['disponibilidad'] | undefined;
 }
 
 const Disponibilidad: React.FC<DisponibilidadProps> = ({ data }) => {
+  const [active, setActive] = React.useState(true);
   return (
     <div className={`${styles["cube-container"]} ${styles.disponibilidad}`}>
       <div className={styles["title-container"]}>
         <h2 className={`${styles.h2}`}>Disponibilidad</h2>
         <div className={styles.columns}>
-          <div className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}>
+          <div  onClick={() => setActive(prev => !prev)}  className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center} `}>
             <div />
           </div>
         </div>
       </div>
-      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows}`}>
+      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows} ${active ? "" : styles.hide}`}>
         <ul className={`${styles.legend} ${styles.ul}`} />
         <div className={styles["line-container"]}>
           <div className={styles["line-disponibilidad"]}>

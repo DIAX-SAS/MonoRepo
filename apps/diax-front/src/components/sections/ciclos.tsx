@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { MultiLayerPieChart, TimeSeriesLineChart } from '../graphs/index';
 import type { GraphData } from '../../app/dashboard/dashboard.types';
-import {CollapsibleList} from "../core/CollapsibleList"
-import styles from "../../app/dashboard/styles.module.scss"
+import { CollapsibleList } from '../core/CollapsibleList';
+import styles from '../../app/dashboard/styles.module.scss';
 interface CiclosProps {
   data: GraphData['ciclos'] | undefined;
 }
 
 const Ciclos: React.FC<CiclosProps> = ({ data }) => {
   const [selectedPlcId, setSelectedPlcId] = useState<string | undefined>();
-
+  const [active, setActive] = useState(true);
   const infoByPlcId: Record<string, GraphData['ciclos']> = {};
 
   // Extraer PLC IDs desde los nombres (ej: "Buenas PIMM 4")
@@ -43,19 +43,30 @@ const Ciclos: React.FC<CiclosProps> = ({ data }) => {
   const currentData = selectedPlcId ? infoByPlcId[selectedPlcId] : undefined;
 
   return (
-    <div className={`${styles["cube-container"]} ${styles["ciclos"]}`}>
-      <div className={`${styles["title-container"]}`}>
+    <div className={`${styles['cube-container']} ${styles['ciclos']}`}>
+      <div className={`${styles['title-container']}`}>
         <h2 className={`${styles.h2}`}>Ciclos</h2>
         <div className={`${styles.columns}`}>
-          <div className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}>
+          <div
+            onClick={() => setActive((prev) => !prev)}
+            className={`${styles['button-minimize-down']} ${styles['button-main']} ${styles.center}`}
+          >
             <div />
           </div>
         </div>
       </div>
-      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows}`}>
-        <div className={`${styles.columns} ${styles.center} ${styles["full-width"]}`}>
-          <div  className={`${styles["pie-container"]} ${styles["pie-ciclos-container"]}`}>
-            <div className={`${styles["pie-ciclos"]}`}>
+      <div
+        className={`${styles.center} ${styles['full-width']} ${styles.rows} ${
+          active ? '' : styles.hide
+        }`}
+      >
+        <div
+          className={`${styles.columns} ${styles.center} ${styles['full-width']}`}
+        >
+          <div
+            className={`${styles['pie-container']} ${styles['pie-ciclos-container']}`}
+          >
+            <div className={`${styles['pie-ciclos']}`}>
               {currentData && (
                 <MultiLayerPieChart
                   unit="segundos"
@@ -64,10 +75,14 @@ const Ciclos: React.FC<CiclosProps> = ({ data }) => {
               )}
             </div>
           </div>
-          <ul className={`${styles.legend} ${styles["legend-ciclos"]} ${styles.ul}`}></ul>
+          <ul
+            className={`${styles.legend} ${styles['legend-ciclos']} ${styles.ul}`}
+          ></ul>
         </div>
-        <div className={`${styles["line-container"]} ${styles["line-ciclos-container"]}`}>
-          <div className={`${styles["line-ciclos"]}`}>
+        <div
+          className={`${styles['line-container']} ${styles['line-ciclos-container']}`}
+        >
+          <div className={`${styles['line-ciclos']}`}>
             {currentData && (
               <>
                 <TimeSeriesLineChart
@@ -79,10 +94,12 @@ const Ciclos: React.FC<CiclosProps> = ({ data }) => {
             )}
           </div>
         </div>
-        <div  className={`${styles.rows} ${styles.center} ${styles["cicle-plc-cont"]}`}>
+        <div
+          className={`${styles.rows} ${styles.center} ${styles['cicle-plc-cont']}`}
+        >
           <h2 className={`${styles.h2}`}>Maquina</h2>
           <select
-            className={`${styles["cicle-plc"]} ${styles.select}`}
+            className={`${styles['cicle-plc']} ${styles.select}`}
             onChange={(e) => setSelectedPlcId(e.target.value)}
             defaultValue=""
           >

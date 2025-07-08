@@ -10,6 +10,7 @@ interface MontajeProps {
 const Montaje: React.FC<MontajeProps> = ({ data }) => {
   const [selectedPlcId, setSelectedPlcId] = useState<string>('');
 
+  const [active, setActive] = useState(true);
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPlcId(e.target.value);
   };
@@ -39,6 +40,7 @@ const Montaje: React.FC<MontajeProps> = ({ data }) => {
         <h2 className={`${styles.h2}`}>Montaje</h2>
         <div className={styles.columns}>
           <div
+            onClick={() => setActive(prev => !prev)} 
             className={`${styles["button-minimize-down"]} ${styles["button-main"]} ${styles.center}`}
           >
             <div />
@@ -46,7 +48,7 @@ const Montaje: React.FC<MontajeProps> = ({ data }) => {
         </div>
       </div>
 
-      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows}`}>
+      <div className={`${styles.center} ${styles["full-width"]} ${styles.rows} ${active ? "" : styles.hide}`}>
         <div
           className={`${styles.rows} ${styles.center} ${styles["montaje-plc-cont"]}`}
         >
