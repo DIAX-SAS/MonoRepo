@@ -152,6 +152,31 @@ const MultiLayerPieChart: React.FC<PieChartProps> = ({
         tooltip.style('opacity', 0);
       });
 
+    // Add a label for each element.
+    g
+      .append('g')
+      .attr('pointer-events', 'none')
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 8)
+      .attr('font-family', 'sans-serif')
+      .attr("color", "#000000")
+      .selectAll('text')
+      .data(
+        root
+          .descendants()
+          .filter((d) => d.depth && (((d as d3.HierarchyRectangularNode<ChartNode>).y0 + (d as d3.HierarchyRectangularNode<ChartNode>).y1) / 2) * ((d as d3.HierarchyRectangularNode<ChartNode>).x1 - (d as d3.HierarchyRectangularNode<ChartNode>).x0) > 10)
+      )
+      .join('text')
+      .attr('transform', function (d) {
+        const x = ((((d as d3.HierarchyRectangularNode<ChartNode>).x0 + (d as d3.HierarchyRectangularNode<ChartNode>).x1) / 2) * 180) / Math.PI;
+        const y = ((d as d3.HierarchyRectangularNode<ChartNode>).y0 + (d as d3.HierarchyRectangularNode<ChartNode>).y1) / 2;
+        return `rotate(${
+          x - 90
+        }) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+      })
+      .attr('dy', '0.35em')
+      .text((d) => d.data.name);
+
     return () => {
       tooltip.remove();
     };
