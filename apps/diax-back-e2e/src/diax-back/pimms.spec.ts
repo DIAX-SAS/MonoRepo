@@ -107,7 +107,7 @@ describe('POST /pimms', () => {
 
  describe("GET /pimms/email", () =>{
   it("should return a success when email is valid and the endpoint is working", async () =>{
-    const email = "desarrollo@diax.com.co";
+    const email = "test@example.com.co";
     const res = await axios.get(`/api/pimms/email?address=${encodeURIComponent(email)}`)
     expect(res.status).toBe(200);
   })

@@ -104,7 +104,7 @@ jobs:
         ports:
           - 4566:4566
         env:
-          SERVICES: secretsmanager,dynamodb
+          SERVICES: secretsmanager,dynamodb,ses
           DEBUG: 1
         options: >-
           --health-cmd "curl -f http://localhost:4566 || exit 1"
@@ -146,6 +146,10 @@ jobs:
           aws --endpoint-url=http://localhost:4566 secretsmanager create-secret \
             --name IoTAuth/token \
             --secret-string '{"signingKey":"LoletnT7k2hloq0zce+oNduMd3L+zHHFktqWWNRROMw="}'
+
+      - name: Setup SES local
+        run: |
+          aws --endpoint-url=http://localhost:4566 ses create-email-identity --email-identity "test@example.com.co" --region us-east-1
 
       - name: Copy enviromental variables
         run: |

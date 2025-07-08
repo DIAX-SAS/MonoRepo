@@ -19,6 +19,7 @@ export class EmailService {
     const isDev = process.env.NODE_ENV === 'development';
     this.sesClient = new SESClient({
       region: this.config.get<string>('AWS_REGION'),
+      endpoint: this.config.get<string>('SES_URI'), 
       ...(isDev && {
         credentials: {
           accessKeyId: this.config.get<string>('AWS_ACCESS_KEY_ID'),
