@@ -16,6 +16,9 @@ jobs:
       tag: staging
       service: diax-front-staging
       project: diax-front
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   build-and-push-diax-front:
     if: github.event.pull_request.merged == true
@@ -25,6 +28,9 @@ jobs:
       tag: latest
       service: diax-front
       project: diax-front
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   build-and-push-diax-back-staging:
     if: github.event.pull_request.merged == true
@@ -33,14 +39,21 @@ jobs:
       tag: staging
       service: diax-back-staging
       project: diax-back
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   build-and-push-diax-back:
     if: github.event.pull_request.merged == true
     uses: ./.github/workflows/reusable-deploy.yml
+    needs: build-and-push-diax-back-staging
     with:
       tag: latest
       service: diax-back
       project: diax-back
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   build-and-push-certificates-iot:
     runs-on: self-hosted
