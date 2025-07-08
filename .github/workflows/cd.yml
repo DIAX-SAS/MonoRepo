@@ -1,0 +1,89 @@
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+  workflow_dispatch:
+
+jobs:
+  build-and-push-diax-front-staging:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      tag: staging
+      service: diax-front-staging
+      project: diax-front
+
+  build-and-push-diax-front:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    needs: build-and-push-diax-front-staging
+    with:
+      tag: latest
+      service: diax-front
+      project: diax-front
+
+  build-and-push-diax-back-staging:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      tag: staging
+      service: diax-back-staging
+      project: diax-back
+
+  build-and-push-diax-back:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      tag: latest
+      service: diax-back
+      project: diax-back
+
+  build-and-push-certificates-iot:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          sudo docker build -t certificates:latest -f apps/things/uploader/raspberryPI/utils/Dockerfile .
+
+      - name: Stop and remove existing container
+        run: |
+          sudo docker stop certificates || true
+          sudo docker rm certificates || true
+
+      - name: Run Docker container
+        run: |
+          sudo docker run -d \
+            --name certificates \
+            --restart always \
+            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -v iot-certs:/certificates \
+            certificates:latest
+
+  build-and-push-raspberryPI:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          sudo docker build -t 009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest apps/things/uploader/raspberryPI
+      - name: Stop and remove existing container
+        run: |
+          sudo docker stop uploader-raspberryPI || true
+          sudo docker rm uploader-raspberryPI || true
+      - name: Run Docker container
+        run: |
+          sudo docker run -d \
+            --name uploader-raspberryPI \
+            --restart always \
+            -v iot-certs:/raspberryPI/certificates \
+            009160061988.dkr.ecr.us-east-1.amazonaws.com/diax-registry/raspberrypi:latest

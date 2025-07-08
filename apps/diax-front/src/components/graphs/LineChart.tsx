@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import * as d3 from "d3";
+import React, { useEffect, useRef } from 'react';
+import * as d3 from 'd3';
 
 interface DataPoint {
   timestamp: number;
@@ -12,156 +12,117 @@ export interface LineSeries {
 }
 
 interface TimeSeriesLineChartProps {
-  width?: number;
-  height?: number;
   series: LineSeries[] | undefined;
   labelY: string;
 }
 
-const colors = {
-  blue: ["#3366D6", "#4285F4", "#71A3F7", "#A0C2FA", "#D0E0FC"],
-  purple: ["#BE53C4", "#E585EB", "#F0B0F3", "#F4CFF6", "#F9F1F9"],
-  red: ["#FB4826", "#F9674D", "#FC9885", "#FCBBAF", "#FCE0DB"],
-  green: ["#1EC828", "#4BE354", "#7DEF84", "#ACF8B0", "#CEFED1"],
-  cyan: ["#23C897", "#41E6B5", "#76F1CC", "#A8F6DF", "#D9F6EE"],
-};
+const colors = [
+  '#3366D6',
+  '#BE53C4',
+  '#FB4826',
+  '#1EC828',
+  '#23C897',
+  '#4285F4',
+  '#E585EB',
+  '#F9674D',
+  '#4BE354',
+  '#41E6B5',
+];
 
-const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({ width = 600, height = 400, series, labelY }) => {
-  const ref = useRef<SVGSVGElement | null>(null);
-
-
+const TimeSeriesLineChart: React.FC<TimeSeriesLineChartProps> = ({
+  series,
+  labelY,
+}) => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!series || !svgRef.current) return;
 
-    if (!ref.current) return;
+    const svgElement = d3.select(svgRef.current);
+    svgElement.selectAll('*').remove(); // Clear previous render
 
-    if (!series) return;
+    const margin = { top: 20, right: 30, bottom: 40, left: 80 };
+    const width = svgRef.current.clientWidth - margin.left - margin.right;
+    const height = svgRef.current.clientHeight - margin.top - margin.bottom;
 
-    const margin = { top: 30, right: 100, bottom: 60, left: 70 };
-    const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
+    const svg = svgElement
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
 
+    // Flatten all data points
     const allData = series.flatMap((s) => s.data);
-    const xExtent = d3.extent(allData, (d) => new Date(d.timestamp * 1000)) as [Date, Date];
-    const yMax = d3.max(allData, (d) => d.value) || 0;
+    const xExtent = d3.extent(allData, (d) => new Date(d.timestamp)) as [
+      Date,
+      Date
+    ];
+    const yMax = d3.max(allData, (d) => Number(d.value?.toFixed(2))) ?? 0;
 
-    const xScale = d3.scaleTime().domain(xExtent).range([0, chartWidth]);
-    const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([chartHeight, 0]);
+    const xScale = d3.scaleTime().domain(xExtent).range([0, width]);
+    const yScale = d3.scaleLinear().domain([0, yMax]).range([height, 0]);
 
-    const svg = d3.select(ref.current);
-    svg.selectAll("*").remove();
+    const xAxis = svg
+      .append('g')
+      .attr('transform', `translate(0, ${height})`)
+      .attr('font-size', '10px')
+      .call(d3.axisBottom(xScale));
 
-    const g = svg
-      .attr("width", width)
-      .attr("height", height)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    xAxis
+      .selectAll('text')
+      .attr('transform', 'rotate(-45)')
+      .style('text-anchor', 'end');
 
-    const xAxisGroup = g.append("g").attr("transform", `translate(0,${chartHeight})`);
-    xAxisGroup.call(d3.axisBottom(xScale).tickFormat((d: Date | d3.NumberValue) => d3.timeFormat("%H:%M:%S")(d as Date)));
+    svg.append('g').call(d3.axisLeft(yScale));
 
-    g.append("g").call(d3.axisLeft(yScale));
-
-    // Y-Axis Label
-    g.append("text")
-      .attr("x", -chartHeight / 2)
-      .attr("y", -50)
-      .attr("transform", "rotate(-90)")
-      .attr("fill", "black")
-      .attr("text-anchor", "middle")
-      .attr("font-size", "14px")
+    svg
+      .append('text')
+      .attr('transform', `rotate(-90)`)
+      .attr('y', -60)
+      .attr('x', -height / 2)
+      .attr('dy', '1em')
+      .style('text-anchor', 'middle')
+      .style('font-size', '12px')
       .text(labelY);
 
-    // X-Axis Label
-    g.append("text")
-      .attr("x", chartWidth / 2)
-      .attr("y", chartHeight + 40)
-      .attr("fill", "black")
-      .attr("text-anchor", "middle")
-      .attr("font-size", "14px")
-      .text("Time");
+    // Add clip path
+    svg
+      .append('defs')
+      .append('clipPath')
+      .attr('id', 'clip')
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height);
 
-    g.append("clipPath")
-      .attr("id", "clip")
-      .append("rect")
-      .attr("width", chartWidth)
-      .attr("height", chartHeight);
+    const chartArea = svg.append('g').attr('clip-path', 'url(#clip)');
 
-    const lineGroup = g.append("g").attr("clip-path", "url(#clip)");
-
-    const tooltip = d3.select("body").select("#tooltip");
-    if (tooltip.empty()) {
-      d3.select("body")
-        .append("div")
-        .attr("id", "tooltip")
-        .style("position", "absolute")
-        .style("background", "white")
-        .style("padding", "5px")
-        .style("border", "1px solid black")
-        .style("border-radius", "5px")
-        .style("display", "none");
-    }
-
-    const colorKeys = Object.keys(colors);
-
-    const lineGenerator = d3
+    const line = d3
       .line<DataPoint>()
-      .x((d) => xScale(new Date(d.timestamp * 1000)))
-      .y((d) => yScale(d.value))
-      .curve(d3.curveMonotoneX);
+      .x((d) => xScale(new Date(d.timestamp)))
+      .y((d) => yScale(d.value));
 
     series.forEach((s, i) => {
-      const colorCategory = colorKeys[i % colorKeys.length] as keyof typeof colors;
-      const strokeColor = colors[colorCategory][0];
-
-      lineGroup
-        .append("path")
+      chartArea
+        .append('path')
         .datum(s.data)
-        .attr("fill", "none")
-        .attr("stroke", strokeColor)
-        .attr("stroke-width", 2)
-        .attr("d", lineGenerator)
-        .on("mouseover", () => {
-          tooltip.style("background", strokeColor).style("display", "block").text(s.name);
-        })
-        .on("mousemove", (event: MouseEvent) => {
-          tooltip
-            .style("left", `${Math.min(event.pageX + 10, window.innerWidth - 100)}px`)
-            .style("top", `${event.pageY - 10}px`);
-        })
-        .on("mouseout", () => {
-          tooltip.style("display", "none");
-        });
+        .attr('fill', 'none')
+        .attr('stroke', colors[i % colors.length])
+        .attr('stroke-width', 2)
+        .attr('class', `line-${i}`)
+        .attr('d', line);
     });
 
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 5])
-      .translateExtent([
-        [0, 0],
-        [chartWidth, chartHeight],
-      ])
-      .on("zoom", (event) => {
-        const newXScale = event.transform.rescaleX(xScale);
-        xAxisGroup.call(d3.axisBottom(newXScale).tickFormat((d: d3.AxisDomain, index: number) => d3.timeFormat("%H:%M:%S")(d as Date)));
+  }, [series, labelY]);
 
-        lineGroup.selectAll<SVGPathElement, DataPoint>("path").attr("d", (_, i) => {
-          return d3
-            .line<DataPoint>()
-            .x((d) => newXScale(new Date(d.timestamp * 1000)))
-            .y((d) => yScale(d.value))
-            .curve(d3.curveMonotoneX)(series[i].data) || "";
-        });
-      });
-
-    svg.call(zoom);
-
-    svg.on("dblclick", () => {
-      svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
-    });
-  }, [width, height, series, labelY]);
-
-  return <svg ref={ref}></svg>;
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: '400px', background: 'transparent' }}
+    >
+      <svg ref={svgRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
 };
 
 export default TimeSeriesLineChart;

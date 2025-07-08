@@ -1,33 +1,20 @@
-import { schemaDefinition, schemaSettings } from '../pimm.schema';
+import { GetPimmsDTO } from "../pimms.interface";
 
-describe('schemaDefinition', () => {
-  it('should define PLCNumber as a Number type and hashKey (partition key)', () => {
-    expect(schemaDefinition.PLCNumber).toEqual({
-      type: Number,
-      hashKey: true,
-    });
-  });
+describe('GetPimmsDTO', () => {
+  it('should create a valid GetPimmsDTO instance', () => {
+    const testPimms: GetPimmsDTO = {
+      timestamp: 1700000000,
+      counters: [
+        { id: '1', name: 'Counter1', value: '100', valueType: 'number' },
+      ],
+      states: [
+        { id: '2', name: 'State1', value: 'on', valueType: 'string' },
+      ],
+      plcId: 123,
+    };
 
-  it('should define timestamp as a Number type and rangeKey (sort key)', () => {
-    expect(schemaDefinition.timestamp).toEqual({
-      type: Number,
-      rangeKey: true,
-    });
-  });
-
-  it('should define payload as an Object type', () => {
-    expect(schemaDefinition.payload).toEqual({
-      type: Object,
-    });
-  });
-});
-
-describe('schemaSettings', () => {
-  it('should have saveUnknown set to true', () => {
-    expect(schemaSettings.saveUnknown).toBe(true);
-  });
-
-  it('should have timestamps set to true', () => {
-    expect(schemaSettings.timestamps).not.toBe(false);
+    expect(testPimms).toHaveProperty('timestamp', 1700000000);
+    expect(testPimms.counters[0].id).toBe('1');
+    expect(testPimms.plcId).toBe(123);
   });
 });

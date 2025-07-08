@@ -1,8 +1,7 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
-import Container from '@mui/material/Container';
-import GlobalStyles from '@mui/material/GlobalStyles';
+import { GlobalStyles, Box, Container } from '../../components/core';
 import { Navigation } from '../../components/layout/main-nav';
+import styles from './styles.module.scss';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,8 +14,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
         styles={{
           body: {
             '--MainNav-height': '56px',
-            '--MainNav-zIndex': 1000,
-            '--SideNav-width': '280px',
+            '--MainNav-zIndex': 1000,         
             '--SideNav-zIndex': 1100,
             '--MobileNav-width': '320px',
             '--MobileNav-zIndex': 1100,
@@ -35,7 +33,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
         <Navigation />
         <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column', pl: { lg: 'var(--SideNav-width)' } }}>
           <main>
-            <Container maxWidth="xl" sx={{ py: '64px' }}>
+            <Container maxWidth="xl" className={`${styles["mui-container"]}`} >
               {children}
             </Container>
           </main>

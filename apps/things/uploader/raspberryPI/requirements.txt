@@ -1,0 +1,6 @@
+pytest
+pylint
+pymodbus
+AWSIoTPythonSDK
+awsiotsdk
+awscrt

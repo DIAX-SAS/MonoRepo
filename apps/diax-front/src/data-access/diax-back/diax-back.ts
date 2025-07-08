@@ -1,38 +1,62 @@
-import { config } from '../../config';
-import { InfoSettings, ResponsePIMM } from '@repo-hub/internal';
+"use server";
 
-const URL = config.backendURL;
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../app/api/auth/[...nextauth]/_lib/authOptions"; // Asegúrate de exportar authOptions correctamente
 
-export async function fetchData(auth: { accessToken: string | undefined }, infoSettings: InfoSettings) {
-  const response = await fetch(URL.concat('/pimms'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${auth.accessToken}`,
-    },
-    body: JSON.stringify(infoSettings),
-  });
+import {
+  FilterPimmsDto,
+  ResponsePimms,
+  ResponseToken,
+} from "../../app/dashboard/dashboard.types";
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+const URL = `${process.env.NEXT_PUBLIC_API_BASE_PATH}/api`;
+
+export async function fetchWrapper<TRequest = unknown, TResponse = unknown>(
+  url: string,
+  params: {
+    method: "GET" | "POST" | "PUT" | "DELETE";
+    body?: TRequest;
+    headers?: HeadersInit;
   }
-  const responseContent: ResponsePIMM = await response.json();
-  return responseContent;
+): Promise<TResponse> {
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
+
+  const fetchHeaders: HeadersInit = {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+    ...params.headers,
+  };
+
+  const fetchOptions: RequestInit = {
+    method: params.method,
+    headers: fetchHeaders,
+  };
+
+  if (params.body && params.method !== "GET") {
+    fetchOptions.body = JSON.stringify(params.body);
+  }
+
+  const response = await fetch(`${URL}${url}`, fetchOptions);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error ${response.status}: ${errorText}`);
+  }
+
+  return response.json();
 }
 
-export async function fetchCredentialsCore(auth: { accessToken: string | undefined }) {
-  const response = await fetch(URL.concat('/pimms/credentials'), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${auth.accessToken}`,
-    },
+export async function fetchPIMMs(
+  parameters: FilterPimmsDto
+): Promise<ResponsePimms> {
+  return fetchWrapper<FilterPimmsDto, ResponsePimms>("/pimms", {
+    method: "POST",
+    body: parameters,
   });
+}
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+export async function fetchCredentialsCore(): Promise<ResponseToken> {
+  return fetchWrapper<undefined, ResponseToken>("/pimms/iot/credentials", {
+    method: "GET",
+  });
 }

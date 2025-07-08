@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import NotFound from '../page'; // Adjust the import path as necessary
 import '@testing-library/jest-dom'; // Import jest-dom matchers
 import { MemoryRouterProvider } from 'next-router-mock/MemoryRouterProvider'; // Mock Next.js router
+
 
 describe('NotFound Component', () => {
   it('renders the 404 image', () => {
@@ -30,12 +31,14 @@ describe('NotFound Component', () => {
     expect(button).toBeInTheDocument();
   });
 
-  it('navigates to /redirect when the button is clicked', () => {
+  it('navigates to /redirect when the button is clicked', async () => {
     // Render the component with the MemoryRouterProvider
     render(<NotFound />, { wrapper: MemoryRouterProvider });
     const button = screen.getByRole('link', { name: /go back to home/i });
-    expect(button).toBeInTheDocument();
+   
     expect(button).toHaveAttribute('href', '/redirect');
-    button.click();
+    await act(async () => {
+      button.click();
+    });
   });
 });

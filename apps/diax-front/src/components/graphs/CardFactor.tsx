@@ -1,16 +1,17 @@
-import * as React from "react";
-import Avatar from "@mui/material/Avatar";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import LinearProgress from "@mui/material/LinearProgress";
-import Stack from "@mui/material/Stack";
-import type { SxProps } from "@mui/material/styles";
-import Typography from "@mui/material/Typography";
-import { ListBullets as ListBulletsIcon } from "@phosphor-icons/react/dist/ssr/ListBullets";
+import * as React from 'react';
+import {
+  Card,
+  CardContent,
+  LinearProgress,
+  Stack,
+  Typography,
+  Box,
+  type SxProps,
+} from '../core';
 
 export interface TasksProgressProps {
   sx?: SxProps;
-  value: number | undefined;
+  value?: number;
   title: string;
 }
 
@@ -20,46 +21,35 @@ export default function CardFactor({
   title,
 }: TasksProgressProps): React.JSX.Element {
   return (
-    <Card sx={sx}>
+    <Card sx={{ p: 1, ...sx }}>
       <CardContent>
         <Stack spacing={2}>
-          <Stack
-            direction="row"
-            sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
-            spacing={3}
-          >
-            <Stack spacing={1}>
+          <Box display="flex" justifyContent="flex-end" alignItems="center">
+            <Box textAlign="right">
               <Typography
+                variant="overline"
                 color="text.secondary"
                 gutterBottom
-                variant="overline"
               >
                 {title}
               </Typography>
-              <Typography >{value}%</Typography>
-            </Stack>
-            <Avatar
-              sx={{
-                backgroundColor: "var(--mui-palette-warning-main)",
-                height: "56px",
-                width: "56px",
-              }}
-            >
-              <ListBulletsIcon fontSize="var(--icon-fontSize-lg)" />
-            </Avatar>
-          </Stack>
-          <div>
-            <LinearProgress
-              value={value}
-              variant="determinate"
-              role="progressbar" 
-              aria-valuenow={value}
-              aria-valuemin={0} 
-              aria-valuemax={100} 
-              aria-label="Loading progress" 
-            />
+              <Typography variant="h6" fontWeight="bold">
+                {value}%
+              </Typography>
+            </Box>
+          </Box>
 
-          </div>
+          <LinearProgress
+            data-testid={`${title}-factor`}
+            value={value}
+            variant="determinate"
+            role="progressbar"
+            aria-valuenow={value}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${title} progress`}
+            sx={{ height: 8, borderRadius: 5 }}
+          />
         </Stack>
       </CardContent>
     </Card>

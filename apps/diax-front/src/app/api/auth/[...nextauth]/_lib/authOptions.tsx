@@ -5,7 +5,7 @@ import { JWT } from "next-auth/jwt";
 
 async function refreshAccessToken(token: JWT) {
   try {
-    const url = `${process.env.COGNITO_TOKEN_ENDPOINT}`;
+    const url = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/oauth2/token`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
     Cognito({
       clientId: process.env.COGNITO_CLIENT_ID || '',
       clientSecret: '',
-      issuer: process.env.COGNITO_ISSUER,
+      issuer: `${process.env.COGNITO_URI}/${process.env.COGNITO_USER_POOL_ID}`,
       client: {
         token_endpoint_auth_method: "none"
       },
@@ -66,11 +66,11 @@ export const authOptions: NextAuthOptions = {
           accessToken: account.access_token,
           idToken: account.id_token,
           refreshToken: account.refresh_token,
-          expiresAt: Date.now() + (Number(account.expires_in) * 1000) || Date.now() + 3600 * 1000,
+          expiresAt: Date.now() + (Number(account.expires_in) * 1000),
           ...user
         };
       }
-      if (!token.expiresAt || Date.now() > token.expiresAt || trigger == "update") {
+      if (!token.expiresAt || Date.now() > token.expiresAt) {
         return await refreshAccessToken(token);
       }   
 
@@ -82,6 +82,13 @@ export const authOptions: NextAuthOptions = {
       session.error = token.error;
       session.expiresTokenAt = token.expiresAt;     
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     }
   }
 };

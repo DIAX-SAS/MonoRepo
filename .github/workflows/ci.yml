@@ -1,39 +1,181 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
-
-permissions:
-  actions: read
-  contents: read
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  main:
+  build-raspberryPI:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4     
+   
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
-      # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      # Uncomment this line to enable task distribution
-      # - run: npx nx-cloud start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
-
-      # Cache node_modules
-      - uses: actions/setup-node@v4
+          node-version: 22
+          cache: 'yarn'
+      
+      - name: Cache node_modules and Yarn cache
+        uses: actions/cache@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          path: |
+            node_modules
+            ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
-      - run: npm ci --legacy-peer-deps
-      - uses: nrwl/nx-set-shas@v4
+      - name: Install dependencies
+        run: |
+         pip install -r apps/things/uploader/raspberryPI/requirements.txt
+         yarn install --frozen-lockfile 
+      
 
-      # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
-      # - run: npx nx-cloud record -- echo Hello World
-      # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
-      - run: npx nx affected -t lint test build
+      - name: Run raspberryPI lint
+        run: |         
+          yarn nx run raspberryPI:lint
+
+      - name: Run raspberryPI unit tests
+        run: |        
+          yarn nx run raspberryPI:test
+
+
+  build-diax-front:
+    runs-on: ubuntu-latest
+    steps:
+          - name: Checkout code
+            uses: actions/checkout@v4      
+          - name: Use Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: 22
+              cache: 'yarn'
+
+          - name: Copy enviromental variables
+            run: |
+              cp apps/diax-front/.env.local.template apps/diax-front/.env.local
+              cp apps/diax-front-e2e/.env.template apps/diax-front-e2e/.env
+              
+              #Replace if it exists or append if it doesn't
+              sed -i 's/^COGNITO_TEST_PASSWORD=.*/COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}/' apps/diax-front-e2e/.env || echo "COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}" >> apps/diax-front-e2e/.env
+
+          - name: Cache node_modules and Yarn cache
+            uses: actions/cache@v4
+            with:
+              path: |
+                node_modules
+                ~/.cache/yarn
+              key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+              restore-keys: |
+                ${{ runner.os }}-yarn-
+                  
+          - name: Install dependencies
+            run: |
+             yarn install --frozen-lockfile 
+             yarn playwright install --with-deps
+
+          - name: Run diax-front lint
+            run: yarn nx run diax-front:lint
+    
+          - name: Run diax-front unit tests
+            run: yarn nx run diax-front:test:ci
+    
+          - name: Run diax-front build
+            run: yarn nx run diax-front:build:production
+    
+          - name: Run diax-front e2e tests
+            run: |
+              yarn nx run diax-front:serve:production --port=4000 & 
+              SERVER_PID=$!
+              yarn wait-on http://localhost:4000/
+              yarn nx run diax-front-e2e:e2e:ci
+              kill $SERVER_PID
+
+
+  build-diax-back:
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: secretsmanager,dynamodb,ses
+          DEBUG: 1
+        options: >-
+          --health-cmd "curl -f http://localhost:4566 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+
+      - name: Cache node_modules and Yarn cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn- 
+      
+      - name: Install dependencies
+        run: |
+             yarn install --frozen-lockfile 
+
+      - name: Configure AWS credentials
+        run: |
+            aws configure set aws_access_key_id AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key AWS_SECRET_ACCESS_KEY
+            aws configure set region us-east-1
+      
+      - name: Setup SecretsManager Local
+        run: |
+          aws --endpoint-url=http://localhost:4566 secretsmanager create-secret \
+            --name IoTAuth/token \
+            --secret-string '{"signingKey":"LoletnT7k2hloq0zce+oNduMd3L+zHHFktqWWNRROMw="}'
+
+      - name: Setup SES local
+        run: |
+           aws --endpoint-url=http://localhost:4566 ses verify-email-identity --email-address "test@example.com.co"
+
+      - name: Copy enviromental variables
+        run: |
+          cp apps/diax-back/.env.template apps/diax-back/.env
+          cp apps/diax-back-e2e/.env.template apps/diax-back-e2e/.env
+
+          #Replace if it exists or append if it doesn't
+          sed -i 's/^COGNITO_TEST_PASSWORD=.*/COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}/' apps/diax-back-e2e/.env || echo "COGNITO_TEST_PASSWORD=${{ secrets.COGNITO_TEST_PASSWORD }}" >> apps/diax-back-e2e/.env
+          
+      - name: Run diax-back lint
+        run: yarn nx run diax-back:lint
+
+      - name: Run diax-back unit tests
+        run: yarn nx run diax-back:test:ci
+      
+      - name: Run diax-back build
+        run: yarn nx run diax-back:build:production
+
+      - name: Run diax-back e2e tests
+        run: |
+          yarn nx run diax-back:serve:production & 
+          SERVER_PID=$!
+          yarn wait-on http://localhost:3000/api 
+          yarn nx run diax-back-e2e:e2e
+          kill $SERVER_PID
+
+
+
+

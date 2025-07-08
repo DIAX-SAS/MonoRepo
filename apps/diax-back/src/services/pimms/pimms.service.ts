@@ -1,118 +1,134 @@
 import { Injectable } from '@nestjs/common';
-import { InfoSettingsDto } from './pimms.dto';
-import { getSecrets, ResponsePIMM } from '@repo-hub/internal';
 import { sign } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
-import * as dynamoose from 'dynamoose';
-import { PIMMSchema } from './pimm.schema';
+import { GetPimmsDTO, GetPimmsResponseDTO, PIMMDocumentKey, PimmsFilterDto } from './pimms.interface';
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from '@aws-sdk/client-secrets-manager';
+import { InjectModel, Model } from 'nestjs-dynamoose';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
-export class PIMMService {
-  constructor(private readonly config: ConfigService) { }
+export class PimmsService {
+  iotSecretId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  endPointSecrets: string;
+  constructor(
+    private readonly config: ConfigService,
+    private readonly email: EmailService,
+    @InjectModel("PIMM") private PIMMModel: Model<GetPimmsDTO, PIMMDocumentKey>,
+    @InjectModel("PIMMMinute") private PIMMMinuteModel: Model<GetPimmsDTO, PIMMDocumentKey>,
+    @InjectModel("PIMMHour") private PIMMHourModel: Model<GetPimmsDTO, PIMMDocumentKey>
+  ) {
+    this.iotSecretId = this.config.get('IOT_AUTH_SECRET_PATH');
+    this.accessKeyId = this.config.get('AWS_ACCESS_KEY_ID');
+    this.secretAccessKey = this.config.get('AWS_SECRET_ACCESS_KEY');
+    this.endPointSecrets = this.config.get("SECRETS_MANAGER_URI")
+  }
 
-  async getPIMMSCredentials() {
-    const secretString = JSON.parse(
-      await getSecrets(this.config.get('ID_AUTH_TOKEN'))
+  async getPimmsIotCredentials() {
+    const isDev = process.env.NODE_ENV === 'development';
+    const smClient = new SecretsManagerClient({
+      region: 'us-east-1',
+      endpoint: this.endPointSecrets,
+      ...(isDev && {
+        credentials: {
+          accessKeyId: this.accessKeyId,
+          secretAccessKey: this.secretAccessKey,        },
+      }),
+    });
+
+    const { SecretString } = await smClient.send(
+      new GetSecretValueCommand({ SecretId: this.iotSecretId })
     );
-    const signingKey = Buffer.from(secretString.signingKey, 'base64');
-    const expiresIn = this.config.get('TEMPORAL_TOKEN_EXPIRATION').concat('m');
-    const expirationDate = new Date();
-    expirationDate.setMinutes(
-      expirationDate.getMinutes() + this.config.get('TEMPORAL_TOKEN_EXPIRATION')
-    );   
-    const temporalToken = sign(
-      {
-        iot: true,
-        timestamp: Date.now(),
-      },
-      signingKey,
-      {
-        expiresIn,
-        algorithm: 'HS256',
-      }
-    );   
+
+    const { signingKey } = JSON.parse(SecretString);
+    const key = Buffer.from(signingKey, 'base64');
+
+    const token = sign({ iot: true, timestamp: Date.now() }, key, {
+      expiresIn: '10m',
+      algorithm: 'HS256',
+    });
 
     return {
       token: {
-        sessionToken: temporalToken,
-        expiration: expirationDate.toISOString(),
+        sessionToken: token,
+        expiration: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       },
     };
   }
 
-  async getPIMMS(settings: InfoSettingsDto): Promise<ResponsePIMM> {
-    const { initTime, endTime, lastID, accUnit: step } = settings.filters;
+  async getPIMMS(settings: PimmsFilterDto): Promise<GetPimmsResponseDTO> {
+    const { initTime, endTime, lastID, stepUnit } = settings;
 
-    let allResults = [];
-    const tableName = this.getTableName(step);
-    const tableModel = dynamoose.model(tableName, PIMMSchema);
+    let tableModel: Model<GetPimmsDTO, PIMMDocumentKey>;
+    switch (stepUnit) {
+      case "second":
+      default:
+        tableModel = this.PIMMModel;
+        break;
+      case "minute":
+        tableModel = this.PIMMMinuteModel;
+        break;
+      case "hour":
+        tableModel = this.PIMMHourModel;
+        break;
 
-    const partitions = await this.findPartitions(tableModel);
+    }  
 
-    for (const partition of partitions) {
-      let query = tableModel
-        .query('PLCNumber')
-        .eq(partition)
-        .filter('timestamp')
-        .attributes(['PLCNumber', 'timestamp', 'payload'])
-        .between(initTime, endTime);
-
-      if (lastID) {
-        query = query.startAt({
-          PLCNumber: partition,
-          timestamp: lastID,
-        });
-      }
-
-      const result = await query.exec();
-      const items = result.toJSON().map((item) => item.payload);
-      allResults = [...allResults, ...items];
+    /**
+  * Generates an array of epoch timestamps (in seconds) for each day 
+  * between `initTime` and `endTime` (inclusive), normalized to 00:00:00 UTC.
+  *
+  * @param {number} initTime - The start timestamp (in milliseconds).
+  * @param {number} endTime - The end timestamp (in milliseconds).
+  * @returns {number[]} An array of timestamps (in seconds) representing each day.
+  */
+    function getPartitions(initTime: number, endTime: number): number[] {
+      const ONE_DAY_MS = 86400000; 
+   
+      const start = new Date(initTime);
+      start.setUTCHours(0, 0, 0, 0);
+    
+      const end = new Date(endTime);
+      end.setUTCHours(0, 0, 0, 0);
+     
+      const totalDays = Math.ceil((end.getTime() - start.getTime()) / ONE_DAY_MS) + 1;
+    
+      return Array.from({ length: totalDays }, (_, i) =>
+        (start.getTime() + i * ONE_DAY_MS) 
+      );
     }
+
+    const partitions = getPartitions(initTime, endTime);
+
+    const rawItems = await Promise.all(
+      partitions.map(async (partition) => {
+        return (
+          await tableModel
+            .query('epochDay')
+            .eq(partition)
+            .where('timestamp')
+            .between(lastID || initTime, endTime)
+            .attributes(['plcId', 'timestamp', 'counters', 'states'])
+            .exec()
+        );
+      })
+    );
+    const pimms = rawItems.flat() as GetPimmsDTO[];
 
     return {
-      pimms: allResults,
-      lastID: allResults.at(-1)?.timestamp || null,
-      totalProcessed: allResults.length,
+      pimms,
+      lastID: pimms.at(-1)?.timestamp ?? null,
+      totalProcessed: pimms.length,
     };
   }
 
-  private getTableName(step: string) {
-    const buckets: Record<string, string> = {
-      second: this.config.get('NAME_TABLE'),
-      minute: this.config.get('NAME_TABLE_MINUTE'),
-      hour: this.config.get('NAME_TABLE_HOUR'),
-    };
-    const bucket = buckets[step];
-    return bucket;
-  }
-
-  private async checkPartitionExists(
-    table,
-    pimmNumber: number
-  ): Promise<boolean> {
-    const response = await table
-      .query('PLCNumber')
-      .eq(pimmNumber)
-      .limit(1)
-      .exec();
-    return response.length > 0;
-  }
-
-  private async findPartitions(tableModel) {
-    let pimmNumber = 0;
-    let falseCount = 0;
-    const partitions: number[] = [];
-
-    while (falseCount < 5) {
-      if (await this.checkPartitionExists(tableModel, pimmNumber)) {
-        partitions.push(pimmNumber);
-        falseCount = 0; // Reset false counter since we found a valid partition
-      } else {
-        falseCount += 1; // Increment false counter
-      }
-      pimmNumber += 1; // Move to the next number
-    }
-
-    return partitions;
+  async sendPimmReport(address: string){   
+    const subject = "REPORTE EMPLEADOS OEE";
+    const content = "test";
+    return this.email.sendEmail(address, content, subject)
   }
 }
