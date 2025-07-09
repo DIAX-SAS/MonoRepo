@@ -263,6 +263,7 @@ export default function Page(): React.JSX.Element {
   }, [PIMMs]);
 
   React.useEffect(() => {
+    let connectionPromise: Promise<MqttClient> | undefined;
     if (parameters.live) {
       setParameters((prevParameters) => ({
         ...prevParameters,
@@ -270,10 +271,30 @@ export default function Page(): React.JSX.Element {
         endDate: new Date().getTime(),
       }));
     }
+    if (parameters.live) {
+      connectionPromise = connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
+        const pimmData = JSON.parse(payload.toString());
+        setPIMMs((prevPIMMs) => {
+          return [...prevPIMMs, pimmData].sort(
+            (a, b) => a.timestamp - b.timestamp
+          );
+        });
+      });
+    } else {
+      closeConnectionToMQTTBroker();
+    }
+
+    return () => {
+      if (connectionPromise) {
+        connectionPromise.then((client) => {
+          closeConnectionToMQTTBroker(client);
+        });
+      }
+    };
   }, [parameters.live]);
 
   React.useEffect(() => {
-    let connectionPromise: Promise<MqttClient> | undefined;
+    
     setPIMMs([]);
     setFilters({
       equipos: new Map<string, boolean>(),
@@ -298,26 +319,6 @@ export default function Page(): React.JSX.Element {
       });
     });
 
-    if (parameters.live) {
-      connectionPromise = connectToMQTTBroker('PIMMStateTopic', (topic, payload) => {
-        const pimmData = JSON.parse(payload.toString());
-        setPIMMs((prevPIMMs) => {
-          return [...prevPIMMs, pimmData].sort(
-            (a, b) => a.timestamp - b.timestamp
-          );
-        });
-      });
-    } else {
-      closeConnectionToMQTTBroker();
-    }
-
-    return () => {
-      if (connectionPromise) {
-        connectionPromise.then((client) => {
-          closeConnectionToMQTTBroker(client);
-        });
-      }
-    };
   }, [parameters]);
 
   return (
