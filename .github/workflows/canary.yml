@@ -2,8 +2,8 @@ name: CM
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 5 * * *'      # Ejecuta todos los días a las 5:00 AM UTC
+  #schedule:
+    #- cron: '0 5 * * *'      # Ejecuta todos los días a las 5:00 AM UTC
 
 jobs:
   try-to-sing:
